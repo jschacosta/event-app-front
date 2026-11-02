@@ -38,6 +38,7 @@ const EQUIVALENTES: Record<string, ComponentProps<typeof Ionicons>['name']> = {
   'airplane': 'airplane-outline',
   'bubble.left.and.bubble.right': 'chatbubbles-outline',
   'person.2': 'people-outline',
+  'megaphone': 'megaphone-outline',
   'line.3.horizontal.decrease': 'options-outline',
   'checkmark.circle.fill': 'checkmark-circle',
   'chevron.down': 'chevron-down',

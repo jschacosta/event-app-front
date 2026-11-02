@@ -17,8 +17,9 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="chats">
         <NativeTabs.Trigger.Label>{tr('tabs.chats')}</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="group" />
-        <NativeTabs.Trigger.Badge hidden={!noLeidos}>{textoCuenta(noLeidos)}</NativeTabs.Trigger.Badge>
+        <NativeTabs.Trigger.Icon sf={{ default: 'megaphone', selected: 'megaphone.fill' }} md="campaign" />
+        {/* Sin texto cuando no hay nuevos: con "0" la barra nativa muestra el globo aunque esté oculto. */}
+        <NativeTabs.Trigger.Badge hidden={!noLeidos}>{noLeidos ? textoCuenta(noLeidos) : undefined}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="experiencias">
         <NativeTabs.Trigger.Label>{tr('tabs.experiencias')}</NativeTabs.Trigger.Label>

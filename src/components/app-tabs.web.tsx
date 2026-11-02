@@ -9,7 +9,7 @@ import { textoCuenta, useSincronizarNoLeidos } from '@/lib/no-leidos';
 // En el navegador: barra inferior translúcida, igual que en iPhone.
 const PESTANAS = [
   { name: 'index', href: '/', clave: 'tabs.agenda', icono: 'calendar' },
-  { name: 'chats', href: '/chats', clave: 'tabs.chats', icono: 'person.2' },
+  { name: 'chats', href: '/chats', clave: 'tabs.chats', icono: 'megaphone' },
   { name: 'experiencias', href: '/experiencias', clave: 'tabs.experiencias', icono: 'star' },
   { name: 'perfil', href: '/perfil', clave: 'tabs.perfil', icono: 'person' },
 ] as const;
