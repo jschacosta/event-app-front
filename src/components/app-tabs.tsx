@@ -1,31 +1,32 @@
 import { NativeTabs } from 'expo-router/native-tabs';
-import { useColorScheme } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { textoCuenta, useSincronizarNoLeidos } from '@/lib/no-leidos';
 
+// Barra de pestañas nativa: SF Symbols en iPhone, íconos Material en Android.
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
-
+  const t = useTheme();
+  const { t: tr } = useTranslation();
+  const noLeidos = useSincronizarNoLeidos();
   return (
-    <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+    <NativeTabs tintColor={t.accentText} backgroundColor={t.bar} iconColor={{ default: t.textSecondary, selected: t.accentText }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Label>{tr('tabs.agenda')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="calendar" md="calendar_today" />
       </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
+      <NativeTabs.Trigger name="chats">
+        <NativeTabs.Trigger.Label>{tr('tabs.chats')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="group" />
+        <NativeTabs.Trigger.Badge hidden={!noLeidos}>{textoCuenta(noLeidos)}</NativeTabs.Trigger.Badge>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="experiencias">
+        <NativeTabs.Trigger.Label>{tr('tabs.experiencias')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'star', selected: 'star.fill' }} md="star" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="perfil">
+        <NativeTabs.Trigger.Label>{tr('tabs.perfil')}</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

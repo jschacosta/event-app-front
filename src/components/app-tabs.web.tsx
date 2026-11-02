@@ -1,115 +1,72 @@
-import {
-  Tabs,
-  TabList,
-  TabTrigger,
-  TabSlot,
-  TabTriggerSlotProps,
-  TabListProps,
-} from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Tabs, TabList, TabSlot, TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Icono, Texto } from '@/components/ui';
+import { useTheme } from '@/hooks/use-theme';
+import { textoCuenta, useSincronizarNoLeidos } from '@/lib/no-leidos';
 
-import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+// En el navegador: barra inferior translúcida, igual que en iPhone.
+const PESTANAS = [
+  { name: 'index', href: '/', clave: 'tabs.agenda', icono: 'calendar' },
+  { name: 'chats', href: '/chats', clave: 'tabs.chats', icono: 'person.2' },
+  { name: 'experiencias', href: '/experiencias', clave: 'tabs.experiencias', icono: 'star' },
+  { name: 'perfil', href: '/perfil', clave: 'tabs.perfil', icono: 'person' },
+] as const;
+
+// En React 19 la ref llega como prop normal, así que no hace falta forwardRef.
+function Boton({ isFocused, texto, icono, cuenta, ...props }: TabTriggerSlotProps & { texto: string; icono: (typeof PESTANAS)[number]['icono']; cuenta?: number }) {
+  const t = useTheme();
+  const color = isFocused ? t.accentText : t.textSecondary;
+  return (
+    <Pressable {...(props as object)} style={styles.boton}>
+      <View>
+        <Icono nombre={icono} tamano={24} color={color} />
+        {cuenta ? (
+          <View style={[styles.globo, { backgroundColor: t.danger, borderColor: t.background }]}>
+            <Texto v="mini" style={styles.globoTexto}>{textoCuenta(cuenta)}</Texto>
+          </View>
+        ) : null}
+      </View>
+      <Texto v="mini" style={{ color, fontSize: 10, fontWeight: isFocused ? '600' : '500' }}>{texto}</Texto>
+    </Pressable>
+  );
+}
 
 export default function AppTabs() {
+  const t = useTheme();
+  const { t: tr } = useTranslation();
+  const noLeidos = useSincronizarNoLeidos();
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
-        <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+      <TabList style={[styles.barra, { borderTopColor: t.separator }]}>
+        {/* El vidrio va en una capa que se sale por abajo y por los lados: así los bordes del
+            desenfoque (que Chrome dibuja mal) quedan fuera de la pantalla y no se ve el fondo. */}
+        <View pointerEvents="none" style={[styles.vidrio, { backgroundColor: t.bar }]} />
+        {PESTANAS.map((p) => (
+          <TabTrigger key={p.name} name={p.name} href={p.href} asChild>
+            <Boton texto={tr(p.clave)} icono={p.icono} cuenta={p.name === 'chats' ? noLeidos : undefined} />
           </TabTrigger>
-          <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton>Explore</TabButton>
-          </TabTrigger>
-        </CustomTabList>
+        ))}
       </TabList>
     </Tabs>
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
-  return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
-  );
-}
-
-export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
-
-  return (
-    <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
-
-        {props.children}
-
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+  barra: {
+    position: 'absolute', left: 0, right: 0, bottom: 0, height: 64, flexDirection: 'row', overflow: 'hidden',
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
+  vidrio: {
+    position: 'absolute', top: 0, left: -48, right: -48, bottom: -48,
+    backdropFilter: 'blur(30px) saturate(180%)', WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+  } as object,
+  globo: {
+    position: 'absolute', top: -5, left: 15, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2,
   },
-  brandText: {
-    marginRight: 'auto',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
-  },
+  globoTexto: { color: '#FFFFFF', fontSize: 10, lineHeight: 12, fontWeight: '700' },
+  boton: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
 });

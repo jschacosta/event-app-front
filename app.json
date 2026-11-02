@@ -1,14 +1,16 @@
 {
   "expo": {
-    "name": "rio-eventos-app",
+    "name": "Bora",
     "slug": "rio-eventos-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rioeventosapp",
+    "scheme": "bora",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.riodiferente.eventos",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -17,10 +19,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.riodiferente.eventos"
     },
     "web": {
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -32,7 +35,18 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Rio Eventos usa tus fotos para tu perfil de viajero."
+        }
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
