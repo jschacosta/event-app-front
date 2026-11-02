@@ -159,7 +159,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     );
     // Con modo lento el servidor dice cuándo se puede volver a escribir (al enviar o al rechazar).
     if (r.esperaHasta !== undefined) setEsperaHasta(r.esperaHasta ? new Date(r.esperaHasta).getTime() : null);
-    if (r.miembro) setMiembro(true); // escribir es unirse
+    if (r.miembro !== undefined) setMiembro(Boolean(r.miembro)); // escribir no une: solo "Unirme"
     if (r.mensaje) {
       const m = r.mensaje;
       setMensajes((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));

@@ -541,8 +541,9 @@ export default function ChatScreen() {
 
   const alUnirme = async () => {
     const r = await unirme();
-    if (r.error) avisar(r.error);
-    else setAviso(tr('canales.unido'));
+    if (r.error) return avisar(r.error);
+    setAviso(tr('canales.unido'));
+    if (canal) cargarCanales(); // para que el encabezado cuente a quien se acaba de unir
   };
 
   // "Ya estoy aquí" desde el botón 📍 del encabezado: las caras y marcar o quitar.
@@ -571,7 +572,7 @@ export default function ChatScreen() {
         <View style={styles.filaEncabezado}>
           <Pressable
             accessibilityLabel={tr('comun.volver')}
-            onPress={() => (canal ? cambiarSala('general') : router.canGoBack() ? router.back() : router.replace('/'))}
+            onPress={() => (!esIdioma ? cambiarSala('general') : router.canGoBack() ? router.back() : router.replace('/'))}
             style={styles.botonVolver}>
             <Text style={styles.flecha}>‹</Text>
           </Pressable>
@@ -588,7 +589,7 @@ export default function ChatScreen() {
             </View>
           </Pressable>
           {estado === 'listo' && aqui.abierto ? <BotonAqui aqui={aqui} onPress={hojaAqui} /> : null}
-          {/* Unirme: la sala queda en "Mis canales" aunque no escriba (escribir también une). */}
+          {/* Unirme: la única forma de tener la sala en "Mis canales" (mirar o escribir no une). */}
           {estado === 'listo' && !miembro ? (
             <Pressable
               onPress={alUnirme}
@@ -604,7 +605,8 @@ export default function ChatScreen() {
             <Icono nombre="ellipsis" tamano={20} color={t.text} />
           </Pressable>
         </View>
-        {id && estado !== 'normas' ? <SelectorSalas eventoId={id} sala={sala} canales={canales} onCambio={cambiarSala} /> : null}
+        {/* Un canal propio es una sola sala (sin idiomas): adentro no se muestran las salas del evento. */}
+        {id && esIdioma && estado !== 'normas' ? <SelectorSalas eventoId={id} sala={sala} canales={canales} onCambio={cambiarSala} /> : null}
         {estado === 'listo' && fijado ? (
           <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(150)} style={styles.fijado}>
             <Pressable

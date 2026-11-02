@@ -28,6 +28,15 @@ export type MiCanal = {
 
 const BANDERA_SALA: Record<string, string> = { es: 'ES', en: 'GB', pt: 'BR' };
 
+// Los canales propios no llevan la foto del evento: un círculo de color con su inicial, para
+// distinguirlos de las salas de idioma. El color sale del nombre, así cada canal mantiene el suyo.
+const COLORES_CANAL = ['#5E5CE6', '#FF6B3D', '#30A46C', '#E5484D', '#0A84FF', '#D6409F', '#AD7F00', '#12A594'];
+function colorCanal(nombre: string) {
+  let h = 0;
+  for (const letra of nombre) h = (h * 31 + letra.charCodeAt(0)) >>> 0;
+  return COLORES_CANAL[h % COLORES_CANAL.length];
+}
+
 // "21:40" si fue hoy; si no, "Ayer", "Jueves" o "12 de octubre".
 function cuando(iso: string) {
   const d = new Date(iso);
@@ -41,8 +50,8 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
   const t = useTheme();
   const { t: tr } = useTranslation();
   const titulo = c.canal?.nombre ?? c.evento.titulo;
-  // En las salas de idioma se dice cuál es; en los canales propios, de qué evento son.
-  const contexto = c.canal ? c.evento.titulo : c.sala === 'general' ? tr('canales.general') : c.sala.toUpperCase();
+  // En las salas de idioma se dice cuál es; en los canales propios, que es un canal y de qué evento.
+  const contexto = c.canal ? `${tr('canales.etiquetaCanal')} · ${c.evento.titulo}` : c.sala === 'general' ? tr('canales.general') : c.sala.toUpperCase();
   const ultimo = c.ultimo
     ? `${c.ultimo.mio ? tr('chat.tu') : c.ultimo.autor.split(' ')[0]}: ${c.ultimo.encuesta ? '📊 ' : ''}${c.ultimo.texto}`
     : tr('canales.sinMensajes');
@@ -58,11 +67,17 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
       accessibilityHint={tr('canales.mantenerParaSalir')}
       style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundElement }]}>
       <View>
-        <View style={[styles.foto, { backgroundColor: t.backgroundSelected }]}>
-          {c.evento.imagen
-            ? <Image source={{ uri: c.evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
-            : <Icono nombre="bubble.left.and.bubble.right" tamano={20} color={t.textSecondary} />}
-        </View>
+        {c.canal ? (
+          <View style={[styles.foto, { backgroundColor: colorCanal(c.canal.nombre) }]}>
+            <Text style={styles.inicial}>{[...c.canal.nombre.trim()][0]?.toUpperCase() ?? '#'}</Text>
+          </View>
+        ) : (
+          <View style={[styles.foto, { backgroundColor: t.backgroundSelected }]}>
+            {c.evento.imagen
+              ? <Image source={{ uri: c.evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+              : <Icono nombre="bubble.left.and.bubble.right" tamano={20} color={t.textSecondary} />}
+          </View>
+        )}
         {/* Sello en la foto: qué sala es (bandera, globo o el ícono del canal propio). */}
         <View style={[styles.sello, { backgroundColor: c.canal ? t.text : t.background, borderColor: t.background }]}>
           {c.canal
@@ -182,6 +197,7 @@ function ContenidoElegir({ eventos, ciudad, onElegir, onCerrar }: {
 const styles = StyleSheet.create({
   fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 20 },
   foto: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  inicial: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
   sello: {
     position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, borderRadius: 10, borderWidth: 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
