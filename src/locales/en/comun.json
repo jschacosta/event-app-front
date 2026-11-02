@@ -151,7 +151,15 @@
     "nuevos_one": "{{count}} new message",
     "nuevos_other": "{{count}} new messages",
     "eliminar": "Delete message",
-    "eliminado": "Message deleted"
+    "eliminado": "Message deleted",
+    "editado": "edited",
+    "editar": "Edit",
+    "borrar": "Delete",
+    "borrado": "Message deleted",
+    "editando": "Editing message",
+    "cancelarEdicion": "Cancel editing",
+    "soloAvisos": "Announcements channel: only its creator can post here.",
+    "vacioAvisos": "No announcements yet."
   },
   "editarPerfil": {
     "errorNombre": "Enter your first and last name.",
@@ -268,7 +276,10 @@
     "unirme": "Join",
     "unido": "Done, you'll see it in My channels",
     "saliste": "You left the channel",
-    "unirmeAyuda": "Join to keep it in My channels and see new messages, even if you don't write."
+    "unirmeAyuda": "Join to keep it in My channels and see new messages, even if you don't write.",
+    "avisos": "Announcements",
+    "soloAvisos": "Announcements channel",
+    "soloAvisosPie": "Only you post; everyone else reads, reacts and votes. Handy for times, meeting points or changes."
   },
   "normas": {
     "titulo": "Before you join",
@@ -439,5 +450,12 @@
     "nacimiento": "Your date of birth",
     "foto": "At least one photo",
     "ir": "Complete my profile"
+  },
+  "formato": {
+    "negrita": "Bold",
+    "cursiva": "Italic",
+    "subrayado": "Underline",
+    "tachado": "Strikethrough",
+    "spoiler": "Spoiler (hidden until tapped)"
   }
 }

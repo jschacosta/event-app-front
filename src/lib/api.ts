@@ -75,6 +75,7 @@ export type MensajeChat = {
   reacciones?: Reaccion[];
   encuesta?: Encuesta | null;
   fijado?: boolean;
+  editado?: boolean;
 };
 
 // Canal propio dentro de un evento (lo crean el admin y los usuarios habilitados).
@@ -85,6 +86,7 @@ export type CanalPropio = {
   descripcion: string | null;
   codigo: string;
   privado: boolean;
+  soloAvisos?: boolean; // canal de avisos: solo escribe quien lo creó
   miembros: number;
   soyMiembro: boolean;
   esMio: boolean;

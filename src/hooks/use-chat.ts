@@ -14,6 +14,7 @@ type Respuesta = {
   leidoHasta?: string | null;
   modoLento?: number; esperaHasta?: string | null;
   miembro?: boolean; // si ya me uní a la sala (sale en "Mis canales")
+  soloLectura?: boolean; // canal de avisos donde no soy quien escribe
 };
 type RespuestaEnvio = { ok?: boolean; error?: string; codigo?: string; mensaje?: MensajeChat; esperaHasta?: string | null; miembro?: boolean };
 
@@ -38,6 +39,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
   const [modoLento, setModoLento] = useState(0);
   const [esperaHasta, setEsperaHasta] = useState<number | null>(null);
   const [miembro, setMiembro] = useState(false);
+  const [soloLectura, setSoloLectura] = useState(false);
   const [intento, setIntento] = useState(0); // sube para volver a entrar (tras aceptar normas o la contraseña)
   const ultimoAviso = useRef(0);
 
@@ -53,6 +55,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     setModoLento(0);
     setEsperaHasta(null);
     setMiembro(false);
+    setSoloLectura(false);
     setEstado(token ? 'conectando' : 'sin-sesion');
   }
 
@@ -79,6 +82,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
       setModoLento(r.modoLento ?? 0);
       setEsperaHasta(r.esperaHasta ? new Date(r.esperaHasta).getTime() : null);
       setMiembro(Boolean(r.miembro));
+      setSoloLectura(Boolean(r.soloLectura));
       setError(null);
       setEstado('listo');
     };
@@ -98,6 +102,10 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
       if (!esDeAqui(d)) return;
       setFijado(d.mensaje);
       setMensajes((prev) => prev.map((m) => ({ ...m, fijado: m.id === d.mensaje?.id })));
+    };
+    const alEditado = ({ mensajeId, texto }: { mensajeId: string; texto: string }) => {
+      setMensajes((prev) => prev.map((m) => (m.id === mensajeId ? { ...m, texto, editado: true } : m)));
+      setFijado((f) => (f?.id === mensajeId ? { ...f, texto, editado: true } : f));
     };
     const alVotos = ({ mensajeId, encuesta }: { mensajeId: string; encuesta: Encuesta }) =>
       setMensajes((prev) => prev.map((m) => (m.id === mensajeId ? { ...m, encuesta } : m)));
@@ -126,6 +134,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     s.on('chat:reacciones', alReacciones);
     s.on('chat:fijado', alFijado);
     s.on('chat:votos', alVotos);
+    s.on('chat:editado', alEditado);
     s.on('chat:escribiendo', alEscribiendo);
     s.on('chat:canalCerrado', alCanalCerrado);
     s.on('chat:modoLento', alModoLento);
@@ -143,6 +152,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
       s.off('chat:reacciones', alReacciones);
       s.off('chat:fijado', alFijado);
       s.off('chat:votos', alVotos);
+      s.off('chat:editado', alEditado);
       s.off('chat:escribiendo', alEscribiendo);
       s.off('chat:canalCerrado', alCanalCerrado);
       s.off('chat:modoLento', alModoLento);
@@ -203,6 +213,23 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
   const eliminar = useCallback(async (mensajeId: string) => {
     if (!token) return {};
     return emitir<{ ok?: boolean; error?: string }>(obtenerSocket(token), 'chat:ocultar', { mensajeId });
+  }, [token]);
+
+  // Editar o borrar un mensaje propio (el servidor lo permite durante los primeros 15 minutos).
+  const editar = useCallback(async (mensajeId: string, texto: string) => {
+    if (!token) return { error: i18n.t('chat.iniciaParaEscribir') };
+    const r = await emitir<{ ok?: boolean; error?: string; codigo?: string; texto?: string }>(obtenerSocket(token), 'chat:editar', { mensajeId, texto });
+    if (r.ok && r.texto !== undefined) {
+      const nuevo = r.texto;
+      setMensajes((prev) => prev.map((m) => (m.id === mensajeId ? { ...m, texto: nuevo, editado: true } : m)));
+    }
+    return r;
+  }, [token]);
+  const borrar = useCallback(async (mensajeId: string) => {
+    if (!token) return {};
+    const r = await emitir<{ ok?: boolean; error?: string }>(obtenerSocket(token), 'chat:borrar', { mensajeId });
+    if (r.ok) setMensajes((prev) => prev.filter((m) => m.id !== mensajeId));
+    return r;
   }, [token]);
 
   const crearEncuesta = useCallback(async (pregunta: string, opciones: string[]) => {
@@ -274,7 +301,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
 
   return {
     estado: token ? estado : 'sin-sesion',
-    miembro, unirme, salir, eliminar,
+    miembro, unirme, salir, eliminar, editar, borrar, soloLectura,
     error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
     leidoHasta, fijado, puedeFijar: permisos.fijar, puedeEncuesta: permisos.encuesta, fijar, crearEncuesta, votar,
     modoLento, esperaHasta, cambiarModoLento,

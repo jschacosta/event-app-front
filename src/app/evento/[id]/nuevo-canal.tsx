@@ -49,6 +49,7 @@ export default function NuevoCanalScreen() {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [conClave, setConClave] = useState(false);
+  const [soloAvisos, setSoloAvisos] = useState(false);
   const [clave, setClave] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export default function NuevoCanalScreen() {
       const r = await api<{ canal: CanalPropio }>(`/canales/evento/${id}`, {
         metodo: 'POST',
         token,
-        body: { nombre: nombre.trim(), descripcion: descripcion.trim() || undefined, clave: conClave ? clave.trim() : undefined },
+        body: { nombre: nombre.trim(), descripcion: descripcion.trim() || undefined, clave: conClave ? clave.trim() : undefined, soloAvisos },
       });
       setCreado(r.canal);
     } catch (e) {
@@ -130,6 +131,9 @@ export default function NuevoCanalScreen() {
                 <Campo valor={clave} onCambio={setClave} placeholder={tr('canales.clave')} secreto max={40} />
               </View>
             ) : null}
+          </Grupo>
+          <Grupo pie={tr('canales.soloAvisosPie')}>
+            <FilaInterruptor etiqueta={tr('canales.soloAvisos')} valor={soloAvisos} onCambio={setSoloAvisos} />
           </Grupo>
           {error ? <Texto v="detalle" style={{ color: t.danger, paddingHorizontal: 16 }}>{error}</Texto> : null}
           <View style={{ paddingHorizontal: 16 }}>

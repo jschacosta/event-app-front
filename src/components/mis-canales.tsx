@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { diaCorto, etiquetaDiaChat, hora, horaDispositivo } from '@/lib/fechas';
+import { quitarFormato } from '@/lib/formato';
 import { textoCuenta } from '@/lib/no-leidos';
 
 export type MiCanal = {
@@ -20,7 +21,7 @@ export type MiCanal = {
   eventoId: string;
   sala: string;
   evento: { titulo: string; imagen: string | null; inicio: string; fin: string };
-  canal: { nombre: string; privado: boolean; esMio: boolean } | null;
+  canal: { nombre: string; privado: boolean; esMio: boolean; soloAvisos?: boolean } | null;
   ultimo: { texto: string; encuesta: boolean; autor: string; mio: boolean; fecha: string } | null;
   noLeidos: number;
   actividad: string;
@@ -53,7 +54,7 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
   // En las salas de idioma se dice cuál es; en los canales propios, que es un canal y de qué evento.
   const contexto = c.canal ? `${tr('canales.etiquetaCanal')} · ${c.evento.titulo}` : c.sala === 'general' ? tr('canales.general') : c.sala.toUpperCase();
   const ultimo = c.ultimo
-    ? `${c.ultimo.mio ? tr('chat.tu') : c.ultimo.autor.split(' ')[0]}: ${c.ultimo.encuesta ? '📊 ' : ''}${c.ultimo.texto}`
+    ? `${c.ultimo.mio ? tr('chat.tu') : c.ultimo.autor.split(' ')[0]}: ${c.ultimo.encuesta ? '📊 ' : ''}${quitarFormato(c.ultimo.texto)}`
     : tr('canales.sinMensajes');
 
   return (
@@ -81,7 +82,7 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
         {/* Sello en la foto: qué sala es (bandera, globo o el ícono del canal propio). */}
         <View style={[styles.sello, { backgroundColor: c.canal ? t.text : t.background, borderColor: t.background }]}>
           {c.canal
-            ? <Icono nombre={c.canal.privado ? 'lock.fill' : 'bubble.left.and.bubble.right'} tamano={9} color={t.background} />
+            ? <Icono nombre={c.canal.privado ? 'lock.fill' : c.canal.soloAvisos ? 'megaphone' : 'bubble.left.and.bubble.right'} tamano={9} color={t.background} />
             : BANDERA_SALA[c.sala]
               ? <Bandera codigo={BANDERA_SALA[c.sala]} alto={9} />
               : <Icono nombre="globe" tamano={11} color={t.text} />}

@@ -231,7 +231,7 @@ export function SelectorSalas({ eventoId, sala, canales, onCambio }: {
                   : { backgroundColor: t.backgroundElement, borderColor: t.separator },
                 pressed && { opacity: 0.7 },
               ]}>
-              <Icono nombre={c.privado && !c.soyMiembro ? 'lock.fill' : 'bubble.left.and.bubble.right'} tamano={13} color={activa ? t.onAccent : t.text} />
+              <Icono nombre={c.privado && !c.soyMiembro ? 'lock.fill' : c.soloAvisos ? 'megaphone' : 'bubble.left.and.bubble.right'} tamano={13} color={activa ? t.onAccent : t.text} />
               <Texto v="pie" style={{ fontWeight: activa ? '700' : '600', maxWidth: 150, color: activa ? t.onAccent : t.text }} numberOfLines={1}>
                 {c.creador?.admin ? 'Bora · ' : ''}{c.nombre}
               </Texto>

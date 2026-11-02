@@ -151,7 +151,15 @@
     "nuevos_one": "{{count}} mensaje nuevo",
     "nuevos_other": "{{count}} mensajes nuevos",
     "eliminar": "Eliminar mensaje",
-    "eliminado": "Mensaje eliminado"
+    "eliminado": "Mensaje eliminado",
+    "editado": "editado",
+    "editar": "Editar",
+    "borrar": "Borrar",
+    "borrado": "Mensaje borrado",
+    "editando": "Editando mensaje",
+    "cancelarEdicion": "Cancelar edición",
+    "soloAvisos": "Canal de avisos: solo quien lo creó puede escribir aquí.",
+    "vacioAvisos": "Aún no hay avisos."
   },
   "editarPerfil": {
     "errorNombre": "Escribe tu nombre y tu apellido.",
@@ -268,7 +276,10 @@
     "unirme": "Unirme",
     "unido": "Listo, lo verás en Mis canales",
     "saliste": "Saliste del canal",
-    "unirmeAyuda": "Únete para tenerlo en Mis canales y ver sus mensajes nuevos, aunque no escribas."
+    "unirmeAyuda": "Únete para tenerlo en Mis canales y ver sus mensajes nuevos, aunque no escribas.",
+    "avisos": "Avisos",
+    "soloAvisos": "Canal de avisos",
+    "soloAvisosPie": "Solo tú escribes; los demás leen, reaccionan y votan. Útil para horarios, punto de encuentro o cambios."
   },
   "normas": {
     "titulo": "Antes de entrar",
@@ -439,5 +450,12 @@
     "nacimiento": "Tu fecha de nacimiento",
     "foto": "Al menos una foto",
     "ir": "Completar mi perfil"
+  },
+  "formato": {
+    "negrita": "Negrita",
+    "cursiva": "Cursiva",
+    "subrayado": "Subrayado",
+    "tachado": "Tachado",
+    "spoiler": "Spoiler (oculto hasta tocarlo)"
   }
 }

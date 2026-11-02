@@ -25,11 +25,23 @@ import { useTheme } from '@/hooks/use-theme';
 import { api, MOTIVOS_REPORTE, SALAS_IDIOMA, type Autor, type CanalPropio, type Evento, type MensajeChat } from '@/lib/api';
 import { compartirCanal } from '@/lib/compartir-canal';
 import { claveDiaDispositivo, etiquetaDiaChat, hora, horaDispositivo } from '@/lib/fechas';
+import { aplicarFormato, quitarFormato, textoConFormato, type Formato } from '@/lib/formato';
 import i18n from '@/lib/i18n';
 
 // Mensajes seguidos de la misma persona (con menos de 5 minutos entre sí) se agrupan:
 // sin repetir foto ni nombre, como en WhatsApp.
 const AGRUPAR_MS = 5 * 60 * 1000;
+// Lo mismo que permite el servidor para editar o borrar un mensaje propio.
+const EDITAR_MS = 15 * 60 * 1000;
+const sePuedeEditar = (m: MensajeChat) => Date.now() - new Date(m.fecha).getTime() < EDITAR_MS;
+
+// Botones de formato que aparecen al seleccionar texto en el campo (como en Telegram).
+const BOTONES_FORMATO: { formato: Formato; letra: string; estilo: object }[] = [
+  { formato: 'negrita', letra: 'B', estilo: { fontWeight: '800' } },
+  { formato: 'cursiva', letra: 'I', estilo: { fontStyle: 'italic', fontWeight: '600' } },
+  { formato: 'subrayado', letra: 'U', estilo: { textDecorationLine: 'underline', fontWeight: '600' } },
+  { formato: 'tachado', letra: 'S', estilo: { textDecorationLine: 'line-through', fontWeight: '600' } },
+];
 
 type Item =
   | { tipo: 'dia'; clave: string; etiqueta: string }
@@ -68,7 +80,7 @@ function Cita({ nombre, texto, mia, onPress }: { nombre: string; texto: string; 
       <View style={[styles.citaLinea, mia && styles.citaLineaMia]} />
       <View style={{ flexShrink: 1 }}>
         <Text style={[styles.citaNombre, mia && styles.citaTextoMio]} numberOfLines={1}>{nombre}</Text>
-        <Text style={[styles.citaTexto, mia && styles.citaTextoMio]} numberOfLines={2}>{texto}</Text>
+        <Text style={[styles.citaTexto, mia && styles.citaTextoMio]} numberOfLines={2}>{quitarFormato(texto)}</Text>
       </View>
     </Pressable>
   );
@@ -86,7 +98,8 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, yo, resaltado, aqui, e
   const styles = useEstilos();
   const t = useTheme();
   const { t: tr } = useTranslation();
-  const horaTexto = horaDispositivo(m.fecha);
+  // "editado" va junto a la hora, como en Telegram.
+  const horaTexto = m.editado ? `${tr('chat.editado')} ${horaDispositivo(m.fecha)}` : horaDispositivo(m.fecha);
   const reacciones = m.reacciones ?? [];
 
   const burbuja = (
@@ -112,7 +125,7 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, yo, resaltado, aqui, e
         <TarjetaEncuesta pregunta={m.texto} encuesta={m.encuesta} yo={yo} mia={mia} onVotar={(i) => onVotar(m, i)} />
       ) : (
         <Text style={mia ? styles.textoMio : styles.textoOtro}>
-          {m.texto}
+          {textoConFormato(m.texto, mia ? t.onAccent : t.text)}
           {/* Espacio para que la hora no se monte sobre el texto. Va del color de la burbuja:
               en Android el color 'transparent' dentro de un texto a veces se ve y la hora salía dos veces. */}
           <Text style={mia ? styles.espacioHoraMia : styles.espacioHoraOtro}>{`   ${horaTexto}`}</Text>
@@ -213,7 +226,7 @@ export default function ChatScreen() {
   const {
     estado, error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
     leidoHasta, fijado, puedeFijar, puedeEncuesta, fijar, crearEncuesta, votar,
-    modoLento, esperaHasta, cambiarModoLento, miembro, unirme, salir, eliminar,
+    modoLento, esperaHasta, cambiarModoLento, miembro, unirme, salir, eliminar, editar, borrar, soloLectura,
   } = useChat(id, sala);
   const { ids: bloqueados } = useBloqueos();
   const [bloquear, setBloquear] = useState<Autor | null>(null);
@@ -244,6 +257,9 @@ export default function ChatScreen() {
   const [seleccion, setSeleccion] = useState({ start: 0, end: 0 });
   const [enviando, setEnviando] = useState(false);
   const [respondiendo, setRespondiendo] = useState<MensajeChat | null>(null);
+  // Mensaje propio que se está editando: el campo de texto lo trae y "enviar" lo guarda.
+  const [editando, setEditando] = useState<MensajeChat | null>(null);
+  const [enfocado, setEnfocado] = useState(false);
   const [panelEmojis, setPanelEmojis] = useState(false);
   const [resaltado, setResaltado] = useState<string | null>(null);
   const [hoja, setHoja] = useState<{ titulo?: string; mensaje?: string; opciones: OpcionHoja[]; encabezado?: ReactNode } | null>(null);
@@ -334,11 +350,26 @@ export default function ChatScreen() {
 
   const cambiarSala = (nueva: string) => {
     setRespondiendo(null);
+    if (editando) cancelarEdicion();
     router.setParams({ sala: nueva });
+  };
+
+  const cancelarEdicion = () => {
+    setEditando(null);
+    setTexto('');
   };
 
   const mandar = async () => {
     const limpio = texto.trim();
+    if (editando) {
+      if (!limpio || enviando) return;
+      if (limpio === editando.texto) return cancelarEdicion();
+      setEnviando(true);
+      const r = await editar(editando.id, limpio);
+      setEnviando(false);
+      if (r.error) return avisar(r.error);
+      return cancelarEdicion();
+    }
     if (!limpio || enviando || esperando) return;
     if (usuario && !usuario.perfilCompleto && usuario.proveedor !== 'dev') return setPerfilPendiente(true);
     setEnviando(true);
@@ -363,6 +394,15 @@ export default function ChatScreen() {
     setSeleccion({ start: pos, end: pos });
   };
 
+  // Negrita, cursiva… sobre lo seleccionado; la selección queda en el mismo texto.
+  const darFormato = (formato: Formato) => {
+    const r = aplicarFormato(texto, Math.min(seleccion.start, seleccion.end), Math.max(seleccion.start, seleccion.end), formato);
+    if (r.texto.length > 500) return;
+    setTexto(r.texto);
+    setSeleccion({ start: r.inicio, end: r.fin });
+    campo.current?.focus();
+  };
+
   const alternarEmojis = () => {
     if (panelEmojis) {
       setPanelEmojis(false);
@@ -382,6 +422,7 @@ export default function ChatScreen() {
   }, [items, tr]);
 
   const responder = (m: MensajeChat) => {
+    if (editando) cancelarEdicion();
     setRespondiendo(m);
     setPanelEmojis(false);
     setTimeout(() => campo.current?.focus(), 300);
@@ -442,11 +483,32 @@ export default function ChatScreen() {
       encabezado: <View style={{ marginBottom: 2 }}><PanelEmojis onElegir={elegir} alto={250} /></View>,
     });
     setHoja({
-      mensaje: m.texto.length > 120 ? `${m.texto.slice(0, 119)}…` : m.texto,
+      mensaje: (() => { const plano = quitarFormato(m.texto); return plano.length > 120 ? `${plano.slice(0, 119)}…` : plano; })(),
       encabezado: estado === 'listo' ? <FilaReacciones elegida={miReaccion} onElegir={elegir} onMas={abrirTodos} /> : undefined,
       opciones: [
         ...(estado === 'listo' ? [{ texto: tr('chat.responder'), icono: 'arrowshape.turn.up.left', onPress: () => responder(m) }] : []),
         { texto: tr('chat.copiar'), icono: 'doc.on.doc', onPress: () => copiar(m) },
+        // Mensaje propio reciente: editar o borrar (las encuestas solo se borran).
+        ...(mio && estado === 'listo' && sePuedeEditar(m) ? [
+          ...(m.encuesta || soloLectura ? [] : [{
+            texto: tr('chat.editar'), icono: 'pencil',
+            onPress: () => {
+              setRespondiendo(null);
+              setPanelEmojis(false);
+              setEditando(m);
+              setTexto(m.texto);
+              setTimeout(() => campo.current?.focus(), 300);
+            },
+          }]),
+          {
+            texto: tr('chat.borrar'), icono: 'trash', destructiva: true,
+            onPress: async () => {
+              const r = await borrar(m.id);
+              if (r.error) avisar(r.error);
+              else setAviso(tr('chat.borrado'));
+            },
+          },
+        ] : []),
         ...(puedeFijar && estado === 'listo' ? [m.id === fijado?.id
           ? { texto: tr('chat.desfijar'), icono: 'pin.slash', onPress: () => cambiarFijado(m.id, false) }
           : { texto: tr('chat.fijar'), icono: 'pin', onPress: () => cambiarFijado(m.id, true) }] : []),
@@ -466,7 +528,7 @@ export default function ChatScreen() {
         ]),
       ],
     });
-  }, [usuario, estado, reaccionarA, tr, puedeFijar, fijado]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [usuario, estado, reaccionarA, tr, puedeFijar, fijado, soloLectura]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tocar la foto de alguien (o a alguien en la lista de personas): su edad, verificación, Instagram y reportar.
   const perfilPersona = (autor: Autor, mensajeId?: string) => {
@@ -561,10 +623,12 @@ export default function ChatScreen() {
 
   const van = evento?.asistencia?.van;
   const subtitulo = canal
-    ? [canal.privado ? tr('canales.privado') : null, tr('canales.personas', { count: canal.miembros })].filter(Boolean).join(' · ')
+    ? [canal.soloAvisos ? tr('canales.avisos') : null, canal.privado ? tr('canales.privado') : null, tr('canales.personas', { count: canal.miembros })].filter(Boolean).join(' · ')
     : van ? tr('agenda.van', { count: van }) : null;
   const silenciado = usuario?.silenciadoHasta && new Date(usuario.silenciadoHasta) > new Date();
-  const puedeEscribir = estado === 'listo' && !silenciado;
+  const puedeEscribir = estado === 'listo' && !silenciado && !soloLectura;
+  // En la web no se mira el foco: apretar un botón de formato saca el foco del campo antes del toque.
+  const haySeleccion = (enfocado || Platform.OS === 'web') && seleccion.end !== seleccion.start && puedeEscribir;
 
   return (
     <KeyboardAvoidingView style={styles.pantalla} behavior="padding">
@@ -612,12 +676,12 @@ export default function ChatScreen() {
             <Pressable
               onPress={() => irACita(fijado.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${tr('chat.mensajeFijado')}: ${fijado.texto}`}
+              accessibilityLabel={`${tr('chat.mensajeFijado')}: ${quitarFormato(fijado.texto)}`}
               style={({ pressed }) => [styles.fijadoToque, pressed && { opacity: 0.6 }]}>
               <View style={styles.fijadoLinea} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.fijadoRotulo}>{tr(fijado.encuesta ? 'chat.encuestaFijada' : 'chat.mensajeFijado')}</Text>
-                <Text style={styles.fijadoTexto} numberOfLines={1}>{fijado.texto}</Text>
+                <Text style={styles.fijadoTexto} numberOfLines={1}>{quitarFormato(fijado.texto)}</Text>
               </View>
               <Icono nombre="pin.fill" tamano={15} color={t.textSecondary} />
             </Pressable>
@@ -665,7 +729,7 @@ export default function ChatScreen() {
               <Text style={styles.nota}>{tr('chat.teVen')}</Text>
             </View>
           }
-          ListEmptyComponent={<Text style={styles.nota}>{esIdioma && sala !== 'general' ? tr('chat.vacioIdioma') : tr('chat.vacio')}</Text>}
+          ListEmptyComponent={<Text style={styles.nota}>{soloLectura ? tr('chat.vacioAvisos') : esIdioma && sala !== 'general' ? tr('chat.vacioIdioma') : tr('chat.vacio')}</Text>}
           renderItem={({ item }) => item.tipo === 'dia' ? <SeparadorDia etiqueta={item.etiqueta} /> : item.tipo === 'nuevos' ? (
             <View style={styles.nuevos}>
               <View style={styles.nuevosLinea} />
@@ -703,7 +767,12 @@ export default function ChatScreen() {
 
       {estado === 'listo' || estado === 'conectando' ? (
         <View style={[styles.barraEntrada, { paddingBottom: panelEmojis ? 8 : Math.max(insets.bottom, 8) }]}>
-          {silenciado ? (
+          {soloLectura ? (
+            <View style={styles.silenciado}>
+              <Icono nombre="megaphone" tamano={15} color={t.textSecondary} />
+              <Text style={styles.textoSilenciado}>{tr('chat.soloAvisos')}</Text>
+            </View>
+          ) : silenciado ? (
             <View style={styles.silenciado}>
               <Icono nombre="speaker.slash" tamano={15} color={t.textSecondary} />
               <Text style={styles.textoSilenciado}>{tr('chat.silenciado')}</Text>
@@ -723,6 +792,38 @@ export default function ChatScreen() {
                     <Icono nombre="xmark.circle.fill" tamano={20} color={t.textSecondary} />
                   </Pressable>
                 </Animated.View>
+              ) : null}
+              {editando ? (
+                <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOut.duration(120)} style={styles.respondiendo}>
+                  <Icono nombre="pencil" tamano={16} color={t.textSecondary} />
+                  <View style={{ flex: 1 }}>
+                    <Cita nombre={tr('chat.editando')} texto={editando.texto} />
+                  </View>
+                  <Pressable onPress={cancelarEdicion} hitSlop={10} accessibilityLabel={tr('chat.cancelarEdicion')}>
+                    <Icono nombre="xmark.circle.fill" tamano={20} color={t.textSecondary} />
+                  </Pressable>
+                </Animated.View>
+              ) : null}
+              {haySeleccion ? (
+                <View style={styles.filaFormato}>
+                  {BOTONES_FORMATO.map((b) => (
+                    <Pressable
+                      key={b.formato}
+                      onPress={() => darFormato(b.formato)}
+                      accessibilityRole="button"
+                      accessibilityLabel={tr(`formato.${b.formato}`)}
+                      style={({ pressed }) => [styles.botonFormato, pressed && { opacity: 0.5 }]}>
+                      <Text style={[styles.letraFormato, b.estilo]}>{b.letra}</Text>
+                    </Pressable>
+                  ))}
+                  <Pressable
+                    onPress={() => darFormato('spoiler')}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr('formato.spoiler')}
+                    style={({ pressed }) => [styles.botonFormato, pressed && { opacity: 0.5 }]}>
+                    <Icono nombre="eye.slash" tamano={16} color={t.text} />
+                  </Pressable>
+                </View>
               ) : null}
               {modoLento ? (
                 <View style={styles.notaLento} accessibilityLiveRegion="polite">
@@ -761,7 +862,8 @@ export default function ChatScreen() {
                     }}
                     selection={Platform.OS === 'web' ? undefined : seleccion}
                     onSelectionChange={(e) => setSeleccion(e.nativeEvent.selection)}
-                    onFocus={() => setPanelEmojis(false)}
+                    onFocus={() => { setPanelEmojis(false); setEnfocado(true); }}
+                    onBlur={() => setEnfocado(false)}
                     placeholder={canal ? tr('chat.mensajeEn', { canal: canal.nombre }) : tr('chat.mensaje')}
                     placeholderTextColor={t.textSecondary}
                     style={styles.input}
@@ -774,9 +876,11 @@ export default function ChatScreen() {
                   <Pressable
                     accessibilityLabel={tr('chat.enviar')}
                     onPress={mandar}
-                    disabled={!texto.trim() || enviando || esperando}
-                    style={[styles.botonEnviar, (!texto.trim() || enviando || esperando) && { opacity: 0.4 }]}>
-                    {esperando
+                    disabled={!texto.trim() || enviando || (esperando && !editando)}
+                    style={[styles.botonEnviar, (!texto.trim() || enviando || (esperando && !editando)) && { opacity: 0.4 }]}>
+                    {editando
+                      ? <Icono nombre="checkmark" tamano={16} color={t.onAccent} peso="bold" />
+                      : esperando
                       ? <Text style={styles.cuentaLento}>{faltan}</Text>
                       : <Icono nombre="arrow.up" tamano={16} color={t.onAccent} peso="bold" />}
                   </Pressable>
@@ -934,6 +1038,9 @@ function crearEstilos(C: ReturnType<typeof colores>) {
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separador,
   },
   respondiendo: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, marginBottom: 8 },
+  filaFormato: { flexDirection: 'row', alignSelf: 'center', gap: 4, padding: 4, marginBottom: 8, borderRadius: 12, backgroundColor: C.campo, borderWidth: StyleSheet.hairlineWidth, borderColor: C.separador },
+  botonFormato: { width: 40, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  letraFormato: { fontSize: 16, color: C.texto, fontFamily: fuente },
   filaCampo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   botonEmoji: { width: 34, height: 36, alignItems: 'center', justifyContent: 'center' },
   campo: {
