@@ -1,9 +1,7 @@
 // Canales: un canal por evento. Abre 3 días antes y desaparece cuando el evento termina.
 // Dos vistas: "Mis canales" (las salas donde ya entré, como la lista de chats de WhatsApp,
 // para volver rápido y ver lo no leído) y "Explorar" (tarjetas con la foto del evento, filtro por fecha y buscador).
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,12 +12,13 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Banderas } from '@/components/bandera';
+import { IconoTopico } from '@/components/chat/topicos';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
-import { BarraBusqueda, BotonCiudad, IconoVacio, TiraFechas } from '@/components/filtros';
+import { BarraBusqueda, IconoVacio, TiraFechas } from '@/components/filtros';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { FilaMiCanal, HojaElegirEvento, type MiCanal } from '@/components/mis-canales';
-import { BotonTexto, Icono, Segmentado, Texto } from '@/components/ui';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { BotonTexto, Icono, Texto } from '@/components/ui';
+import { BottomTabInset } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
@@ -49,7 +48,10 @@ function PuntoVivo() {
   );
 }
 
-const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice }: { evento: Evento; indice: number }) {
+// Canal de un evento en "Explorar": fila con la foto (aro amarillo si está abierto), nombre,
+// cuándo y dónde, y quiénes van o ya llegaron. Antes era una tarjeta de 190 px con 5 líneas sobre la foto.
+const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice, ultima }: { evento: Evento; indice: number; ultima: boolean }) {
+  const t = useTheme();
   const { t: tr } = useTranslation();
   const nuevos = useNoLeidos()[e.id]?.total ?? 0;
   const abierto = e.chatAbierto;
@@ -57,64 +59,42 @@ const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice }: { evento:
   const abrir = () => abierto
     ? router.push({ pathname: '/evento/[id]/chat', params: { id: e.id } })
     : router.push({ pathname: '/evento/[id]', params: { id: e.id } });
+  const extra = abierto && (e.miAsistencia?.aqui || a?.aqui)
+    ? (e.miAsistencia?.aqui ? tr('aqui.estas') : tr('aqui.enLugar', { count: a?.aqui ?? 0 }))
+    : a && a.van > 0 ? tr('agenda.van', { count: a.van }) : null;
 
   return (
-    <Animated.View entering={indice < ANIMADAS ? FadeInDown.delay(50 * indice).duration(380).springify().damping(20) : undefined}>
-      <Pressable onPress={abrir} style={({ pressed }) => [styles.tarjeta, !abierto && styles.tarjetaPronto, pressed && { transform: [{ scale: 0.98 }] }]}>
-        {e.imagen ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : null}
-        <LinearGradient
-          colors={abierto ? ['rgba(0,0,0,0.25)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.85)'] : ['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.9)']}
-          locations={[0, 0.35, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-
-        <BlurView intensity={40} tint="dark" style={styles.estado}>
-          {abierto ? <PuntoVivo /> : <Icono nombre="calendar" tamano={12} color="#FFFFFF" />}
-          <Texto v="pie" style={[styles.blanco, { fontWeight: '600' }]}>
-            {abierto ? tr('canales.enVivo') : tr('canales.abre', { dia: diaCorto(e.chatAbreEn), hora: hora(e.chatAbreEn) })}
-          </Texto>
-        </BlurView>
-
-        <View style={styles.pie}>
-          <View style={{ flex: 1, gap: 6 }}>
-            <Texto v="seccion" style={styles.blanco} numberOfLines={2}>{e.titulo}</Texto>
-            <View style={styles.datos}>
-              <Texto v="pie" style={[styles.blanco, { opacity: 0.85 }]}>
-                {[`${diaCorto(e.inicio)} ${hora(e.inicio)}`, e.lugar ?? e.barrio].filter(Boolean).join(' · ')}
-              </Texto>
-            </View>
-            {/* Quiénes ya llegaron al lugar ("Ya estoy aquí"): se actualiza al volver a esta pestaña. */}
-            {abierto && (e.miAsistencia?.aqui || a?.aqui) ? (
-              <View style={styles.datos}>
-                <View style={[styles.aqui, e.miAsistencia?.aqui && styles.aquiMio]}>
-                  <Icono nombre="location.fill" tamano={10} color={e.miAsistencia?.aqui ? '#000000' : '#FFFFFF'} />
-                  <Texto v="pie" style={{ fontWeight: '700', color: e.miAsistencia?.aqui ? '#000000' : '#FFFFFF' }}>
-                    {e.miAsistencia?.aqui ? tr('aqui.estas') : tr('aqui.enLugar', { count: a?.aqui ?? 0 })}
-                  </Texto>
-                </View>
-                {e.miAsistencia?.aqui && (a?.aqui ?? 0) > 1 ? (
-                  <Texto v="pie" style={[styles.blanco, { opacity: 0.85 }]}>{tr('aqui.enLugar', { count: a?.aqui ?? 0 })}</Texto>
-                ) : null}
-              </View>
-            ) : null}
-            {a && a.van > 0 ? (
-              <View style={styles.datos}>
-                <Banderas codigos={a.paisesTop} alto={11} max={5} />
-                <Texto v="pie" style={[styles.blanco, { fontWeight: '600' }]}>{tr('agenda.van', { count: a.van })}</Texto>
-              </View>
+    <Animated.View entering={indice < ANIMADAS ? FadeInDown.delay(40 * indice).duration(300) : undefined}>
+      <Pressable onPress={abrir} style={({ pressed }) => [styles.filaCanal, pressed && { backgroundColor: t.backgroundElement }]}>
+        <View style={[styles.aroCanal, { borderColor: abierto ? t.sun : 'transparent' }]}>
+          <View style={[styles.fotoCanal, { backgroundColor: t.backgroundElement }]}>
+            {e.imagen ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+          </View>
+        </View>
+        <View style={[styles.cuerpoCanal, !ultima && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+          <View style={styles.lineaCanal}>
+            <Texto v="cuerpoFuerte" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{e.titulo}</Texto>
+            {abierto ? (
+              <View style={styles.datos}><PuntoVivo /><Texto v="pie" style={{ fontWeight: '700', color: t.live }}>{tr('canales.enVivo')}</Texto></View>
             ) : null}
           </View>
-          {abierto && nuevos > 0 ? (
-            <Animated.View
-              entering={ZoomIn.springify().damping(14)}
-              style={styles.nuevos}
-              accessibilityLabel={tr('chat.nuevos', { count: nuevos })}>
-              <Texto v="pie" style={styles.nuevosTexto}>{textoCuenta(nuevos)}</Texto>
-            </Animated.View>
-          ) : abierto ? (
-            <BlurView intensity={40} tint="light" style={styles.flecha}>
-              <Icono nombre="chevron.right" tamano={15} color="#FFFFFF" peso="semibold" />
-            </BlurView>
+          <View style={styles.lineaCanal}>
+            <Texto v="detalle" secundario numberOfLines={1} style={{ flex: 1, fontSize: 14 }}>
+              {abierto
+                ? [`${diaCorto(e.inicio)} ${hora(e.inicio)}`, e.lugar ?? e.barrio].filter(Boolean).join(' · ')
+                : tr('canales.abre', { dia: diaCorto(e.chatAbreEn), hora: hora(e.chatAbreEn) })}
+            </Texto>
+            {abierto && nuevos > 0 ? (
+              <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.nuevos, { backgroundColor: t.accent }]} accessibilityLabel={tr('chat.nuevos', { count: nuevos })}>
+                <Texto v="mini" style={{ color: t.onAccent, fontWeight: '700' }}>{textoCuenta(nuevos)}</Texto>
+              </Animated.View>
+            ) : null}
+          </View>
+          {extra ? (
+            <View style={styles.datos}>
+              {a?.paisesTop.length ? <Banderas codigos={a.paisesTop} alto={10} max={3} /> : null}
+              <Texto v="pie" secundario style={{ fontWeight: '600' }}>{extra}</Texto>
+            </View>
           ) : null}
         </View>
       </Pressable>
@@ -126,8 +106,34 @@ const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice }: { evento:
 type Fila =
   | { tipo: 'seccion'; clave: string; titulo: string; ayuda?: string }
   | { tipo: 'canal'; clave: string; evento: Evento; indice: number }
-  | { tipo: 'mio'; clave: string; canal: MiCanal; ultima: boolean };
+  | { tipo: 'mio'; clave: string; canal: MiCanal; ultima: boolean }
+  | { tipo: 'topicoMio'; clave: string; topico: MiTopico; ultima: boolean };
 type Vista = 'mis' | 'explorar';
+// Tópico que creé (para el filtro "Creados por mí").
+type MiTopico = {
+  id: string; eventoId: string; sala: string; nombre: string; icono: string | null; color: number; cerrado: boolean;
+  evento: { titulo: string; imagen: string | null }; canal: string | null;
+};
+
+// Fila de un tópico propio: su ícono, nombre y dónde está (evento y canal).
+const FilaTopicoMio = memo(function FilaTopicoMio({ x, ultima, onAbrir }: { x: MiTopico; ultima: boolean; onAbrir: (x: MiTopico) => void }) {
+  const t = useTheme();
+  const { t: tr } = useTranslation();
+  return (
+    <Pressable onPress={() => onAbrir(x)} accessibilityRole="button" style={({ pressed }) => [styles.filaTopico, pressed && { backgroundColor: t.backgroundSelected }]}>
+      <IconoTopico topico={x} tamano={46} />
+      <View style={[styles.cuerpoTopico, !ultima && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <Texto v="cuerpoFuerte" numberOfLines={1} style={{ flexShrink: 1 }}>{x.nombre}</Texto>
+          {x.cerrado ? <Icono nombre="lock.fill" tamano={12} color={t.textSecondary} /> : null}
+        </View>
+        <Texto v="pie" secundario numberOfLines={1}>
+          {`${tr('topicos.etiqueta')} · ${x.canal ?? (x.sala === 'general' ? tr('canales.general') : x.sala.toUpperCase())} · ${x.evento.titulo}`}
+        </Texto>
+      </View>
+    </Pressable>
+  );
+});
 
 export default function CanalesScreen() {
   const t = useTheme();
@@ -139,6 +145,9 @@ export default function CanalesScreen() {
   const [consulta, setConsulta] = useState('');
   const [dia, setDia] = useState<string | null>(null);
   const [misCanalesApi, setMisCanales] = useState<MiCanal[] | null>(null);
+  const [misTopicos, setMisTopicos] = useState<MiTopico[]>([]);
+  // Filtro dentro de "Mis canales": todos o solo los canales y tópicos que creé.
+  const [soloCreados, setSoloCreados] = useState(false);
   const misCanales = useMemo(() => (token ? misCanalesApi : []), [token, misCanalesApi]); // sin sesión no hay
   // Parte en "Mis canales" si ya estoy en alguno; si no, en "Explorar". Después la elige la persona.
   const [vista, setVista] = useState<Vista | null>(null);
@@ -174,7 +183,9 @@ export default function CanalesScreen() {
   const totalNuevos = useMemo(() => Object.values(noLeidos).reduce((n, e) => n + e.total, 0), [noLeidos]);
   const cargarMisCanales = useCallback(() => {
     if (!token) return;
-    api<{ canales: MiCanal[] }>('/me/canales', { token }).then((r) => setMisCanales(r.canales)).catch(() => setMisCanales((m) => m ?? []));
+    api<{ canales: MiCanal[]; misTopicos?: MiTopico[] }>('/me/canales', { token })
+      .then((r) => { setMisCanales(r.canales); setMisTopicos(r.misTopicos ?? []); })
+      .catch(() => setMisCanales((m) => m ?? []));
   }, [token]);
   useFocusEffect(cargarMisCanales);
   useEffect(() => { if (totalNuevos) cargarMisCanales(); }, [totalNuevos, cargarMisCanales]);
@@ -240,14 +251,27 @@ export default function CanalesScreen() {
   // Mis canales filtrados por el buscador (nombre del canal o del evento).
   const misFiltrados = useMemo(() => {
     const q = consulta.trim().toLowerCase();
-    const lista = misCanales ?? [];
+    const lista = (misCanales ?? []).filter((c) => !soloCreados || c.canal?.esMio);
     return q.length >= 2 ? lista.filter((c) => `${c.canal?.nombre ?? ''} ${c.evento.titulo}`.toLowerCase().includes(q)) : lista;
-  }, [misCanales, consulta]);
+  }, [misCanales, consulta, soloCreados]);
+  const topicosFiltrados = useMemo(() => {
+    if (!soloCreados) return [];
+    const q = consulta.trim().toLowerCase();
+    return q.length >= 2 ? misTopicos.filter((x) => `${x.nombre} ${x.canal ?? ''} ${x.evento.titulo}`.toLowerCase().includes(q)) : misTopicos;
+  }, [misTopicos, consulta, soloCreados]);
+  const abrirTopicoMio = useCallback((x: MiTopico) => {
+    router.push({ pathname: '/evento/[id]/chat', params: { id: x.eventoId, sala: x.sala, topico: x.id } });
+  }, []);
 
   const filas = useMemo<Fila[]>(() => {
     const r: Fila[] = [];
     if (vistaActual === 'mis') {
+      if (soloCreados && misFiltrados.length) r.push({ tipo: 'seccion', clave: 's-canales-mios', titulo: tr('canales.misCanalesCreados') });
       misFiltrados.forEach((c, i) => r.push({ tipo: 'mio', clave: c.clave, canal: c, ultima: i === misFiltrados.length - 1 }));
+      if (topicosFiltrados.length) {
+        r.push({ tipo: 'seccion', clave: 's-topicos-mios', titulo: tr('topicos.misTopicos') });
+        topicosFiltrados.forEach((x, i) => r.push({ tipo: 'topicoMio', clave: `t-${x.id}`, topico: x, ultima: i === topicosFiltrados.length - 1 }));
+      }
       return r;
     }
     if (abiertos.length) {
@@ -259,7 +283,7 @@ export default function CanalesScreen() {
       pronto.forEach((e, i) => r.push({ tipo: 'canal', clave: e.id, evento: e, indice: abiertos.length + i }));
     }
     return r;
-  }, [abiertos, pronto, tr, vistaActual, misFiltrados]);
+  }, [abiertos, pronto, tr, vistaActual, misFiltrados, topicosFiltrados, soloCreados]);
 
   const nuevosEnMis = (misCanales ?? []).some((c) => (noLeidos[c.eventoId]?.salas[c.sala] ?? 0) > 0);
 
@@ -274,7 +298,9 @@ export default function CanalesScreen() {
         ref={lista}
         data={filas}
         keyExtractor={(f) => f.clave}
-        renderItem={({ item: f, index }) => f.tipo === 'mio' ? (
+        renderItem={({ item: f, index }) => f.tipo === 'topicoMio' ? (
+          <FilaTopicoMio x={f.topico} ultima={f.ultima} onAbrir={abrirTopicoMio} />
+        ) : f.tipo === 'mio' ? (
           <FilaMiCanal
             c={f.canal}
             nuevos={noLeidos[f.canal.eventoId]?.salas[f.canal.sala] ?? 0}
@@ -283,14 +309,12 @@ export default function CanalesScreen() {
             onOpciones={setOpciones}
           />
         ) : f.tipo === 'seccion' ? (
-          <View style={{ gap: 2, paddingHorizontal: 20, marginTop: index === 0 ? 22 : 16, marginBottom: 12 }}>
+          <View style={{ gap: 2, paddingHorizontal: 20, marginTop: index === 0 ? 20 : 28, marginBottom: 4 }}>
             <Texto v="seccion">{f.titulo}</Texto>
             {f.ayuda ? <Texto v="pie" secundario>{f.ayuda}</Texto> : null}
           </View>
         ) : (
-          <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
-            <TarjetaCanal evento={f.evento} indice={f.indice} />
-          </View>
+          <TarjetaCanal evento={f.evento} indice={f.indice} ultima={filas[index + 1]?.tipo !== 'canal'} />
         )}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -304,48 +328,54 @@ export default function CanalesScreen() {
         contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + BottomTabInset + 24 }}
         ListHeaderComponent={
           <>
-            <View style={{ paddingHorizontal: 20, gap: 10 }}>
-              <View style={styles.filaCiudad}>
-                <BotonCiudad />
-                {puedeCrear ? (
-                  <Pressable
-                    onPress={() => setEligiendoEvento(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel={tr('canales.crear')}
-                    hitSlop={8}
-                    style={({ pressed }) => [styles.botonCrear, { backgroundColor: t.text }, pressed && { opacity: 0.7 }]}>
-                    <Icono nombre="plus" tamano={14} color={t.background} peso="bold" />
-                    <Texto v="pie" style={{ color: t.background, fontWeight: '700' }}>{tr('canales.crearCorto')}</Texto>
-                  </Pressable>
-                ) : null}
-              </View>
-              <View style={{ gap: 2 }}>
-                <Texto v="tituloGrande">{tr('canales.titulo')}</Texto>
-                {vistaActual === 'explorar' ? <Texto v="detalle" secundario>{tr('canales.explicacion')}</Texto> : null}
-              </View>
-              <Segmentado<Vista>
-                opciones={[
-                  { id: 'mis', texto: misCanales?.length ? `${tr('canales.misCanales')} · ${misCanales.length}` : tr('canales.misCanales') },
-                  { id: 'explorar', texto: tr('canales.explorar') },
-                ]}
-                valor={vistaActual}
-                onCambio={(v) => { setVista(v); setDia(null); }}
-                marcas={{ mis: vistaActual !== 'mis' && nuevosEnMis }}
-              />
+            <View style={styles.cabeza}>
+              <Texto v="tituloGrande">{tr('canales.titulo')}</Texto>
+              {puedeCrear ? (
+                <Pressable
+                  onPress={() => setEligiendoEvento(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr('canales.crear')}
+                  style={({ pressed }) => [styles.botonRedondo, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.7 }]}>
+                  <Icono nombre="pencil" tamano={18} color={t.accentText} peso="semibold" />
+                </Pressable>
+              ) : null}
             </View>
-            <View style={{ paddingHorizontal: 20, marginTop: 10 }} onLayout={medirBuscador}>
+            <View style={{ paddingHorizontal: 20, marginTop: 14 }} onLayout={medirBuscador}>
               <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr(vistaActual === 'mis' ? 'canales.buscarMios' : 'canales.buscar')} />
+            </View>
+            {/* Pestañas como las carpetas de Telegram: reemplazan al selector y a los chips de antes. */}
+            <View style={[styles.pestanas, { borderBottomColor: t.separator }]}>
+              {([
+                { id: 'todos', texto: tr('canales.todos'), cuenta: misCanales?.length ?? 0, marca: false },
+                { id: 'creados', texto: tr('canales.creadosPorMi'), cuenta: 0, marca: false },
+                { id: 'explorar', texto: tr('canales.explorar'), cuenta: 0, marca: false },
+              ] as const).map((p) => {
+                const activa = p.id === 'explorar' ? vistaActual === 'explorar' : vistaActual === 'mis' && soloCreados === (p.id === 'creados');
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => {
+                      if (p.id === 'explorar') setVista('explorar');
+                      else { setVista('mis'); setSoloCreados(p.id === 'creados'); }
+                      setDia(null);
+                    }}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: activa }}
+                    style={[styles.pestana, activa && { borderBottomColor: t.accent }]}>
+                    <Texto v="detalle" style={{ fontWeight: '700', color: activa ? t.text : t.textSecondary }}>{p.texto}</Texto>
+                    {p.id === 'todos' && nuevosEnMis && !activa ? <View style={[styles.marcaPestana, { backgroundColor: t.accent }]} /> : null}
+                  </Pressable>
+                );
+              })}
             </View>
             {vistaActual === 'explorar' ? (
               <View style={{ marginTop: 14 }}>
+                <Texto v="pie" secundario style={{ paddingHorizontal: 20, marginBottom: 10 }}>{tr('canales.explicacion')}</Texto>
                 <TiraFechas valor={dia} onCambio={setDia} diasConEventos={diasConEventos} dias={10} />
               </View>
-            ) : <View style={{ height: 8 }} />}
+            ) : <View style={{ height: 6 }} />}
           </>
         }
-        ListFooterComponent={vistaActual === 'mis' && misFiltrados.length ? (
-          <Texto v="pie" secundario style={styles.pieMios}>{tr('canales.mantenerParaSalir')}</Texto>
-        ) : undefined}
         ListEmptyComponent={vistaActual === 'mis' ? (misCanales === null ? <ActivityIndicator style={{ marginTop: 40 }} /> : (
           <View style={styles.vacio}>
             <IconoVacio nombre={consulta.trim() ? 'magnifyingglass' : 'bubble.left.and.bubble.right'} />
@@ -391,8 +421,12 @@ export default function CanalesScreen() {
 }
 
 const styles = StyleSheet.create({
+  filtrosMis: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, marginTop: 10, marginBottom: 6 },
+  chipFiltro: { height: 30, paddingHorizontal: 14, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  filaTopico: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 20 },
+  cuerpoTopico: { flex: 1, paddingVertical: 12, paddingRight: 20, gap: 2 },
   pantalla: { flex: 1, alignItems: 'center' },
-  scroll: { width: '100%', maxWidth: MaxContentWidth },
+  scroll: { width: '100%' },
   blanco: { color: '#FFFFFF' },
   tarjeta: { height: 190, borderRadius: 22, overflow: 'hidden', justifyContent: 'flex-end' },
   tarjetaPronto: { height: 150 },
@@ -407,10 +441,19 @@ const styles = StyleSheet.create({
   aqui: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 22, paddingHorizontal: 8, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.22)' },
   aquiMio: { backgroundColor: '#FFFFFF' },
   // Mensajes nuevos: globo blanco con el número, como en WhatsApp.
-  nuevos: { minWidth: 28, height: 28, borderRadius: 14, paddingHorizontal: 8, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  nuevos: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  filaCanal: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 20 },
+  aroCanal: { width: 62, height: 62, borderRadius: 31, borderWidth: 2.5, padding: 2.5 },
+  fotoCanal: { flex: 1, borderRadius: 26, overflow: 'hidden' },
+  cuerpoCanal: { flex: 1, gap: 3, paddingVertical: 12, paddingRight: 20, minHeight: 84, justifyContent: 'center' },
+  lineaCanal: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nuevosTexto: { color: '#000000', fontWeight: '700' },
   flecha: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  filaCiudad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cabeza: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 2 },
+  botonRedondo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  pestanas: { flexDirection: 'row', gap: 22, paddingHorizontal: 20, marginTop: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  pestana: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8, paddingBottom: 10, borderBottomWidth: 2.5, borderBottomColor: 'transparent', marginBottom: -StyleSheet.hairlineWidth },
+  marcaPestana: { width: 7, height: 7, borderRadius: 4 },
   botonCrear: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 12, borderRadius: 15 },
   pieMios: { textAlign: 'center', marginTop: 16, paddingHorizontal: 32 },
   aviso: { position: 'absolute', left: 24, right: 24, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14 },

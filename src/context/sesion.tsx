@@ -7,6 +7,7 @@ import { api, ApiError, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { almacen } from '@/lib/almacen';
 import i18n from '@/lib/i18n';
 import { pedirTokenApple, pedirTokenGoogle } from '@/lib/login';
+import { quitarNotificaciones } from '@/lib/notificaciones';
 import { cerrarSocket } from '@/lib/socket';
 
 const CLAVE_TOKEN = 'sesion_token';
@@ -23,6 +24,7 @@ type Sesion = {
   subirFoto: (uri: string, tipo?: string) => Promise<Usuario>; // devuelve el perfil con la foto nueva al final
   borrarFoto: (url: string) => Promise<void>;
   salir: () => Promise<void>;
+  eliminarCuenta: () => Promise<void>;
   // Normas de los canales: se aceptan la primera vez que se abre el canal de cada evento.
   aceptarNormas: (eventoId: string) => Promise<void>;
   // Reemplaza el usuario con el que devolvió el servidor (por ejemplo, tras verificar la edad)
@@ -155,16 +157,28 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setUsuario(user);
   }, [token]);
 
-  const salir = useCallback(async () => {
+  const olvidarSesion = useCallback(async () => {
     cerrarSocket();
     await almacen.borrar(CLAVE_TOKEN);
     setToken(null);
     setUsuario(null);
   }, []);
 
+  const salir = useCallback(async () => {
+    await quitarNotificaciones(token);
+    await olvidarSesion();
+  }, [token, olvidarSesion]);
+
+  // Elimina la cuenta en el servidor (no se puede deshacer) y deja la app como recién instalada, sin sesión.
+  const eliminarCuenta = useCallback(async () => {
+    await quitarNotificaciones(token);
+    await api('/me', { metodo: 'DELETE', token });
+    await olvidarSesion();
+  }, [token, olvidarSesion]);
+
   return (
     <SesionContext.Provider
-      value={{ cargando, token, usuario, entrarConApple, entrarConGoogle, entrarDev, actualizarPerfil, subirFoto, borrarFoto, salir, aceptarNormas, fijarUsuario: setUsuario,
+      value={{ cargando, token, usuario, entrarConApple, entrarConGoogle, entrarDev, actualizarPerfil, subirFoto, borrarFoto, salir, eliminarCuenta, aceptarNormas, fijarUsuario: setUsuario,
         registrar, verificarEmail, entrarConEmail, reenviarCodigo, olvideContrasena, restablecerContrasena, introVista, marcarIntroVista }}>
       {children}
     </SesionContext.Provider>

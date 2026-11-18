@@ -14,7 +14,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { BarraBusqueda } from '@/components/filtros';
 import { Icono, Texto } from '@/components/ui';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { BottomTabInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const ALTO_TITULO = 44; // fila del título chico
@@ -54,15 +54,20 @@ export function EncabezadoCompacto({ visible, titulo, izquierda, derecha, busque
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const p = useSharedValue(0);
+  // Si se escribe en este buscador la lista se acorta y vuelve arriba; sin esto el encabezado
+  // se escondería con el teclado abierto. Se queda mientras el buscador tenga foco o texto.
+  const [enUso, setEnUso] = useState(false);
+  const usandoBusqueda = enUso && Boolean(busqueda);
+  const mostrar = visible || usandoBusqueda;
   useEffect(() => {
-    p.set(withTiming(visible ? 1 : 0, { duration: visible ? 260 : 180, easing: Easing.out(Easing.cubic) }));
-  }, [visible, p]);
+    p.set(withTiming(mostrar ? 1 : 0, { duration: mostrar ? 260 : 180, easing: Easing.out(Easing.cubic) }));
+  }, [mostrar, p]);
   const estilo = useAnimatedStyle(() => ({ opacity: p.value, transform: [{ translateY: (1 - p.value) * -14 }] }));
   const estiloTitulo = useAnimatedStyle(() => ({ transform: [{ scale: 0.92 + p.value * 0.08 }] }));
 
   return (
-    <Animated.View style={[styles.cabecera, { pointerEvents: visible ? 'auto' : 'none' }, estilo]}>
-      <BlurView intensity={60} tint={t.background === '#000000' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+    <Animated.View style={[styles.cabecera, { pointerEvents: mostrar ? 'auto' : 'none' }, estilo]}>
+      <BlurView intensity={60} tint={t.background !== '#FFFFFF' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: t.bar }]} />
       <View style={[styles.contenido, { paddingTop: insets.top }]}>
         <View style={styles.filaTitulo}>
@@ -74,7 +79,13 @@ export function EncabezadoCompacto({ visible, titulo, izquierda, derecha, busque
         </View>
         {busqueda ? (
           <View style={styles.busqueda}>
-            <BarraBusqueda valor={busqueda.valor} onCambio={busqueda.onCambio} placeholder={busqueda.placeholder} />
+            <BarraBusqueda
+              valor={busqueda.valor}
+              onCambio={(v) => { busqueda.onCambio(v); if (!v) setEnUso(false); }}
+              placeholder={busqueda.placeholder}
+              onFocus={() => setEnUso(true)}
+              onBlur={() => { if (!busqueda.valor) setEnUso(false); }}
+            />
           </View>
         ) : null}
       </View>
@@ -99,8 +110,8 @@ export function BotonArriba({ visible, onPress, sinPestanas }: { visible: boolea
         accessibilityRole="button"
         accessibilityLabel={tr('comun.volverArriba')}
         hitSlop={6}
-        style={({ pressed }) => [styles.arribaBoton, { backgroundColor: t.text }, pressed && { transform: [{ scale: 0.92 }], opacity: 0.85 }]}>
-        <Icono nombre="arrow.up" tamano={20} color={t.background} peso="semibold" />
+        style={({ pressed }) => [styles.arribaBoton, { backgroundColor: t.accent }, pressed && { transform: [{ scale: 0.92 }], opacity: 0.85 }]}>
+        <Icono nombre="arrow.up" tamano={20} color={t.onAccent} peso="semibold" />
       </Pressable>
     </Animated.View>
   );
@@ -124,7 +135,7 @@ export function BotonVolver({ onPress }: { onPress: () => void }) {
 
 const styles = StyleSheet.create({
   cabecera: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, overflow: 'hidden' },
-  contenido: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  contenido: { width: '100%', alignSelf: 'center' },
   filaTitulo: { height: ALTO_TITULO, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   lado: { flex: 1, minWidth: 44, alignItems: 'flex-start' },
   busqueda: { paddingHorizontal: 20, paddingBottom: 10 },

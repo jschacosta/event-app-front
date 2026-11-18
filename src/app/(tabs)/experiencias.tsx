@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Texto } from '@/components/ui';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { BottomTabInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // El sitio de Rio Diferente tiene versión por idioma.
@@ -48,7 +48,7 @@ export default function ExperienciasScreen() {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
-  scroll: { width: '100%', maxWidth: MaxContentWidth },
+  scroll: { width: '100%' },
   tarjeta: { height: 220, borderRadius: 24, overflow: 'hidden', justifyContent: 'flex-end' },
   velo: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '65%' },
   texto: { padding: 20, gap: 2 },

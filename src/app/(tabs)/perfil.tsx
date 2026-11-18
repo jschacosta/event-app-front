@@ -3,19 +3,20 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, View, Linking } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeInDown, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withSpring, withTiming, ZoomIn,
-  type SharedValue,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bandera, Banderas } from '@/components/bandera';
 import { FOTOS_INTRO } from '@/components/intro/escenas';
-import { Fila, Grupo, Icono, Texto } from '@/components/ui';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { Logo } from '@/components/logo';
+import { GrupoCuenta, GrupoLegal, GrupoNotificaciones, GrupoPrivacidad } from '@/components/ajustes';
+import { Grupo, Icono, Texto } from '@/components/ui';
+import { BottomTabInset } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import type { Usuario } from '@/lib/api';
@@ -24,7 +25,6 @@ import { cambiarIdioma, IDIOMAS_APP } from '@/lib/i18n';
 import { nombreInteres } from '@/lib/intereses';
 import { nombrePais } from '@/lib/paises';
 
-const ROJO = '#FF3B30';
 const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).springify().damping(20);
 
 // Botón que se hunde un poco al tocarlo, como en iOS.
@@ -89,8 +89,8 @@ function OpcionApariencia({ id, texto, activa }: { id: Apariencia; texto: string
         )}
       </Animated.View>
       <Texto v="detalle" style={{ fontWeight: activa ? '600' : '400' }}>{texto}</Texto>
-      <View style={[styles.circulo, { borderColor: activa ? t.text : t.chevron }]}>
-        <Animated.View style={[styles.circuloRelleno, { backgroundColor: t.text }, aro]}>
+      <View style={[styles.circulo, { borderColor: activa ? t.accent : t.chevron }]}>
+        <Animated.View style={[styles.circuloRelleno, { backgroundColor: t.accent }, aro]}>
           <Icono nombre="checkmark" tamano={11} color={t.background} peso="bold" />
         </Animated.View>
       </View>
@@ -163,7 +163,7 @@ function SinCuenta() {
       <Animated.View entering={entrada(0)} style={styles.portada}>
         <Image source={{ uri: FOTOS_INTRO.grupo }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
         <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.9)']} locations={[0, 0.3, 0.72]} style={StyleSheet.absoluteFill} />
-        <Texto style={styles.marca}>bora</Texto>
+        <View style={styles.marca}><Logo alto={30} variante="sobreFoto" /></View>
         <View style={styles.portadaContenido}>
           <Texto v="titulo" style={styles.blanco}>{t('perfil.invitado.titulo')}</Texto>
           <View style={{ gap: 12, marginTop: 4 }}>
@@ -196,54 +196,90 @@ function SinCuenta() {
 }
 
 // ---------- Con cuenta ----------
-function progresoPerfil(u: Usuario) {
-  const pasos = [u.foto, u.fechaNacimiento, u.pais, u.fotos.length > 1, u.paisesVisitados.length > 0, u.idiomas.length > 0];
-  return Math.round((pasos.filter(Boolean).length / pasos.length) * 100);
-}
 
-function Cifras({ usuario }: { usuario: Usuario }) {
+// Lo que falta para escribir en los canales (y para un perfil completo), como lista de pasos con check.
+// Antes eran dos ceros gigantes ("0 países, 0 idiomas") y una barra con porcentaje.
+function TarjetaCompletar({ usuario }: { usuario: Usuario }) {
   const t = useTheme();
   const { t: tr } = useTranslation('auth');
-  const cifras = [
-    { valor: usuario.paisesVisitados.length, texto: tr('perfil.cifras.paises') },
-    { valor: usuario.idiomas.length, texto: tr('perfil.cifras.idiomas') },
+  const pasos = [
+    { id: 'foto', listo: Boolean(usuario.foto) },
+    { id: 'edad', listo: Boolean(usuario.fechaNacimiento) },
+    { id: 'pais', listo: Boolean(usuario.pais) },
+    { id: 'viajes', listo: usuario.fotos.length > 1 },
+    { id: 'paises', listo: usuario.paisesVisitados.length > 0 },
+    { id: 'idiomas', listo: usuario.idiomas.length > 0 },
   ];
+  const hechos = pasos.filter((p) => p.listo).length;
+  const ancho = useSharedValue(0);
+  useEffect(() => {
+    ancho.set(withTiming((hechos / pasos.length) * 100, { duration: 700 }));
+  }, [hechos, pasos.length, ancho]);
+  const relleno = useAnimatedStyle(() => ({ width: `${ancho.value}%` }));
+  if (hechos === pasos.length) return null;
+  // Se ven los hechos (tachados) y los 3 primeros que faltan.
+  const faltan = pasos.filter((p) => !p.listo).slice(0, 3);
+  const visibles = [...pasos.filter((p) => p.listo).slice(-1), ...faltan];
   return (
-    <View style={[styles.cifras, { backgroundColor: t.card }]}>
-      {cifras.map((c, i) => (
-        <View key={c.texto} style={[styles.cifra, i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: t.separator }]}>
-          <Texto v="seccion">{c.valor}</Texto>
-          <Texto v="mini" secundario style={{ textAlign: 'center' }}>{c.texto}</Texto>
-        </View>
+    <View style={[styles.completar, { backgroundColor: t.backgroundElement }]}>
+      <View style={styles.completarCabeza}>
+        <Texto v="cuerpoFuerte" style={{ flex: 1, fontSize: 16 }}>{usuario.perfilCompleto ? tr('perfil.completarTitulo') : tr('perfil.listoTitulo')}</Texto>
+        <Texto v="detalle" style={{ fontWeight: '700', color: t.accentText }}>{tr('perfil.pasos', { hechos, total: pasos.length })}</Texto>
+      </View>
+      <View style={[styles.barra, { backgroundColor: t.backgroundSelected }]}>
+        <Animated.View style={[styles.barraRelleno, { backgroundColor: t.accent }, relleno]} />
+      </View>
+      {visibles.map((p, i) => (
+        <Pressable
+          key={p.id}
+          disabled={p.listo}
+          onPress={() => router.push(p.id === 'viajes' ? '/perfil/editar' : '/onboarding')}
+          style={({ pressed }) => [styles.paso, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.separator }, pressed && { opacity: 0.6 }]}>
+          <View style={[styles.check, p.listo ? { backgroundColor: t.accent } : { borderWidth: 2, borderColor: t.chevron }]}>
+            {p.listo ? <Icono nombre="checkmark" tamano={12} color={t.onAccent} peso="bold" /> : null}
+          </View>
+          <Texto v="detalle" style={[{ flex: 1 }, p.listo && { color: t.textSecondary, textDecorationLine: 'line-through' }]}>{tr(`perfil.paso.${p.id}`)}</Texto>
+          {p.listo ? null : <Icono nombre="chevron.right" tamano={13} color={t.chevron} peso="semibold" />}
+        </Pressable>
       ))}
     </View>
   );
 }
 
-function TarjetaCompletar({ usuario }: { usuario: Usuario }) {
+// Ajustes en su propia hoja (antes estaban mezclados con el perfil en una sola pantalla larga).
+function HojaAjustes({ visible, usuario, onCerrar }: { visible: boolean; usuario: Usuario | null; onCerrar: () => void }) {
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
+      <SafeAreaProvider>
+        <ContenidoAjustes usuario={usuario} onCerrar={onCerrar} />
+      </SafeAreaProvider>
+    </Modal>
+  );
+}
+
+function ContenidoAjustes({ usuario, onCerrar }: { usuario: Usuario | null; onCerrar: () => void }) {
   const t = useTheme();
   const { t: tr } = useTranslation('auth');
-  const porcentaje = progresoPerfil(usuario);
-  const ancho = useSharedValue(0);
-  useEffect(() => {
-    ancho.set(withTiming(porcentaje, { duration: 900 }));
-  }, [porcentaje, ancho]);
-  const relleno = useAnimatedStyle(() => ({ width: `${ancho.value}%` }));
-  if (porcentaje >= 100) return null;
+  const insets = useSafeAreaInsets();
   return (
-    <Tocable onPress={() => router.push('/onboarding')} style={[styles.completar, { backgroundColor: t.card }]}>
-      <View style={{ flex: 1, gap: 8 }}>
-        <View style={styles.completarCabeza}>
-          <Texto v="cuerpoFuerte">{tr('perfil.completarTitulo')}</Texto>
-          <Texto v="pie" secundario style={{ fontWeight: '600' }}>{porcentaje} %</Texto>
-        </View>
-        <View style={[styles.barra, { backgroundColor: t.backgroundSelected }]}>
-          <Animated.View style={[styles.barraRelleno, { backgroundColor: t.text }, relleno]} />
-        </View>
-        <Texto v="pie" secundario>{usuario.perfilCompleto ? tr('perfil.completarExtra') : tr('perfil.completarPie')}</Texto>
+    <View style={{ flex: 1, backgroundColor: t.grouped }}>
+      <View style={[styles.cabezaHoja, { paddingTop: Platform.OS === 'ios' ? 18 : insets.top + 12 }]}>
+        <Texto v="titulo">{tr('perfil.ajustes')}</Texto>
+        <Pressable onPress={onCerrar} accessibilityRole="button" accessibilityLabel={tr('perfil.cerrar')} hitSlop={10}
+          style={({ pressed }) => [styles.redondo, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.6 }]}>
+          <Icono nombre="xmark" tamano={15} color={t.text} peso="bold" />
+        </Pressable>
       </View>
-      <Icono nombre="chevron.right" tamano={14} color={t.chevron} peso="semibold" />
-    </Tocable>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, gap: 24, paddingBottom: insets.bottom + 32 }}>
+        {usuario ? <GrupoNotificaciones usuario={usuario} /> : null}
+        {usuario ? <GrupoPrivacidad usuario={usuario} onIr={(ruta) => { onCerrar(); router.push(ruta); }} /> : null}
+        <SelectorApariencia />
+        <SelectorIdioma />
+        <GrupoLegal />
+        {usuario ? <GrupoCuenta usuario={usuario} onCerrar={onCerrar} /> : null}
+        <PieApp />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -265,154 +301,117 @@ function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) 
   );
 }
 
-// Portada con la primera foto de viaje; al tirar hacia abajo se estira (como en Apple Music).
-function Portada({ url, scroll }: { url: string; scroll: SharedValue<number> }) {
-  const t = useTheme();
-  const insets = useSafeAreaInsets();
-  const alto = insets.top + 190;
-  const estilo = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: scroll.value < 0 ? scroll.value : scroll.value * 0.4 },
-      { scale: scroll.value < 0 ? 1 + -scroll.value / alto : 1 },
-    ],
-  }));
-  return (
-    <View style={{ height: alto }}>
-      <Animated.View style={[StyleSheet.absoluteFill, estilo]}>
-        <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
-        <LinearGradient colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0)', t.grouped]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
-      </Animated.View>
-    </View>
-  );
-}
-
-function ConCuenta({ usuario, scroll }: { usuario: Usuario; scroll: SharedValue<number> }) {
+function ConCuenta({ usuario }: { usuario: Usuario }) {
   const t = useTheme();
   const { t: tr } = useTranslation('auth');
   const insets = useSafeAreaInsets();
-  const { salir } = useSesion();
+  const [ajustes, setAjustes] = useState(false);
 
   const viajes = usuario.fotos.slice(1);
-  const portada = viajes[0] ?? null;
   const linea = [usuario.pais ? nombrePais(usuario.pais) : null, usuario.edad ? tr('perfil.edad', { count: usuario.edad }) : null]
     .filter(Boolean)
     .join(' · ');
   const hayAcercaDe = usuario.intereses.length > 0 || usuario.paisesVisitados.length > 0 || usuario.idiomas.length > 0;
 
   return (
-    <View>
-      {portada ? <Portada url={portada} scroll={scroll} /> : <View style={{ height: insets.top + 64 }} />}
+    <View style={[styles.cuerpo, { paddingTop: insets.top + 14 }]}>
+      {/* Encabezado compacto: foto, nombre y bandera, y el botón de ajustes. */}
+      <Animated.View entering={entrada(0)} style={styles.identidad}>
+        <Tocable onPress={() => router.push('/perfil/editar')} etiqueta={tr('perfil.editarPerfil')}
+          style={[styles.avatar, { backgroundColor: t.accentSoft }]}>
+          {usuario.foto ? <Image source={{ uri: usuario.foto }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : (
+            <Texto v="titulo" style={{ color: t.accentSoftText }}>{(usuario.nombreVisible || '?').charAt(0).toUpperCase()}</Texto>
+          )}
+        </Tocable>
+        <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Texto v="titulo" numberOfLines={1} style={{ flexShrink: 1 }}>{usuario.nombreVisible || tr('perfil.sinNombre')}</Texto>
+            {usuario.pais ? <Bandera codigo={usuario.pais} alto={16} /> : null}
+          </View>
+          {linea ? <Texto v="detalle" secundario numberOfLines={1}>{linea}</Texto> : null}
+        </View>
+        <Pressable onPress={() => setAjustes(true)} accessibilityRole="button" accessibilityLabel={tr('perfil.ajustes')}
+          style={({ pressed }) => [styles.redondo, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.6 }]}>
+          <Icono nombre="line.3.horizontal.decrease" tamano={18} color={t.text} peso="semibold" />
+        </Pressable>
+      </Animated.View>
 
-      {/* Botón Editar: vidrio sobre la foto, texto simple si no hay portada */}
-      <View style={[styles.editar, { top: insets.top + 8 }]}>
-        {portada ? (
-          <Tocable onPress={() => router.push('/perfil/editar')} etiqueta={tr('perfil.editar')} style={styles.editarVidrio}>
-            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-            <Texto v="detalle" style={[styles.blanco, { fontWeight: '600' }]}>{tr('perfil.editar')}</Texto>
+      <Animated.View entering={entrada(1)} style={styles.insignias}>
+        <Tocable onPress={() => router.push('/perfil/editar')} style={[styles.insignia, { backgroundColor: t.backgroundElement }]}>
+          <Icono nombre="pencil" tamano={13} color={t.text} />
+          <Texto v="pie" style={{ fontWeight: '600' }}>{tr('perfil.editarPerfil')}</Texto>
+        </Tocable>
+        {usuario.edadVerificada ? (
+          <View style={[styles.insignia, { backgroundColor: t.accentSoft }]}>
+            <Icono nombre="checkmark.seal.fill" tamano={13} color={t.accentSoftText} />
+            <Texto v="pie" style={{ fontWeight: '600', color: t.accentSoftText }}>{tr('verificacion.verificada', { ns: 'comun' })}</Texto>
+          </View>
+        ) : usuario.fechaNacimiento ? (
+          <Tocable onPress={() => router.push('/verificacion')} style={[styles.insignia, { backgroundColor: t.backgroundElement }]}>
+            <Icono nombre="checkmark.seal.fill" tamano={13} color={t.textSecondary} />
+            <Texto v="pie" style={{ fontWeight: '600' }}>{tr('verificacion.empezarCorto', { ns: 'comun' })}</Texto>
           </Tocable>
-        ) : (
-          <Pressable onPress={() => router.push('/perfil/editar')} hitSlop={10}>
-            {({ pressed }) => <Texto style={{ fontWeight: '600', opacity: pressed ? 0.4 : 1 }}>{tr('perfil.editar')}</Texto>}
-          </Pressable>
-        )}
-      </View>
+        ) : null}
+        {usuario.instagram ? (
+          <Tocable onPress={() => Linking.openURL(`https://www.instagram.com/${usuario.instagram}/`)} style={[styles.insignia, { backgroundColor: t.backgroundElement }]}>
+            <Icono nombre="camera" tamano={13} color={t.text} />
+            <Texto v="pie" style={{ fontWeight: '600' }}>@{usuario.instagram}</Texto>
+          </Tocable>
+        ) : null}
+      </Animated.View>
 
-      <View style={styles.cuerpo}>
-        <Animated.View entering={entrada(0)} style={[styles.identidad, portada && { marginTop: -70 }]}>
-          <View style={[styles.avatar, { backgroundColor: t.backgroundSelected, borderColor: t.grouped }]}>
-            {usuario.foto ? <Image source={{ uri: usuario.foto }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : (
-              <Icono nombre="person" tamano={48} color={t.textSecondary} />
-            )}
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Texto v="titulo" style={{ textAlign: 'center' }}>{usuario.nombreVisible || tr('perfil.sinNombre')}</Texto>
-            {usuario.pais ? <Bandera codigo={usuario.pais} alto={20} /> : null}
-          </View>
-          {linea ? <Texto v="detalle" secundario>{linea}</Texto> : null}
-          <View style={styles.insignias}>
-            {usuario.edadVerificada ? (
-              <View style={[styles.insignia, { backgroundColor: t.card }]}>
-                <Icono nombre="checkmark.seal.fill" tamano={13} color={t.text} />
-                <Texto v="pie" style={{ fontWeight: '600' }}>{tr('verificacion.verificada', { ns: 'comun' })}</Texto>
+      <Animated.View entering={entrada(2)}><TarjetaCompletar usuario={usuario} /></Animated.View>
+
+      <Animated.View entering={entrada(3)} style={{ gap: 12 }}>
+        <View style={styles.cabezaSeccion}>
+          <Texto v="seccion">{tr('perfil.viajes')}</Texto>
+          {viajes.length < 3 ? <BotonTextoChico texto={tr('perfil.agregarFoto')} onPress={() => router.push('/perfil/editar')} /> : null}
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20 }} style={{ marginHorizontal: -20 }}>
+          {viajes.map((url) => (
+            <Image key={url} source={{ uri: url }} style={[styles.fotoViaje, { backgroundColor: t.backgroundElement }]} contentFit="cover" transition={200} />
+          ))}
+          {viajes.length < 3 && (
+            <Tocable onPress={() => router.push('/perfil/editar')} style={[styles.fotoViaje, styles.agregarFoto, { borderColor: t.outline }]}>
+              <Icono nombre="plus" tamano={22} color={t.textSecondary} peso="semibold" />
+              <Texto v="pie" secundario style={{ fontWeight: '600' }}>{tr('perfil.agregarFoto')}</Texto>
+            </Tocable>
+          )}
+        </ScrollView>
+      </Animated.View>
+
+      {hayAcercaDe && (
+        <Animated.View entering={entrada(4)} style={{ gap: 18 }}>
+          {usuario.intereses.length > 0 && (
+            <Seccion titulo={tr('perfil.intereses')}>
+              <View style={styles.etiquetas}>{usuario.intereses.map((i) => <Etiqueta key={i} texto={nombreInteres(i)} />)}</View>
+            </Seccion>
+          )}
+          {usuario.paisesVisitados.length > 0 && (
+            <Seccion titulo={tr('perfil.paisesVisitados', { count: usuario.paisesVisitados.length })}>
+              <Banderas codigos={usuario.paisesVisitados} alto={22} gap={8} />
+            </Seccion>
+          )}
+          {usuario.idiomas.length > 0 && (
+            <Seccion titulo={tr('perfil.idiomas')}>
+              <View style={styles.etiquetas}>
+                {usuario.idiomas.map((c) => <Etiqueta key={c} texto={tr(`idiomas.${c}`, { defaultValue: c.toUpperCase() })} />)}
               </View>
-            ) : usuario.fechaNacimiento ? (
-              <Tocable onPress={() => router.push('/verificacion')} style={[styles.insignia, { backgroundColor: t.card }]}>
-                <Icono nombre="checkmark.seal.fill" tamano={13} color={t.textSecondary} />
-                <Texto v="pie" style={{ fontWeight: '600' }}>{tr('verificacion.empezarCorto', { ns: 'comun' })}</Texto>
-                <Icono nombre="chevron.right" tamano={11} color={t.textSecondary} peso="semibold" />
-              </Tocable>
-            ) : null}
-            {usuario.instagram ? (
-              <Tocable onPress={() => Linking.openURL(`https://www.instagram.com/${usuario.instagram}/`)} style={[styles.insignia, { backgroundColor: t.card }]}>
-                <Icono nombre="camera" tamano={13} color={t.text} />
-                <Texto v="pie" style={{ fontWeight: '600' }}>@{usuario.instagram}</Texto>
-              </Tocable>
-            ) : null}
-          </View>
+            </Seccion>
+          )}
         </Animated.View>
-
-        <Animated.View entering={entrada(1)}><Cifras usuario={usuario} /></Animated.View>
-        {progresoPerfil(usuario) < 100 && <Animated.View entering={entrada(2)}><TarjetaCompletar usuario={usuario} /></Animated.View>}
-
-        <Animated.View entering={entrada(3)}>
-          <Seccion titulo={tr('perfil.viajes')}>
-            <Animated.ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }} style={{ marginHorizontal: -16 }}>
-              {viajes.map((url) => (
-                <Image key={url} source={{ uri: url }} style={[styles.fotoViaje, { backgroundColor: t.backgroundElement }]} contentFit="cover" transition={200} />
-              ))}
-              {viajes.length < 3 && (
-                <Tocable onPress={() => router.push('/perfil/editar')} style={[styles.fotoViaje, styles.agregarFoto, { backgroundColor: t.card }]}>
-                  <View style={[styles.agregarIcono, { backgroundColor: t.backgroundElement }]}>
-                    <Icono nombre="plus" tamano={20} color={t.text} peso="semibold" />
-                  </View>
-                  <Texto v="pie" secundario style={{ fontWeight: '600' }}>{tr('perfil.agregarFoto')}</Texto>
-                </Tocable>
-              )}
-            </Animated.ScrollView>
-          </Seccion>
-        </Animated.View>
-
-        {hayAcercaDe && (
-          <Animated.View entering={entrada(4)} style={[styles.tarjeta, { backgroundColor: t.card }]}>
-            {usuario.intereses.length > 0 && (
-              <Seccion titulo={tr('perfil.intereses')}>
-                <View style={styles.etiquetas}>{usuario.intereses.map((i) => <Etiqueta key={i} texto={nombreInteres(i)} />)}</View>
-              </Seccion>
-            )}
-            {usuario.paisesVisitados.length > 0 && (
-              <Seccion titulo={tr('perfil.paisesVisitados', { count: usuario.paisesVisitados.length })}>
-                <Banderas codigos={usuario.paisesVisitados} alto={22} gap={8} />
-              </Seccion>
-            )}
-            {usuario.idiomas.length > 0 && (
-              <Seccion titulo={tr('perfil.idiomas')}>
-                <View style={styles.etiquetas}>
-                  {usuario.idiomas.map((c) => <Etiqueta key={c} texto={tr(`idiomas.${c}`, { defaultValue: c.toUpperCase() })} />)}
-                </View>
-              </Seccion>
-            )}
-          </Animated.View>
-        )}
-
-        <Animated.View entering={entrada(5)}><SelectorApariencia /></Animated.View>
-        <Animated.View entering={entrada(6)}><SelectorIdioma /></Animated.View>
-
-        <Grupo>
-          <Fila
-            etiqueta={tr('bloqueos.titulo')}
-            valor={usuario.bloqueados?.length ? String(usuario.bloqueados.length) : undefined}
-            onPress={() => router.push('/perfil/bloqueados')}
-          />
-        </Grupo>
-
-        <Grupo pie={usuario.email ? tr('perfil.conectadoComo', { email: usuario.email }) : undefined}>
-          <Pressable onPress={salir} style={({ pressed }) => [styles.salir, pressed && { backgroundColor: t.backgroundSelected }]}>
-            <Texto style={{ color: ROJO }}>{tr('perfil.cerrarSesion')}</Texto>
-          </Pressable>
-        </Grupo>
-        <PieApp />
-      </View>
+      )}
+      <HojaAjustes visible={ajustes} usuario={usuario} onCerrar={() => setAjustes(false)} />
     </View>
+  );
+}
+
+function BotonTextoChico({ texto, onPress }: { texto: string; onPress: () => void }) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button">
+      {({ pressed }) => <Texto v="detalle" style={{ color: t.accentText, fontWeight: '600', opacity: pressed ? 0.5 : 1 }}>{texto}</Texto>}
+    </Pressable>
   );
 }
 
@@ -424,14 +423,14 @@ export default function PerfilScreen() {
   const alDesplazar = useAnimatedScrollHandler((e) => { scroll.set(e.contentOffset.y); });
 
   return (
-    <View style={[styles.pantalla, { backgroundColor: tema.grouped }]}>
+    <View style={[styles.pantalla, { backgroundColor: tema.background }]}>
       <Animated.ScrollView
         style={styles.scroll}
         onScroll={alDesplazar}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 28 }}>
-        {cargando ? <ActivityIndicator style={{ marginTop: insets.top + 64 }} /> : usuario ? <ConCuenta usuario={usuario} scroll={scroll} /> : <SinCuenta />}
+        {cargando ? <ActivityIndicator style={{ marginTop: insets.top + 64 }} /> : usuario ? <ConCuenta usuario={usuario} /> : <SinCuenta />}
       </Animated.ScrollView>
     </View>
   );
@@ -439,12 +438,12 @@ export default function PerfilScreen() {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
-  scroll: { width: '100%', maxWidth: MaxContentWidth },
+  scroll: { width: '100%' },
   blanco: { color: '#FFFFFF' },
 
   // sin cuenta
   portada: { minHeight: 520, borderRadius: 28, overflow: 'hidden', justifyContent: 'flex-end' },
-  marca: { position: 'absolute', top: 20, left: 22, color: '#FFFFFF', fontSize: 30, fontWeight: '800', letterSpacing: -1 },
+  marca: { position: 'absolute', top: 22, left: 22 },
   portadaContenido: { padding: 22, gap: 14 },
   beneficio: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   beneficioIcono: { width: 32, height: 32, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
@@ -463,19 +462,24 @@ const styles = StyleSheet.create({
   // con cuenta
   editar: { position: 'absolute', right: 16, zIndex: 2 },
   editarVidrio: { height: 34, paddingHorizontal: 16, borderRadius: 17, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.25)' },
-  cuerpo: { paddingHorizontal: 16, gap: 24 },
-  identidad: { alignItems: 'center', gap: 6 },
-  avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 4, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  insignias: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 },
-  insignia: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 30, paddingHorizontal: 12, borderRadius: 15 },
+  cuerpo: { paddingHorizontal: 20, gap: 22 },
+  identidad: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatar: { width: 72, height: 72, borderRadius: 36, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  redondo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  cabezaHoja: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
+  cabezaSeccion: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  paso: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 46 },
+  check: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  insignias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: -6 },
+  insignia: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 13, borderRadius: 17 },
   cifras: { flexDirection: 'row', borderRadius: 12, paddingVertical: 14 },
   cifra: { flex: 1, alignItems: 'center', gap: 2, paddingHorizontal: 6 },
-  completar: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 12 },
-  completarCabeza: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  barra: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  barraRelleno: { height: 4, borderRadius: 2 },
-  fotoViaje: { width: 132, height: 176, borderRadius: 16, overflow: 'hidden' },
-  agregarFoto: { alignItems: 'center', justifyContent: 'center', gap: 8 },
+  completar: { padding: 16, paddingBottom: 6, borderRadius: 20, gap: 10 },
+  completarCabeza: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 },
+  barra: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
+  barraRelleno: { height: 6, borderRadius: 3 },
+  fotoViaje: { width: 128, height: 160, borderRadius: 16, overflow: 'hidden' },
+  agregarFoto: { alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed' },
   agregarIcono: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   tarjeta: { borderRadius: 12, padding: 16, gap: 20 },
   etiquetas: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

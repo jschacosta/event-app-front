@@ -1,6 +1,6 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 
 // Expo Go no incluye el módulo nativo de Google; para probar Google hace falta
 // una "development build" (se arma más adelante con EAS).
@@ -10,8 +10,11 @@ const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
 // Web: popup de Google (Google Identity Services). Nativo: SDK de Google (no funciona en Expo Go).
+// Además se revisa que el módulo nativo exista de verdad: en algunas versiones de Expo Go para
+// Android la detección de arriba no alcanza y el botón fallaba en vez de avisar.
+const hayModuloGoogle = Platform.OS !== 'web' && TurboModuleRegistry.get('RNGoogleSignin') != null;
 export const googleDisponible =
-  Boolean(googleWebClientId) && (Platform.OS === 'web' || !enExpoGo);
+  Boolean(googleWebClientId) && (Platform.OS === 'web' || (!enExpoGo && hayModuloGoogle));
 
 export async function appleDisponible() {
   if (Platform.OS !== 'ios') return false;

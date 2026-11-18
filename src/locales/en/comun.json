@@ -20,7 +20,15 @@
     "manana": "Tomorrow",
     "todas": "All",
     "elegir": "Date",
-    "ayer": "Yesterday"
+    "ayer": "Yesterday",
+    "todo": "All",
+    "hace": {
+      "ahora": "now",
+      "min": "{{n}}m ago",
+      "h": "{{n}}h ago",
+      "d": "{{n}}d ago",
+      "mes": "{{n}}mo ago"
+    }
   },
   "tabs": {
     "agenda": "Events",
@@ -67,7 +75,20 @@
     "verTodosCuenta": "See all {{count}}",
     "categorias": "Categories",
     "todasCategorias": "All",
-    "cambiarCategoria": "Change category"
+    "cambiarCategoria": "Change category",
+    "enVivo": "Live",
+    "hasta": "until {{hora}}",
+    "eventos_one": "{{count}} event",
+    "eventos_other": "{{count}} events",
+    "abrirBuscador": "Search events",
+    "cerrarBuscador": "Close search",
+    "canalesAbiertos": "Channels open now",
+    "ahora": "Now",
+    "enVivoN_one": "{{count}} live",
+    "enVivoN_other": "{{count}} live",
+    "abreCanal": "Channel opens {{hora}}",
+    "canalAbierto": "Channel open",
+    "hastaCorto": "until {{hora}}"
   },
   "experiencias": {
     "titulo": "Experiences",
@@ -108,7 +129,28 @@
     "comprarEntradas": "Buy tickets",
     "entrarChat": "Join the channel",
     "chatAbre": "Channel opens {{dia}}",
-    "otrasFechas": "More dates"
+    "otrasFechas": "More dates",
+    "vas": "Going?",
+    "voySoloGrupo": "I'm going solo and want to join a group",
+    "mapa": "Map",
+    "verQuienVa": "See who's going",
+    "empiezaEn": "Starts in {{tiempo}}",
+    "enCurso": "Happening now",
+    "yaTermino": "Already over",
+    "marcarAqui": "Mark that I'm here",
+    "quitarAqui": "Remove that I'm here",
+    "aquiAhora_one": "{{count}} is already here",
+    "aquiAhora_other": "{{count}} are already here",
+    "nTalvez": "{{count}} maybe",
+    "nPrevia_one": "{{count}} at the pre-party",
+    "nPrevia_other": "{{count}} at the pre-party",
+    "info": "Info",
+    "entradasNo": "No ticket needed",
+    "verMapa": "View on map",
+    "termina": "Ends at {{hora}}",
+    "vanCon": "{{nombres}} and {{count}} more",
+    "seRepite_one": "Recurring",
+    "seRepite_other": "Recurring: {{count}} dates"
   },
   "chat": {
     "titulo": "Channel",
@@ -159,7 +201,8 @@
     "editando": "Editing message",
     "cancelarEdicion": "Cancel editing",
     "soloAvisos": "Announcements channel: only its creator can post here.",
-    "vacioAvisos": "No announcements yet."
+    "vacioAvisos": "No announcements yet.",
+    "irAlFinal": "Go to latest message"
   },
   "editarPerfil": {
     "errorNombre": "Enter your first and last name.",
@@ -279,7 +322,14 @@
     "unirmeAyuda": "Join to keep it in My channels and see new messages, even if you don't write.",
     "avisos": "Announcements",
     "soloAvisos": "Announcements channel",
-    "soloAvisosPie": "Only you post; everyone else reads, reacts and votes. Handy for times, meeting points or changes."
+    "soloAvisosPie": "Only you post; everyone else reads, reacts and votes. Handy for times, meeting points or changes.",
+    "editar": "Edit channel",
+    "nombre": "Name",
+    "descripcionAyuda": "Say what it is about, the time or the meeting point",
+    "guardado": "Changes saved",
+    "todos": "All",
+    "creadosPorMi": "Created by me",
+    "misCanalesCreados": "Channels I created"
   },
   "normas": {
     "titulo": "Before you join",
@@ -457,5 +507,244 @@
     "subrayado": "Underline",
     "tachado": "Strikethrough",
     "spoiler": "Spoiler (hidden until tapped)"
+  },
+  "expresion": {
+    "emojis": "Emoji",
+    "stickers": "Stickers",
+    "recientes": "Recently used",
+    "sinRecientes": "Stickers you send will show up here.",
+    "enviarSticker": "Send sticker {{emoji}}",
+    "borrar": "Delete",
+    "sticker": "Sticker",
+    "adjuntar": "Attach",
+    "teclado": "Keyboard",
+    "gifs": "GIFs",
+    "gif": "GIF",
+    "buscarGif": "Search GIFs",
+    "tendencias": "Trending",
+    "categoriasGif": [
+      "lol",
+      "party",
+      "dance",
+      "love",
+      "wow",
+      "thanks",
+      "beer",
+      "samba",
+      "beach",
+      "see you"
+    ],
+    "gifsError": "Couldn't load GIFs.",
+    "conKlipy": "GIFs by KLIPY",
+    "paquetes": {
+      "recientes": "Recently used",
+      "fiesta": "Party",
+      "reacciones": "Reactions",
+      "amor": "Love",
+      "caras": "Faces",
+      "comida": "Food & drinks",
+      "animales": "Animals",
+      "rio": "Rio"
+    },
+    "gifsNoActivos": "GIFs aren't enabled yet."
+  },
+  "topicos": {
+    "general": "General",
+    "sinMensajes": "No messages yet",
+    "nuevo": "New topic",
+    "editar": "Edit topic",
+    "nombreEjemplo": "Topic name (e.g. Transport)",
+    "color": "Color",
+    "icono": "Icon",
+    "sinIcono": "No icon: colored initial",
+    "crear": "Create topic",
+    "guardar": "Save",
+    "ayuda": "Split the conversation into topics: transport, pre-party, photos…",
+    "creado": "Topic created",
+    "borrado": "This topic was deleted",
+    "cerrar": "Close topic",
+    "reabrir": "Reopen topic",
+    "cerrado": "Topic closed",
+    "reabierto": "Topic reopened",
+    "borrar": "Delete topic",
+    "borrarPregunta": "Delete “{{nombre}}”?",
+    "borrarAyuda": "All its messages will be deleted too.",
+    "cerradoCorto": "Closed",
+    "cerradoAviso": "This topic is closed: only moderators can write.",
+    "cuenta_one": "{{count}} topic",
+    "cuenta_other": "{{count}} topics",
+    "verTodos": "See all topics",
+    "vacio": "No messages in this topic yet. Be the first!",
+    "etiqueta": "Topic",
+    "misTopicos": "Topics I created"
+  },
+  "avisos": {
+    "unido": "{{nombre}} joined",
+    "unidoYo": "You joined",
+    "topico": "{{nombre}} created the topic {{topico}}",
+    "topicoYo": "You created the topic {{topico}}",
+    "canal": "{{nombre}} created the channel {{canal}}",
+    "canalYo": "You created the channel {{canal}}"
+  },
+  "asistentes": {
+    "titulo": "Who's going?",
+    "quienVa": "Who's going?",
+    "voy": "Going",
+    "talvez": "Maybe",
+    "previa": "Pre-party",
+    "solo": "Going solo",
+    "vacio_voy": "Nobody has said they are going yet.",
+    "vacio_talvez": "Nobody has marked “maybe” yet.",
+    "vacio_previa": "Nobody has joined the pre-party yet."
+  },
+  "opiniones": {
+    "loQueDicen": "What people say",
+    "personas_one": "1 person, {{fueron}} went",
+    "personas_other": "{{count}} people, {{fueron}} went",
+    "pocasRespuestas": "Not enough answers yet. Each question shows up once it has {{n}} or more.",
+    "verTodas": "See all {{count}}",
+    "verMenos": "See less",
+    "fuiResponder": "I went, let me answer",
+    "comoEstuvo": "How was it?",
+    "ayudaResponder": "Only answer what you know. It helps first-timers.",
+    "guardar_one": "Save 1 answer",
+    "guardar_other": "Save {{count}} answers",
+    "preguntas": {
+      "volverias": "Would you go back?",
+      "seguro": "Safe to get there and back?",
+      "musica": "Good music?",
+      "lleno": "Does it get packed?",
+      "fila": "Long line to get in?",
+      "tragos": "Drinks well priced?",
+      "aire": "Air conditioning?",
+      "locales": "More locals than tourists?",
+      "banos": "Decent restrooms?"
+    },
+    "respuesta": {
+      "si": "Yes",
+      "mas": "Sort of",
+      "no": "No"
+    },
+    "corta": {
+      "si": "Yes",
+      "mas": "So-so",
+      "no": "No"
+    },
+    "votarArriba": "Upvote",
+    "votarAbajo": "Downvote",
+    "anonimo": "Someone",
+    "fue": "went",
+    "hilos": "Threads",
+    "hilo": "Thread",
+    "orden": {
+      "mejores": "Top",
+      "nuevas": "New"
+    },
+    "escribir": "Write",
+    "sinHilos": "No threads yet",
+    "sinHilosAyuda": "Ask what you want to know before going, or tell how it went.",
+    "respuestas_one": "1 reply",
+    "respuestas_other": "{{count}} replies",
+    "sinRespuestas": "No replies yet. Be the first to reply.",
+    "respondiendoA": "Replying to {{nombre}}",
+    "escribeRespuesta": "Write a reply",
+    "publicar": "Post",
+    "nuevoHilo": "New thread",
+    "tituloEjemplo": "What do you want to know or share?",
+    "textoEjemplo": "Details (optional)",
+    "reglas": "Everyone who looks at this party sees it, on all its dates. No phone numbers, links or ads.",
+    "respondieron_one": "{{count}} person answered",
+    "respondieron_other": "{{count}} people answered",
+    "verDetalle": "Tap to see the breakdown",
+    "nivel": {
+      "muy": "Highly recommended",
+      "recomendada": "Recommended",
+      "variada": "Mixed",
+      "poco": "Not recommended"
+    },
+    "volveria_one": "{{pct}}% would go back ({{count}} answer)",
+    "volveria_other": "{{pct}}% would go back ({{count}} answers)",
+    "ultimasFechas_one": "Last date:",
+    "ultimasFechas_other": "Last {{count}} dates:",
+    "porFecha": "By date",
+    "enFecha_one": "{{fecha}}: Yes {{pct}}% (1 answer)",
+    "enFecha_other": "{{fecha}}: Yes {{pct}}% ({{count}} answers)",
+    "sinDatosFecha": "{{fecha}}: no answers",
+    "cambio": "Lately: Yes {{ahora}}% (was {{antes}}%)",
+    "queFecha": "Which date did you go?",
+    "responderOtra": "Answer another date",
+    "aviso": {
+      "fuiste": "You went to {{titulo}} {{cuando}}. Your answers help the people going next time.",
+      "ibas": "You were going to {{titulo}} {{cuando}}. If you went, tell us how it was.",
+      "hoy": "today",
+      "anoche": "last night",
+      "elDia": "on {{fecha}}",
+      "responder": "Answer",
+      "noPreguntar": "Don't ask"
+    },
+    "push": {
+      "titulo": "How was {{titulo}}?",
+      "cuerpo": "Answer a few quick questions for the people going next time."
+    }
+  },
+  "notificaciones": {
+    "canal": "Notifications"
+  },
+  "enInternet": {
+    "titulo": "Venue reviews",
+    "enGoogle": "{{lugar}} on Google Maps",
+    "resenas_one": "{{n}} review",
+    "resenas_other": "{{n}} reviews",
+    "notaAccesible_one": "{{nota}} out of 5 stars, {{count}} review on Google",
+    "notaAccesible_other": "{{nota}} out of 5 stars, {{count}} reviews on Google",
+    "leerMas": "Read more",
+    "gemini": "Summarized with Gemini",
+    "reportar": "Report",
+    "verEnGoogle": "See reviews on Google"
+  },
+  "cuentaEliminada": "Deleted account",
+  "ajustes": {
+    "notificaciones": {
+      "titulo": "Notifications",
+      "opinion": "How was it? the next day",
+      "pie": "After a party that repeats, we ask how it went to help others decide.",
+      "bloqueadas": "Bora notifications are turned off on your phone. Turn them on in your system settings to get them.",
+      "abrirAjustes": "Open phone settings"
+    },
+    "privacidad": {
+      "titulo": "Privacy",
+      "mostrarEdad": "Show my age",
+      "soloInicial": "Show only my last name's initial"
+    },
+    "legal": {
+      "titulo": "Help and legal",
+      "normas": "Community guidelines",
+      "privacidad": "Privacy policy",
+      "terminos": "Terms of use",
+      "contacto": "Contact support",
+      "pie": "Questions, problems or requests about your data: {{correo}}"
+    },
+    "cuenta": {
+      "eliminar": "Delete my account"
+    }
+  },
+  "eliminarCuenta": {
+    "titulo": "Delete your Bora account",
+    "intro": "This permanently deletes your account. It can't be undone.",
+    "introEmail": "This permanently deletes the account {{email}}. It can't be undone.",
+    "seBorraTitulo": "What gets deleted",
+    "seBorra": [
+      "Your profile: name, age, country, photos, interests, languages and Instagram.",
+      "The events where you said you're going, maybe or pre-party.",
+      "Your access to channels and the notifications on this phone.",
+      "Your age verification."
+    ],
+    "quedaTitulo": "What stays",
+    "queda": [
+      "What you wrote in channels and threads stays visible to others, signed as “Deleted account”. Channel messages are deleted automatically when each event ends.",
+      "Your answers to “How was it?” still count in the percentages, with nothing linking them to you."
+    ],
+    "entiendo": "I understand my account will be deleted forever.",
+    "boton": "Delete my account"
   }
 }

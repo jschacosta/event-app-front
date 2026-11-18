@@ -173,8 +173,8 @@ export function BotonAqui({ aqui, onPress }: { aqui: ReturnType<typeof useYaAqui
         <Icono nombre="location.fill" tamano={15} color={aqui.mio ? t.onAccent : t.text} />
       </Animated.View>
       {aqui.total > 0 ? (
-        <View style={[styles.globoAqui, { backgroundColor: t.text, borderColor: t.background }]}>
-          <Text style={[styles.globoTexto, { color: t.background }]}>{aqui.total > 99 ? '99+' : aqui.total}</Text>
+        <View style={[styles.globoAqui, { backgroundColor: t.accent, borderColor: t.background }]}>
+          <Text style={[styles.globoTexto, { color: t.onAccent }]}>{aqui.total > 99 ? '99+' : aqui.total}</Text>
         </View>
       ) : null}
     </Pressable>

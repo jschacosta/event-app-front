@@ -22,7 +22,7 @@ export function CampoFecha({ valor, onCambio, minimo, maximo }: {
     onChange: (e: { target: { value: string } }) => e.target.value && onCambio(e.target.value),
     style: {
       border: 0, borderRadius: 7, padding: '6px 10px', fontSize: 17, fontFamily: 'inherit',
-      background: t.backgroundElement, color: t.text, colorScheme: t.background === '#000000' ? 'dark' : 'light',
+      background: t.backgroundElement, color: t.text, colorScheme: t.background !== '#FFFFFF' ? 'dark' : 'light',
     },
   });
 }

@@ -1,21 +1,19 @@
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Banderas } from '@/components/bandera';
 import { HojaCalendario } from '@/components/calendario';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
-import { ListaEventos } from '@/components/fila-evento';
-import { BarraBusqueda, BotonCiudad, ChipGenero, FilaGeneros, IconoVacio, PantallaGeneros, TiraFechas } from '@/components/filtros';
+import { BarraBusqueda, BotonCiudad, FilaGeneros, IconoVacio, TiraFechas } from '@/components/filtros';
+import { AvisoComoEstuvo } from '@/components/opiniones';
 import { BotonTexto, Icono, Texto } from '@/components/ui';
 import { API_URL } from '@/config/api';
-import { BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { BottomTabInset, FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
@@ -23,163 +21,154 @@ import { crearBuscador } from '@/lib/buscar-eventos';
 import { guardarEventos } from '@/lib/eventos-cache';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
-import { claveDia, diasDesdeHoy, fechaLarga, hora, precioTexto, tituloDeClave, tituloDia } from '@/lib/fechas';
-import { GENEROS, nombreGenero } from '@/lib/generos';
+import { claveDia, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
+import { colorEtiquetaGenero, GENEROS, nombreGenero } from '@/lib/generos';
 
-// Tarjetas por día en la fila horizontal; el resto se ve con "Ver todos".
-const MAX_POR_DIA = 8;
-
+// Agenda de Bora, armada como un line-up: el número del día va grande en su propia columna,
+// con una línea que une los eventos de ese día, y cada fila dice qué, a qué hora, dónde, cuánto y quién va.
+// Arriba: ciudad, tus tarjetas de géneros, las fechas y una tira con TODO lo que está en vivo ahora.
+const POR_DIA = 6;
 
 function abrir(e: Evento) {
   router.push({ pathname: '/evento/[id]', params: { id: e.id } });
 }
 
-function TarjetaDestacada({ evento }: { evento: Evento }) {
+// Tarjeta de la tira "Ahora": todos los eventos en curso, uno al lado del otro.
+const TarjetaAhora = memo(function TarjetaAhora({ evento }: { evento: Evento }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   const a = evento.asistencia;
-  const lugar = evento.lugar ?? evento.barrio;
   return (
-    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.destacada, { backgroundColor: t.card }, pressed && { opacity: 0.9 }]}>
-      {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : null}
-      <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.75)']} style={styles.velo} />
-      {evento.chatAbierto && (
-        <BlurView intensity={40} tint="light" style={styles.etiquetaChat}>
-          <View style={[styles.puntoVivo, { backgroundColor: t.live }]} />
-          <Texto v="pie" style={styles.blanco}>{tr('agenda.chatAbierto')}</Texto>
-        </BlurView>
-      )}
-      <View style={styles.textoDestacada}>
-        <Texto v="detalle" style={[styles.blanco, { fontWeight: '600', opacity: 0.9 }]}>
-          {[diasDesdeHoy(evento.inicio) > 0 ? tituloDia(evento.inicio) : null, hora(evento.inicio), lugar].filter(Boolean).join(' · ')}
+    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.ahora, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.8 }]}>
+      <View style={[styles.fotoAhora, { backgroundColor: t.backgroundSelected }]}>
+        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+      </View>
+      <View style={{ flex: 1, gap: 3 }}>
+        <View style={[styles.vivo, { backgroundColor: t.sun }]}>
+          <Texto v="mini" style={{ color: t.onSun, fontWeight: '800' }}>{tr('agenda.enVivo')}</Texto>
+          <Texto v="mini" style={{ color: t.onSun, fontWeight: '600' }}>{tr('agenda.hastaCorto', { hora: hora(evento.fin) })}</Texto>
+        </View>
+        <Texto v="detalle" numberOfLines={2} style={{ fontWeight: '700', lineHeight: 17 }}>{evento.titulo}</Texto>
+        <Texto v="pie" secundario numberOfLines={1}>
+          {a && a.van > 0 ? tr('agenda.van', { count: a.van }) : evento.barrio ?? evento.lugar ?? ''}
         </Texto>
-        <Texto v="titulo" style={styles.blanco} numberOfLines={2}>{evento.titulo}</Texto>
-        {a && a.van > 0 ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
-            <Texto v="detalle" style={[styles.blanco, { fontWeight: '600' }]}>{tr('agenda.van', { count: a.van })}</Texto>
-            <Banderas codigos={a.paisesTop} alto={12} />
-            {a.paises > a.paisesTop.length ? <Texto v="pie" style={styles.blanco}>+{a.paises - a.paisesTop.length}</Texto> : null}
-          </View>
-        ) : (
-          <Texto v="detalle" style={[styles.blanco, { opacity: 0.85, marginTop: 4 }]}>{tr('agenda.seElPrimero')}</Texto>
-        )}
       </View>
     </Pressable>
   );
-}
+});
 
-function TarjetaChica({ evento, repeticiones = 1 }: { evento: Evento; repeticiones?: number }) {
+// Fila del line-up: foto | nombre; hora y lugar; precio; género y quién va. Sin rayas entre filas:
+// las separa el aire. En el buscador (conDia) la fecha va delante de la hora.
+const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { evento: Evento; repeticiones: number; conDia?: boolean }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
+  const a = evento.asistencia;
+  const genero = evento.generos[0];
   const precio = precioTexto(evento.precioDesde);
   return (
-    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.chica, pressed && { opacity: 0.7 }]}>
-      <View style={[styles.fotoChica, { backgroundColor: t.backgroundElement }]}>
-        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : null}
-        {repeticiones > 1 ? (
-          // Fiesta que se repite: se muestra una vez, con cuántas fechas tiene.
-          <View style={styles.repite}>
-            <Icono nombre="repeat" tamano={11} color="#FFFFFF" peso="semibold" />
-            <Texto v="mini" style={{ color: '#FFFFFF', fontWeight: '600' }}>{tr('agenda.fechas', { count: repeticiones })}</Texto>
-          </View>
-        ) : null}
+    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundElement }]}>
+      <View style={[styles.miniatura, { backgroundColor: t.backgroundElement }]}>
+        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
       </View>
-      <View>
-        <Texto v="detalle" style={{ fontWeight: '600' }} numberOfLines={1}>{evento.titulo}</Texto>
-        <Texto v="pie" secundario numberOfLines={1}>
-          {[hora(evento.inicio), evento.barrio, precio].filter(Boolean).join(' · ')}
-        </Texto>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Texto v="cuerpoFuerte" numberOfLines={2} style={{ fontSize: 15, lineHeight: 19 }}>{evento.titulo}</Texto>
+        <View style={styles.linea}>
+          <Texto style={[styles.hora, { color: t.accentText }]}>
+            {conDia ? `${diaCorto(evento.inicio)} ${hora(evento.inicio)}` : hora(evento.inicio)}
+          </Texto>
+          <Texto v="pie" secundario numberOfLines={1} style={{ flexShrink: 1 }}>{evento.lugar ?? evento.barrio ?? ''}</Texto>
+          {precio ? <Texto v="pie" style={{ fontWeight: '600', marginLeft: 'auto' }}>{precio}</Texto> : null}
+        </View>
+        <View style={[styles.linea, { marginTop: 3 }]}>
+          {genero ? (
+            <View style={[styles.genero, { backgroundColor: colorEtiquetaGenero(genero) }]}>
+              <Texto v="mini" style={{ color: '#FFFFFF', fontWeight: '700' }}>{nombreGenero(genero)}</Texto>
+            </View>
+          ) : null}
+          {repeticiones > 1 ? <Texto v="mini" secundario style={{ fontWeight: '600' }}>{tr('agenda.fechas', { count: repeticiones })}</Texto> : null}
+          {a && a.van > 0 ? (
+            <View style={styles.linea}>
+              <Banderas codigos={a.paisesTop} alto={9} max={3} gap={2} />
+              <Texto v="mini" style={{ fontWeight: '700' }}>{tr('agenda.van', { count: a.van })}</Texto>
+            </View>
+          ) : null}
+          {evento.chatAbierto ? (
+            <Texto v="mini" style={{ fontWeight: '700', color: t.accentText }}>{tr('agenda.canalAbierto')}</Texto>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
+});
+
+// Qué vale la pena: lo que dice el servidor (fiesta fija, lugar bien evaluado en Google, -almuerzos y
+// cursos) más la gente de Bora que va, que pesa más que todo lo demás.
+function puntaje({ evento: e, repeticiones }: { evento: Evento; repeticiones: number }) {
+  const a = e.asistencia;
+  const gente = a ? a.van * 3 + a.talvez + a.previa + (a.aqui ?? 0) * 5 : 0;
+  return (e.destaque ?? 0) + Math.min(gente * 4, 60) + (repeticiones > 1 ? 5 : 0);
+}
+
+// Los POR_DIA que más valen la pena, mostrados por hora como un line-up. "Ver todo" muestra el día entero.
+function elegirVisibles<G extends { evento: Evento; repeticiones: number }>(grupos: G[]) {
+  if (grupos.length <= POR_DIA) return grupos;
+  const elegidos = new Set(
+    grupos.map((g, i) => ({ g, i, p: puntaje(g) }))
+      .sort((x, y) => y.p - x.p || x.i - y.i)
+      .slice(0, POR_DIA)
+      .map((x) => x.g),
+  );
+  return grupos.filter((g) => elegidos.has(g));
 }
 
 type Seccion = { clave: string; titulo: string; total: number; grupos: { evento: Evento; repeticiones: number }[] };
 
-// Un día de la agenda: título y fila horizontal de tarjetas.
-const FilaDia = memo(function FilaDia({ seccion, onVerTodos }: { seccion: Seccion; onVerTodos: (clave: string) => void }) {
+// Un día del line-up: el número del día grande en la columna izquierda y una línea fina que baja
+// junto a sus eventos (como el recorrido de una noche). Los días se separan con espacio, no con rayas.
+const Dia = memo(function Dia({ seccion, onVerTodos }: { seccion: Seccion; onVerTodos: (clave: string) => void }) {
+  const t = useTheme();
+  const { t: tr } = useTranslation();
+  const visibles = useMemo(() => elegirVisibles(seccion.grupos), [seccion.grupos]);
+  const { numero, semana } = fechaDeClave(seccion.clave);
+  const relativo = diasHastaClave(seccion.clave);
   return (
-    <View style={{ marginTop: 28 }}>
-      <TituloDia titulo={seccion.titulo} total={seccion.total} onVerTodos={() => onVerTodos(seccion.clave)} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fila}>
-        {seccion.grupos.slice(0, MAX_POR_DIA).map((g) => <TarjetaChica key={g.evento.id} evento={g.evento} repeticiones={g.repeticiones} />)}
-      </ScrollView>
+    <View style={styles.dia} accessible={false}>
+      <View style={styles.columnaDia} accessibilityLabel={seccion.titulo}>
+        <Texto style={[styles.numeroDia, { color: t.text }]}>{numero}</Texto>
+        <Texto v="mini" style={{ fontWeight: '700', color: relativo <= 1 ? t.accentText : t.textSecondary }}>
+          {relativo === 0 ? tr('fechas.hoy') : relativo === 1 ? tr('fechas.manana') : semana}
+        </Texto>
+        {seccion.grupos.length > 1 ? <View style={[styles.riel, { backgroundColor: t.outline }]} /> : null}
+      </View>
+      <View style={{ flex: 1 }}>
+        {visibles.map((g) => <FilaLineup key={g.evento.id} evento={g.evento} repeticiones={g.repeticiones} />)}
+        {seccion.total > visibles.length ? (
+          <Pressable onPress={() => onVerTodos(seccion.clave)} accessibilityRole="button" style={({ pressed }) => [styles.verMas, pressed && { opacity: 0.6 }]}>
+            <Texto v="detalle" style={{ fontWeight: '700', color: t.accentText }}>{tr('agenda.verTodosCuenta', { count: seccion.total })}</Texto>
+            <Icono nombre="chevron.right" tamano={11} color={t.accentText} peso="bold" />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 });
 
-// Chats abiertos ahora: círculos con la foto del evento, directo al chat (une la Agenda con los Chats).
-function ChatsAbiertos({ eventos }: { eventos: Evento[] }) {
-  const t = useTheme();
-  const { t: tr } = useTranslation();
-  if (eventos.length === 0) return null;
-  return (
-    <View style={{ marginTop: 28 }}>
-      <View style={styles.tituloFila}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={[styles.puntoVivo, { backgroundColor: t.live }]} />
-          <Texto v="seccion">{tr('agenda.chatsAhora')}</Texto>
-        </View>
-        <BotonTexto texto={tr('agenda.verTodos')} onPress={() => router.navigate('/chats')} />
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fila}>
-        {eventos.map((e) => (
-          <Pressable
-            key={e.id}
-            onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: e.id } })}
-            style={({ pressed }) => [styles.burbuja, pressed && { opacity: 0.7 }]}>
-            <View style={[styles.aro, { borderColor: t.text }]}>
-              <View style={[styles.circulo, { backgroundColor: t.backgroundElement }]}>
-                {e.imagen ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-              </View>
-            </View>
-            <Texto v="mini" numberOfLines={2} style={{ textAlign: 'center', fontWeight: '500' }}>{e.titulo}</Texto>
-            {e.asistencia?.van ? <Texto v="mini" secundario>{tr('agenda.van', { count: e.asistencia.van })}</Texto> : null}
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-// Título de un día con "Ver todos ›" a la derecha: abre la lista vertical de ese día.
-function TituloDia({ titulo, total, onVerTodos }: { titulo: string; total: number; onVerTodos: () => void }) {
-  const t = useTheme();
-  const { t: tr } = useTranslation();
-  return (
-    <View style={styles.tituloFila}>
-      <Texto v="seccion" style={{ flexShrink: 1 }} numberOfLines={1}>{titulo}</Texto>
-      <Pressable onPress={onVerTodos} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${tr('agenda.verTodos')} · ${titulo}`}>
-        {({ pressed }) => (
-          <View style={[styles.verTodos, pressed && { opacity: 0.5 }]}>
-            <Texto v="detalle" acento style={{ fontWeight: '500' }}>
-              {total > MAX_POR_DIA ? tr('agenda.verTodosCuenta', { count: total }) : tr('agenda.verTodos')}
-            </Texto>
-            <Icono nombre="chevron.right" tamano={13} color={t.accentText} peso="semibold" />
-          </View>
-        )}
-      </Pressable>
-    </View>
-  );
-}
-
 export default function AgendaScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { token, usuario } = useSesion();
+  const { token } = useSesion();
   const { t: tr, i18n } = useTranslation();
   const ciudad = useCiudad();
   const [dia, setDia] = useState<string | null>(null); // null = todas las fechas
   const [eventos, setEventos] = useState<Evento[] | null>(null);
+  const [ahora, setAhora] = useState(() => Date.now()); // se renueva en cada carga
   const [error, setError] = useState<string | null>(null);
   const [refrescando, setRefrescando] = useState(false);
   const [consulta, setConsulta] = useState('');
+  const [buscador, setBuscador] = useState(false);
   const [genero, setGenero] = useState<string | null>(null);
   const [calendario, setCalendario] = useState(false);
-  const [categorias, setCategorias] = useState(false);
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
-  // La agenda es una lista virtualizada: solo se dibujan los días que están cerca de la pantalla
-  // (antes se montaban todos a la vez, cientos de tarjetas con foto, y en Android el scroll se trababa).
   const lista = useRef<FlatList<Seccion>>(null);
   const subir = useCallback(() => lista.current?.scrollToOffset({ offset: 0, animated: true }), []);
 
@@ -187,6 +176,7 @@ export default function AgendaScreen() {
     try {
       const { eventos } = await api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}`, { token });
       setEventos(eventos);
+      setAhora(Date.now());
       guardarEventos(ciudad.id, eventos);
       setError(null);
     } catch {
@@ -204,23 +194,11 @@ export default function AgendaScreen() {
     setDia(null);
   }
 
-  // Recarga al volver a la pestaña (por ejemplo, después de marcar "Voy").
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
-  // Solo se muestran como filtro los tipos que tienen eventos próximos.
   const generosDisponibles = useMemo(
     () => GENEROS.filter((g) => (eventos ?? []).some((e) => e.generos.includes(g))),
     [eventos],
-  );
-  // Cuántos eventos tiene cada tipo (para la pantalla de categorías).
-  const cuentasGenero = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const e of eventos ?? []) for (const g of e.generos) c[g] = (c[g] ?? 0) + 1;
-    return c;
-  }, [eventos]);
-  const chatsAbiertos = useMemo(
-    () => (eventos ?? []).filter((e) => e.chatAbierto && (!genero || e.generos.includes(genero))),
-    [eventos, genero],
   );
   const buscar = useMemo(() => crearBuscador(eventos ?? []), [eventos]);
   const buscando = consulta.trim().length >= 2;
@@ -228,55 +206,47 @@ export default function AgendaScreen() {
     if (!buscando) return [];
     const r = buscar(consulta);
     return agruparSeries(genero ? r.filter((e) => e.generos.includes(genero)) : r);
-    // i18n.language: los nombres de los géneros cambian con el idioma
-  }, [buscando, buscar, consulta, genero, i18n.language]);
+  }, [buscando, buscar, consulta, genero]);
 
-  const { destacado, secciones } = useMemo(() => {
-    const lista = (eventos ?? []).filter((e) => {
-      if (genero && !e.generos.includes(genero)) return false;
-      // Un evento que ya empezó cuenta como de hoy.
-      return !dia || claveDia(diasDesdeHoy(e.inicio) < 0 ? new Date().toISOString() : e.inicio) === dia;
-    });
-    // Sin un día elegido, las fiestas que se repiten aparecen una sola vez (en su próxima fecha).
-    const grupos = dia ? lista.map((evento) => ({ evento, repeticiones: 1 })) : agruparSeries(lista);
-    const destacado = grupos[0]?.evento ?? null;
-    const hoy = claveDia(new Date().toISOString());
-    // Cuántos eventos tiene cada día en total (para "Ver todos (32)").
+  const { enVivo, secciones } = useMemo(() => {
+    const hoy = claveDia(new Date(ahora).toISOString());
+    const deGenero = (eventos ?? []).filter((e) => !genero || e.generos.includes(genero));
+    const vivo = (e: Evento) => new Date(e.inicio).getTime() <= ahora && ahora < new Date(e.fin).getTime();
+    // En vivo también va primero lo que vale la pena (si no, gana el almuerzo que empezó a mediodía).
+    const enVivo = dia && dia !== hoy ? [] : deGenero.filter(vivo)
+      .map((evento, i) => ({ evento, i, p: puntaje({ evento, repeticiones: 1 }) }))
+      .sort((a, b) => b.p - a.p || a.i - b.i)
+      .map((x) => x.evento);
+    // El line-up muestra lo que todavía no empezó (lo que está en vivo ya se ve arriba).
+    const proximos = deGenero.filter((e) => !vivo(e) && (!dia || claveDia(e.inicio) === dia));
+    const grupos = dia ? proximos.map((evento) => ({ evento, repeticiones: 1 })) : agruparSeries(proximos);
+    const porDia = new Map<string, { evento: Evento; repeticiones: number }[]>();
     const totalDia = new Map<string, number>();
-    for (const e of lista) {
-      const clave = diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio);
-      totalDia.set(clave, (totalDia.get(clave) ?? 0) + 1);
+    for (const e of proximos) totalDia.set(claveDia(e.inicio), (totalDia.get(claveDia(e.inicio)) ?? 0) + 1);
+    for (const g of grupos) {
+      const clave = claveDia(g.evento.inicio);
+      porDia.set(clave, [...(porDia.get(clave) ?? []), g]);
     }
-    const porDia = new Map<string, { titulo: string; grupos: { evento: Evento; repeticiones: number }[] }>();
-    for (const g of grupos.slice(1)) {
-      const d = diasDesdeHoy(g.evento.inicio);
-      const clave = d <= 0 ? hoy : claveDia(g.evento.inicio);
-      const seccion = porDia.get(clave) ?? { titulo: d <= 0 ? tr('agenda.masTarde') : tituloDia(g.evento.inicio), grupos: [] };
-      seccion.grupos.push(g);
-      porDia.set(clave, seccion);
-    }
-    const secciones = [...porDia.entries()].map(([clave, s]) => ({ clave, ...s, total: totalDia.get(clave) ?? s.grupos.length }));
-    return { destacado, secciones };
+    const secciones: Seccion[] = [...porDia.entries()].map(([clave, gs]) => ({
+      clave, titulo: encabezadoDia(clave), grupos: gs, total: Math.max(gs.length, totalDia.get(clave) ?? 0),
+    }));
+    return { enVivo, secciones };
     // i18n.language y ciudad.zona: los títulos de los días cambian con el idioma y la zona horaria
-  }, [eventos, dia, genero, tr, i18n.language, ciudad.zona]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventos, dia, genero, ahora, i18n.language, ciudad.zona]);
 
-  // Días que tienen algún evento (del tipo elegido), para encender esos días en la tira.
   const diasConEventos = useMemo(() => {
-    const hoy = claveDia(new Date().toISOString());
+    const hoy = claveDia(new Date(ahora).toISOString());
     return new Set((eventos ?? [])
       .filter((e) => !genero || e.generos.includes(genero))
       .map((e) => (diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, genero, ciudad.zona]);
-
-  const tituloAgenda = !dia
-    ? tr('agenda.titulo.proximos')
-    : dia === claveDia(new Date().toISOString())
-      ? tr('agenda.titulo.hoy')
-      : tituloDeClave(dia);
+  }, [eventos, genero, ahora, ciudad.zona]);
 
   const mostrarSecciones = !error && Boolean(eventos?.length) && !buscando;
   const verDia = useCallback((clave: string) => router.push({ pathname: '/dia/[clave]', params: genero ? { clave, genero } : { clave } }), [genero]);
+  const cerrarBuscador = () => { setBuscador(false); setConsulta(''); };
+  const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0;
 
   const refrescar = async () => {
     setRefrescando(true);
@@ -288,15 +258,14 @@ export default function AgendaScreen() {
     <View style={[styles.pantalla, { backgroundColor: t.background }]}>
       <EncabezadoCompacto
         visible={compacto}
-        titulo={buscando ? tr('agenda.titulo.buscar') : tituloAgenda}
-        derecha={generosDisponibles.length > 1 ? <ChipGenero elegido={genero} onPress={() => setCategorias(true)} chico /> : null}
+        titulo={ciudad.nombre}
         busqueda={{ valor: consulta, onCambio: setConsulta, placeholder: tr('agenda.buscar') }}
       />
       <Animated.FlatList
         ref={lista}
         data={mostrarSecciones ? secciones : []}
         keyExtractor={(sec) => sec.clave}
-        renderItem={({ item: sec }) => <FilaDia seccion={sec} onVerTodos={verDia} />}
+        renderItem={({ item: sec }) => <Dia seccion={sec} onVerTodos={verDia} />}
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
@@ -308,84 +277,85 @@ export default function AgendaScreen() {
         windowSize={7}
         removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
-        ListHeaderComponent={<View style={{ paddingTop: insets.top + 12 }}>
-        <View style={styles.encabezado}>
-          <BotonCiudad />
-          <Pressable onPress={() => router.navigate('/perfil')} accessibilityLabel={tr('agenda.tuPerfil')} style={[styles.avatar, { backgroundColor: t.backgroundElement }]}>
-            {usuario?.foto ? <Image source={{ uri: usuario.foto }} style={StyleSheet.absoluteFill} /> : (
-              <Icono nombre="person" tamano={17} color={t.textSecondary} />
-            )}
-          </Pressable>
-        </View>
-        <View style={{ paddingHorizontal: 20, marginTop: 10 }}>
-          <View style={styles.filaTitulo}>
-            <Texto v="tituloGrande">{buscando ? tr('agenda.titulo.buscar') : tituloAgenda}</Texto>
-            {generosDisponibles.length > 1 ? <ChipGenero elegido={genero} onPress={() => setCategorias(true)} /> : null}
+        ListHeaderComponent={<View style={{ paddingTop: insets.top + 10 }}>
+          <View style={styles.encabezado}>
+            <BotonCiudad grande />
+            <Pressable
+              onPress={() => (buscador ? cerrarBuscador() : setBuscador(true))}
+              accessibilityRole="button"
+              accessibilityLabel={tr(buscador ? 'agenda.cerrarBuscador' : 'agenda.abrirBuscador')}
+              style={({ pressed }) => [styles.botonBuscar, { backgroundColor: buscador ? t.text : t.backgroundElement }, pressed && { opacity: 0.7 }]}>
+              <Icono nombre={buscador ? 'xmark' : 'magnifyingglass'} tamano={16} color={buscador ? t.background : t.text} peso="semibold" />
+            </Pressable>
           </View>
-          <Texto v="detalle" secundario>{fechaLarga(new Date().toISOString()).replace(/^./, (c) => c.toUpperCase())}</Texto>
-        </View>
 
-        <View style={styles.margen} onLayout={medirBuscador}>
-          <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr('agenda.buscar')} />
-        </View>
+          {buscador ? null : <AvisoComoEstuvo token={token} />}
 
-        <View style={{ marginTop: 14 }}>
-          <FilaGeneros generos={generosDisponibles} elegido={genero} onCambio={setGenero} />
-        </View>
+          {buscador ? (
+            <Animated.View entering={FadeInDown.duration(160)} style={styles.margen}>
+              <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr('agenda.buscar')} autoFocus />
+            </Animated.View>
+          ) : null}
 
-        {!buscando && (
-          <View style={{ marginTop: 16 }}>
-            <TiraFechas valor={dia} onCambio={setDia} diasConEventos={diasConEventos} onCalendario={() => setCalendario(true)} />
+          <View style={{ marginTop: 12 }}>
+            <FilaGeneros generos={generosDisponibles} elegido={genero} onCambio={setGenero} />
           </View>
-        )}
+          {!buscando && (
+            <View style={{ marginTop: 10 }} onLayout={medirBuscador}>
+              <TiraFechas valor={dia} onCambio={setDia} diasConEventos={diasConEventos} onCalendario={() => setCalendario(true)} />
+            </View>
+          )}
 
-        {error ? (
-          <View style={styles.vacio}>
-            <Texto secundario style={{ textAlign: 'center' }}>{error}</Texto>
-            <BotonTexto texto={tr('comun.reintentar')} onPress={cargar} />
-          </View>
-        ) : eventos === null ? (
-          <ActivityIndicator style={styles.vacio} />
-        ) : buscando ? (
-          <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.margen}>
-            <Texto v="pie" secundario style={styles.cuenta}>{tr('agenda.resultados', { count: resultados.length })}</Texto>
-            {resultados.length === 0 ? (
-              <View style={styles.vacio}>
-                <IconoVacio nombre="magnifyingglass" />
-                <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>{tr('agenda.sinResultados', { q: consulta.trim() })}</Texto>
-                <Texto v="detalle" secundario style={{ textAlign: 'center' }}>{tr('agenda.sinResultadosAyuda')}</Texto>
+          {error ? (
+            <View style={styles.vacio}>
+              <Texto secundario style={{ textAlign: 'center' }}>{error}</Texto>
+              <BotonTexto texto={tr('comun.reintentar')} onPress={cargar} />
+            </View>
+          ) : eventos === null ? (
+            <ActivityIndicator style={styles.vacio} />
+          ) : buscando ? (
+            <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.margen}>
+              <Texto v="pie" secundario style={styles.cuenta}>{tr('agenda.resultados', { count: resultados.length })}</Texto>
+              {resultados.length === 0 ? (
+                <View style={styles.vacio}>
+                  <IconoVacio nombre="magnifyingglass" />
+                  <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>{tr('agenda.sinResultados', { q: consulta.trim() })}</Texto>
+                  <Texto v="detalle" secundario style={{ textAlign: 'center' }}>{tr('agenda.sinResultadosAyuda')}</Texto>
+                </View>
+              ) : (
+                <View style={{ marginHorizontal: -16 }}>
+                  {resultados.map((g) => (
+                    <FilaLineup key={g.evento.id} evento={g.evento} repeticiones={g.repeticiones} conDia />
+                  ))}
+                </View>
+              )}
+            </Animated.View>
+          ) : eventos.length === 0 ? (
+            <View style={styles.vacio}>
+              <IconoVacio nombre="calendar" />
+              <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>{tr('agenda.ciudadVacia', { ciudad: ciudad.nombre })}</Texto>
+              <BotonTexto texto={tr('ciudad.cambiar')} onPress={() => router.push('/ciudad')} />
+            </View>
+          ) : nada ? (
+            <View style={styles.vacio}>
+              <Texto secundario style={{ textAlign: 'center' }}>
+                {genero ? tr('agenda.sinEventosGenero', { genero: nombreGenero(genero) }) : tr('agenda.sinEventos')}
+              </Texto>
+              {dia ? <BotonTexto texto={tr('agenda.verTodasFechas')} onPress={() => setDia(null)} />
+                : genero ? <BotonTexto texto={tr('agenda.verTodosTipos')} onPress={() => setGenero(null)} /> : null}
+            </View>
+          ) : enVivo.length ? (
+            <View style={{ marginTop: 20 }}>
+              <View style={styles.cabezaAhora}>
+                <Texto v="seccion">{tr('agenda.ahora')}</Texto>
+                <View style={[styles.puntoVivo, { backgroundColor: t.sun }]} />
+                <Texto v="pie" style={{ fontWeight: '700' }}>{tr('agenda.enVivoN', { count: enVivo.length })}</Texto>
               </View>
-            ) : (
-              <ListaEventos grupos={resultados} />
-            )}
-          </Animated.View>
-        ) : eventos.length === 0 ? (
-          <View style={styles.vacio}>
-            <IconoVacio nombre="calendar" />
-            <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>{tr('agenda.ciudadVacia', { ciudad: ciudad.nombre })}</Texto>
-            <BotonTexto texto={tr('ciudad.cambiar')} onPress={() => router.push('/ciudad')} />
-          </View>
-        ) : (
-          <>
-            {destacado ? (
-              <View style={styles.margen}>
-                <TarjetaDestacada evento={destacado} />
-              </View>
-            ) : (
-              <View style={styles.vacio}>
-                <Texto secundario style={{ textAlign: 'center' }}>
-                  {genero ? tr('agenda.sinEventosGenero', { genero: nombreGenero(genero) }) : tr('agenda.sinEventos')}
-                </Texto>
-                {dia ? (
-                  <BotonTexto texto={tr('agenda.verTodasFechas')} onPress={() => setDia(null)} />
-                ) : genero ? (
-                  <BotonTexto texto={tr('agenda.verTodosTipos')} onPress={() => setGenero(null)} />
-                ) : null}
-              </View>
-            )}
-            <ChatsAbiertos eventos={chatsAbiertos} />
-          </>
-        )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tiraAhora}>
+                {enVivo.map((e) => <TarjetaAhora key={e.id} evento={e} />)}
+              </ScrollView>
+            </View>
+          ) : null}
         </View>}
       />
       <BotonArriba visible={arriba} onPress={subir} />
@@ -396,47 +366,32 @@ export default function AgendaScreen() {
         onElegir={(clave) => { setDia(clave); setConsulta(''); }}
         onCerrar={() => setCalendario(false)}
       />
-      <PantallaGeneros
-        visible={categorias}
-        generos={generosDisponibles}
-        cuentas={cuentasGenero}
-        total={eventos?.length ?? 0}
-        elegido={genero}
-        onElegir={setGenero}
-        onCerrar={() => setCategorias(false)}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
-  scroll: { width: '100%', maxWidth: MaxContentWidth },
-  filaTitulo: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 6 },
-  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
-  avatar: { width: 34, height: 34, borderRadius: 17, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  margen: { paddingHorizontal: 20, marginTop: 16 },
-  destacada: { height: 400, borderRadius: 24, overflow: 'hidden', justifyContent: 'flex-end' },
-  velo: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '60%' },
-  etiquetaChat: {
-    position: 'absolute', top: 14, left: 14, height: 28, paddingHorizontal: 12, borderRadius: 14, overflow: 'hidden',
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-  },
-  puntoVivo: { width: 7, height: 7, borderRadius: 4 },
-  textoDestacada: { padding: 20, gap: 4 },
-  blanco: { color: '#FFFFFF' },
-  tituloFila: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 20, marginBottom: 12 },
-  verTodos: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  fila: { paddingHorizontal: 20, gap: 14 },
-  chica: { width: 168, gap: 8 },
-  fotoChica: { width: 168, height: 168, borderRadius: 18, overflow: 'hidden' },
-  repite: {
-    position: 'absolute', left: 8, bottom: 8, height: 22, paddingHorizontal: 8, borderRadius: 11,
-    flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  burbuja: { width: 80, alignItems: 'center', gap: 4 },
-  aro: { width: 76, height: 76, borderRadius: 38, borderWidth: 2.5, padding: 3 },
-  circulo: { flex: 1, borderRadius: 34, overflow: 'hidden' },
+  scroll: { width: '100%' },
+  encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16 },
+  botonBuscar: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  margen: { paddingHorizontal: 16, marginTop: 10 },
+  cabezaAhora: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, marginBottom: 8 },
+  puntoVivo: { width: 7, height: 7, borderRadius: 4, marginLeft: 4 },
+  tiraAhora: { paddingHorizontal: 16, gap: 8 },
+  ahora: { width: 252, flexDirection: 'row', gap: 10, padding: 8, borderRadius: 8 },
+  fotoAhora: { width: 72, height: 72, borderRadius: 6, overflow: 'hidden' },
+  vivo: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, height: 18, paddingHorizontal: 5, borderRadius: 3 },
+  dia: { flexDirection: 'row', marginTop: 18, paddingLeft: 16 },
+  columnaDia: { width: 50, alignItems: 'flex-start', paddingTop: 6 },
+  numeroDia: { fontFamily: FuenteTitulo.cursiva, fontSize: 36, lineHeight: 36, paddingRight: 2 },
+  riel: { width: 2, flex: 1, marginTop: 8, marginLeft: 2, marginBottom: 4, borderRadius: 1 },
+  fila: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 9, paddingLeft: 6, paddingRight: 16, borderRadius: 6 },
+  hora: { fontFamily: FuenteTitulo.cursiva, fontSize: 17, lineHeight: 19, paddingRight: 1 },
+  miniatura: { width: 56, height: 56, borderRadius: 6, overflow: 'hidden' },
+  linea: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  genero: { height: 17, paddingHorizontal: 5, borderRadius: 3, justifyContent: 'center' },
+  verMas: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 6, paddingVertical: 10 },
   vacio: { marginTop: 48, alignItems: 'center', gap: 12, paddingHorizontal: 32 },
-  cuenta: { marginBottom: 8, paddingHorizontal: 4, fontWeight: '600', textTransform: 'uppercase' },
+  cuenta: { marginBottom: 8, paddingHorizontal: 4, fontWeight: '600' },
 });

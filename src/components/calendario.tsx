@@ -121,7 +121,7 @@ export function HojaCalendario({ visible, valor, diasConEventos, onElegir, onCer
                       accessibilityState={{ selected: elegido, disabled: !activo }}
                       style={({ pressed }) => [
                         styles.dia,
-                        elegido && { backgroundColor: t.text },
+                        elegido && { backgroundColor: t.accent },
                         !elegido && esHoy && { borderWidth: 1.5, borderColor: t.text },
                         pressed && !elegido && { backgroundColor: t.backgroundSelected },
                       ]}>
@@ -129,12 +129,12 @@ export function HojaCalendario({ visible, valor, diasConEventos, onElegir, onCer
                         style={{
                           fontSize: 17,
                           fontWeight: elegido || esHoy ? '700' : activo ? '500' : '400',
-                          color: elegido ? t.background : t.text,
+                          color: elegido ? t.onAccent : t.text,
                           opacity: activo || elegido ? 1 : 0.28,
                         }}>
                         {Number(clave.slice(8))}
                       </Texto>
-                      <View style={[styles.punto, { backgroundColor: elegido ? t.background : t.text, opacity: activo ? 1 : 0 }]} />
+                      <View style={[styles.punto, { backgroundColor: elegido ? t.onAccent : t.accent, opacity: activo ? 1 : 0 }]} />
                     </Pressable>
                   </View>
                 );

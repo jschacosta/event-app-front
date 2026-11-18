@@ -1,16 +1,16 @@
 // Emojis del chat: la fila de reacciones rápidas (como WhatsApp) y un panel para elegir más.
 // El panel sirve sobre todo en la web y para reaccionar con cualquier emoji; en el celular
 // el teclado también trae los suyos.
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Icono } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
 
 export const REACCIONES_RAPIDAS = ['❤️', '😂', '🔥', '👍', '😮', '🙏'];
 
-const GRUPOS: { icono: string; emojis: string[] }[] = [
+export const GRUPOS: { icono: string; emojis: string[] }[] = [
   { icono: '😀', emojis: ['😀', '😂', '🤣', '😊', '😍', '🥰', '😘', '😎', '🤩', '🥳', '😜', '🤪', '😏', '😅', '😇', '🙃', '😉', '🤔', '🤗', '🫶', '😴', '🥹', '😭', '😱', '😮', '😳', '🙄', '😬', '🤯', '🥵', '🤤', '😈'] },
   { icono: '👍', emojis: ['👍', '👎', '👏', '🙌', '🙏', '🤝', '👋', '✌️', '🤙', '🤘', '👌', '💪', '🫡', '👀', '💃', '🕺', '🙋', '🤷', '🤦', '👯'] },
   { icono: '🎉', emojis: ['🎉', '🥂', '🍻', '🍺', '🍹', '🍸', '🍷', '🥃', '🍾', '🎶', '🎵', '🎧', '🎤', '🥁', '🎸', '🪩', '🔥', '✨', '⚡', '💥'] },
@@ -18,13 +18,33 @@ const GRUPOS: { icono: string; emojis: string[] }[] = [
   { icono: '❤️', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💖', '💯', '✅', '❌', '⭐', '🌈', '🏳️‍🌈', '🇧🇷', '🇨🇱', '🇦🇷', '🇨🇴', '🇺🇸', '🇪🇸', '🇩🇪', '🇫🇷', '🇬🇧'] },
 ];
 
+// "Pop" al aparecer: crece desde cero, se pasa un poco y vuelve (como los emojis de Telegram).
+// Con valores animados propios para que funcione igual en el celular y en la web.
+export function Pop({ retraso = 0, children }: { retraso?: number; children: ReactNode }) {
+  const p = useSharedValue(0);
+  useEffect(() => {
+    p.set(withDelay(retraso, withSpring(1, { damping: 9, stiffness: 320, mass: 0.6 })));
+  }, [p, retraso]);
+  const estilo = useAnimatedStyle(() => ({ opacity: Math.min(1, p.value * 2), transform: [{ scale: p.value }] }));
+  return <Animated.View style={estilo}>{children}</Animated.View>;
+}
+
+// Salto corto cuando cambia un número o se vuelve a tocar (por ejemplo, la cuenta de una reacción).
+export function useSalto(clave: unknown) {
+  const s = useSharedValue(1);
+  useEffect(() => {
+    s.set(withSequence(withTiming(1.3, { duration: 110 }), withSpring(1, { damping: 8, stiffness: 300 })));
+  }, [clave, s]);
+  return useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+}
+
 // Fila de reacciones rápidas + "+" para abrir el panel completo.
 export function FilaReacciones({ elegida, onElegir, onMas }: { elegida?: string; onElegir: (e: string) => void; onMas: () => void }) {
   const t = useTheme();
   return (
     <View style={[styles.fila, { backgroundColor: t.card }]}>
       {REACCIONES_RAPIDAS.map((e, i) => (
-        <Animated.View key={e} entering={ZoomIn.delay(30 * i).springify().damping(14)}>
+        <Pop key={e} retraso={60 + 35 * i}>
           <Pressable
             onPress={() => onElegir(e)}
             accessibilityRole="button"
@@ -32,11 +52,13 @@ export function FilaReacciones({ elegida, onElegir, onMas }: { elegida?: string;
             style={({ pressed }) => [styles.rapida, elegida === e && { backgroundColor: t.backgroundSelected }, pressed && { transform: [{ scale: 1.25 }] }]}>
             <Text style={styles.emojiGrande}>{e}</Text>
           </Pressable>
-        </Animated.View>
+        </Pop>
       ))}
-      <Pressable onPress={onMas} accessibilityRole="button" style={({ pressed }) => [styles.rapida, styles.mas, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.6 }]}>
-        <Icono nombre="plus" tamano={18} color={t.text} peso="semibold" />
-      </Pressable>
+      <Pop retraso={60 + 35 * REACCIONES_RAPIDAS.length}>
+        <Pressable onPress={onMas} accessibilityRole="button" style={({ pressed }) => [styles.rapida, styles.mas, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.6 }]}>
+          <Icono nombre="plus" tamano={18} color={t.text} peso="semibold" />
+        </Pressable>
+      </Pop>
     </View>
   );
 }

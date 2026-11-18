@@ -97,8 +97,8 @@ export default function NuevoCanalScreen() {
         <AvisoVerificarEdad titulo={tr('verificacion.titulo')} texto={tr('verificacion.paraCrear')} />
       ) : creado ? (
         <Animated.View entering={FadeIn.duration(300)} style={styles.listo}>
-          <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.iconoListo, { backgroundColor: t.text }]}>
-            <Icono nombre="checkmark" tamano={34} color={t.background} peso="bold" />
+          <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.iconoListo, { backgroundColor: t.accent }]}>
+            <Icono nombre="checkmark" tamano={34} color={t.onAccent} peso="bold" />
           </Animated.View>
           <Texto v="titulo" style={{ textAlign: 'center' }}>{creado.nombre}</Texto>
           <Texto secundario style={{ textAlign: 'center' }}>

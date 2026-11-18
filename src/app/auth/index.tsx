@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonAuth, BotonVolver, Enlace, MensajeError, TextoAuth } from '@/components/formulario';
 import { FOTOS_INTRO } from '@/components/intro/escenas';
+import { Logo } from '@/components/logo';
 import { fuenteWeb } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
 import { esCancelacion } from '@/lib/login';
@@ -56,7 +57,7 @@ export default function MetodoScreen() {
 
       <View style={[s.contenido, { paddingTop: insets.top + 70, paddingBottom: insets.bottom + 20 }]}>
         <Animated.View entering={FadeIn.duration(700)} style={{ gap: 6 }}>
-          <TextoAuth style={s.logo}>bora</TextoAuth>
+          <Logo alto={58} variante="sobreFoto" />
           <TextoAuth style={s.lema}>{t('metodo.lema')}</TextoAuth>
         </Animated.View>
 
@@ -99,7 +100,6 @@ export default function MetodoScreen() {
 const s = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: '#000', overflow: 'hidden' },
   contenido: { flex: 1, paddingHorizontal: 24, width: '100%', maxWidth: 480, alignSelf: 'center' },
-  logo: { fontSize: 64, lineHeight: 68, fontWeight: '800', letterSpacing: -3 },
   lema: { fontSize: 22, lineHeight: 28, fontWeight: '600', letterSpacing: -0.4, color: 'rgba(255,255,255,0.88)', maxWidth: 280 },
   terminos: { fontSize: 12, lineHeight: 16, color: 'rgba(255,255,255,0.45)', textAlign: 'center', paddingHorizontal: 12 },
   dev: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.15)', borderStyle: 'dashed', paddingHorizontal: 14, height: 40 },

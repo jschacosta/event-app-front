@@ -22,8 +22,8 @@ function Paso({ numero, texto }: { numero: number; texto: string }) {
   const t = useTheme();
   return (
     <View style={styles.paso}>
-      <View style={[styles.numero, { backgroundColor: t.text }]}>
-        <Texto v="pie" style={{ color: t.background, fontWeight: '700' }}>{numero}</Texto>
+      <View style={[styles.numero, { backgroundColor: t.accent }]}>
+        <Texto v="pie" style={{ color: t.onAccent, fontWeight: '700' }}>{numero}</Texto>
       </View>
       <Texto style={{ flex: 1 }}>{texto}</Texto>
     </View>
@@ -109,11 +109,11 @@ export default function VerificacionScreen() {
       <ScrollView contentContainerStyle={[styles.contenido, { paddingBottom: insets.bottom + 32 }]}>
         {resultado ? (
           <Animated.View entering={FadeIn.duration(250)} style={styles.centro}>
-            <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.icono, { backgroundColor: estado === 'rechazada' ? t.backgroundElement : t.text }]}>
+            <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.icono, { backgroundColor: estado === 'rechazada' ? t.backgroundElement : t.accent }]}>
               <Icono
                 nombre={estado === 'aprobada' ? 'checkmark.seal.fill' : estado === 'rechazada' ? 'exclamationmark.triangle' : 'hourglass'}
                 tamano={34}
-                color={estado === 'rechazada' ? t.text : t.background}
+                color={estado === 'rechazada' ? t.text : t.onAccent}
               />
             </Animated.View>
             <Texto v="titulo" style={{ textAlign: 'center' }}>{tr(`verificacion.${estado}.titulo`)}</Texto>
@@ -132,8 +132,8 @@ export default function VerificacionScreen() {
           </Animated.View>
         ) : (
           <>
-            <Animated.View entering={FadeInDown.duration(350)} style={[styles.icono, { backgroundColor: t.text, alignSelf: 'center' }]}>
-              <Icono nombre="checkmark.seal.fill" tamano={34} color={t.background} />
+            <Animated.View entering={FadeInDown.duration(350)} style={[styles.icono, { backgroundColor: t.accent, alignSelf: 'center' }]}>
+              <Icono nombre="checkmark.seal.fill" tamano={34} color={t.onAccent} />
             </Animated.View>
             <View style={{ gap: 8 }}>
               <Texto v="titulo" style={{ textAlign: 'center' }}>{tr('verificacion.titulo')}</Texto>

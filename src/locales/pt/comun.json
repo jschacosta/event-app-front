@@ -20,7 +20,15 @@
     "manana": "Amanhã",
     "todas": "Todas",
     "elegir": "Data",
-    "ayer": "Ontem"
+    "ayer": "Ontem",
+    "todo": "Tudo",
+    "hace": {
+      "ahora": "agora",
+      "min": "há {{n}} min",
+      "h": "há {{n}} h",
+      "d": "há {{n}} d",
+      "mes": "há {{n}} mês"
+    }
   },
   "tabs": {
     "agenda": "Agenda",
@@ -67,7 +75,20 @@
     "verTodosCuenta": "Ver os {{count}}",
     "categorias": "Categorias",
     "todasCategorias": "Todas",
-    "cambiarCategoria": "Mudar categoria"
+    "cambiarCategoria": "Mudar categoria",
+    "enVivo": "Ao vivo",
+    "hasta": "até {{hora}}",
+    "eventos_one": "{{count}} evento",
+    "eventos_other": "{{count}} eventos",
+    "abrirBuscador": "Buscar eventos",
+    "cerrarBuscador": "Fechar busca",
+    "canalesAbiertos": "Canais abertos agora",
+    "ahora": "Agora",
+    "enVivoN_one": "{{count}} ao vivo",
+    "enVivoN_other": "{{count}} ao vivo",
+    "abreCanal": "Canal abre {{hora}}",
+    "canalAbierto": "Canal aberto",
+    "hastaCorto": "até {{hora}}"
   },
   "experiencias": {
     "titulo": "Experiências",
@@ -108,7 +129,28 @@
     "comprarEntradas": "Comprar ingressos",
     "entrarChat": "Entrar no canal",
     "chatAbre": "O canal abre {{dia}}",
-    "otrasFechas": "Outras datas"
+    "otrasFechas": "Outras datas",
+    "vas": "Você vai?",
+    "voySoloGrupo": "Vou sozinho/a e quero entrar num grupo",
+    "mapa": "Mapa",
+    "verQuienVa": "Ver quem vai",
+    "empiezaEn": "Começa em {{tiempo}}",
+    "enCurso": "Acontecendo agora",
+    "yaTermino": "Já terminou",
+    "marcarAqui": "Marcar que já estou aqui",
+    "quitarAqui": "Tirar que estou aqui",
+    "aquiAhora_one": "{{count}} já está aqui",
+    "aquiAhora_other": "{{count}} já estão aqui",
+    "nTalvez": "{{count}} talvez",
+    "nPrevia_one": "{{count}} no esquenta",
+    "nPrevia_other": "{{count}} no esquenta",
+    "info": "Info",
+    "entradasNo": "Sem ingresso",
+    "verMapa": "Ver no mapa",
+    "termina": "Termina às {{hora}}",
+    "vanCon": "{{nombres}} e mais {{count}}",
+    "seRepite_one": "Se repete",
+    "seRepite_other": "Se repete: {{count}} datas"
   },
   "chat": {
     "titulo": "Canal",
@@ -159,7 +201,8 @@
     "editando": "Editando mensagem",
     "cancelarEdicion": "Cancelar edição",
     "soloAvisos": "Canal de avisos: só quem o criou pode escrever aqui.",
-    "vacioAvisos": "Ainda não há avisos."
+    "vacioAvisos": "Ainda não há avisos.",
+    "irAlFinal": "Ir para a última mensagem"
   },
   "editarPerfil": {
     "errorNombre": "Digite seu nome e sobrenome.",
@@ -279,7 +322,14 @@
     "unirmeAyuda": "Participe para tê-lo em Meus canais e ver as mensagens novas, mesmo sem escrever.",
     "avisos": "Avisos",
     "soloAvisos": "Canal de avisos",
-    "soloAvisosPie": "Só você escreve; os outros leem, reagem e votam. Útil para horários, ponto de encontro ou mudanças."
+    "soloAvisosPie": "Só você escreve; os outros leem, reagem e votam. Útil para horários, ponto de encontro ou mudanças.",
+    "editar": "Editar canal",
+    "nombre": "Nome",
+    "descripcionAyuda": "Conte do que se trata, o horário ou o ponto de encontro",
+    "guardado": "Alterações salvas",
+    "todos": "Todos",
+    "creadosPorMi": "Criados por mim",
+    "misCanalesCreados": "Canais que criei"
   },
   "normas": {
     "titulo": "Antes de entrar",
@@ -457,5 +507,244 @@
     "subrayado": "Sublinhado",
     "tachado": "Tachado",
     "spoiler": "Spoiler (oculto até tocar)"
+  },
+  "expresion": {
+    "emojis": "Emoji",
+    "stickers": "Figurinhas",
+    "recientes": "Usadas recentemente",
+    "sinRecientes": "As figurinhas que você enviar aparecem aqui.",
+    "enviarSticker": "Enviar figurinha {{emoji}}",
+    "borrar": "Apagar",
+    "sticker": "Figurinha",
+    "adjuntar": "Anexar",
+    "teclado": "Teclado",
+    "gifs": "GIFs",
+    "gif": "GIF",
+    "buscarGif": "Buscar GIF",
+    "tendencias": "Em alta",
+    "categoriasGif": [
+      "kkk",
+      "festa",
+      "dançar",
+      "amor",
+      "uau",
+      "obrigado",
+      "cerveja",
+      "samba",
+      "praia",
+      "até logo"
+    ],
+    "gifsError": "Não foi possível carregar os GIFs.",
+    "conKlipy": "GIFs da KLIPY",
+    "paquetes": {
+      "recientes": "Usadas recentemente",
+      "fiesta": "Festa",
+      "reacciones": "Reações",
+      "amor": "Amor",
+      "caras": "Carinhas",
+      "comida": "Comida e bebida",
+      "animales": "Animais",
+      "rio": "Rio"
+    },
+    "gifsNoActivos": "Os GIFs ainda não estão ativados."
+  },
+  "topicos": {
+    "general": "Geral",
+    "sinMensajes": "Ainda não há mensagens",
+    "nuevo": "Novo tópico",
+    "editar": "Editar tópico",
+    "nombreEjemplo": "Nome do tópico (ex.: Transporte)",
+    "color": "Cor",
+    "icono": "Ícone",
+    "sinIcono": "Sem ícone: inicial colorida",
+    "crear": "Criar tópico",
+    "guardar": "Salvar",
+    "ayuda": "Divida a conversa em tópicos: transporte, esquenta, fotos…",
+    "creado": "Tópico criado",
+    "borrado": "Este tópico foi apagado",
+    "cerrar": "Fechar tópico",
+    "reabrir": "Reabrir tópico",
+    "cerrado": "Tópico fechado",
+    "reabierto": "Tópico reaberto",
+    "borrar": "Apagar tópico",
+    "borrarPregunta": "Apagar “{{nombre}}”?",
+    "borrarAyuda": "Todas as mensagens dele também serão apagadas.",
+    "cerradoCorto": "Fechado",
+    "cerradoAviso": "Este tópico está fechado: só quem modera pode escrever.",
+    "cuenta_one": "{{count}} tópico",
+    "cuenta_other": "{{count}} tópicos",
+    "verTodos": "Ver todos os tópicos",
+    "vacio": "Ainda não há mensagens neste tópico. Comece você!",
+    "etiqueta": "Tópico",
+    "misTopicos": "Tópicos que criei"
+  },
+  "avisos": {
+    "unido": "{{nombre}} entrou",
+    "unidoYo": "Você entrou",
+    "topico": "{{nombre}} criou o tópico {{topico}}",
+    "topicoYo": "Você criou o tópico {{topico}}",
+    "canal": "{{nombre}} criou o canal {{canal}}",
+    "canalYo": "Você criou o canal {{canal}}"
+  },
+  "asistentes": {
+    "titulo": "Quem vai?",
+    "quienVa": "Quem vai?",
+    "voy": "Vou",
+    "talvez": "Talvez",
+    "previa": "Esquenta",
+    "solo": "Vai sem grupo",
+    "vacio_voy": "Ninguém marcou que vai ainda.",
+    "vacio_talvez": "Ninguém marcou “talvez” ainda.",
+    "vacio_previa": "Ninguém entrou no esquenta ainda."
+  },
+  "opiniones": {
+    "loQueDicen": "O que dizem",
+    "personas_one": "1 pessoa, {{fueron}} foi",
+    "personas_other": "{{count}} pessoas, {{fueron}} foram",
+    "pocasRespuestas": "Ainda não há respostas suficientes. Cada pergunta aparece com {{n}} ou mais.",
+    "verTodas": "Ver as {{count}}",
+    "verMenos": "Ver menos",
+    "fuiResponder": "Fui, quero responder",
+    "comoEstuvo": "Como foi?",
+    "ayudaResponder": "Responda só o que souber. Ajuda quem vai pela primeira vez.",
+    "guardar_one": "Salvar 1 resposta",
+    "guardar_other": "Salvar {{count}} respostas",
+    "preguntas": {
+      "volverias": "Você voltaria?",
+      "seguro": "É seguro chegar e sair?",
+      "musica": "Música boa?",
+      "lleno": "Fica muito cheio?",
+      "fila": "Muita fila para entrar?",
+      "tragos": "Bebidas com preço bom?",
+      "aire": "Tem ar-condicionado?",
+      "locales": "Mais locais que turistas?",
+      "banos": "Banheiros decentes?"
+    },
+    "respuesta": {
+      "si": "Sim",
+      "mas": "Mais ou menos",
+      "no": "Não"
+    },
+    "corta": {
+      "si": "Sim",
+      "mas": "Regular",
+      "no": "Não"
+    },
+    "votarArriba": "Votar a favor",
+    "votarAbajo": "Votar contra",
+    "anonimo": "Alguém",
+    "fue": "foi",
+    "hilos": "Tópicos",
+    "hilo": "Tópico",
+    "orden": {
+      "mejores": "Melhores",
+      "nuevas": "Novos"
+    },
+    "escribir": "Escrever",
+    "sinHilos": "Ninguém abriu um tópico ainda",
+    "sinHilosAyuda": "Pergunte o que quiser saber antes de ir, ou conte como foi.",
+    "respuestas_one": "1 resposta",
+    "respuestas_other": "{{count}} respostas",
+    "sinRespuestas": "Sem respostas ainda. Seja a primeira pessoa a responder.",
+    "respondiendoA": "Respondendo a {{nombre}}",
+    "escribeRespuesta": "Escreva uma resposta",
+    "publicar": "Publicar",
+    "nuevoHilo": "Novo tópico",
+    "tituloEjemplo": "O que você quer saber ou contar?",
+    "textoEjemplo": "Detalhes (opcional)",
+    "reglas": "Todo mundo que olhar esta festa vê, em todas as datas. Sem telefones, links nem propaganda.",
+    "respondieron_one": "{{count}} pessoa respondeu",
+    "respondieron_other": "{{count}} pessoas responderam",
+    "verDetalle": "Toque para ver o detalhe",
+    "nivel": {
+      "muy": "Muito recomendada",
+      "recomendada": "Recomendada",
+      "variada": "Variada",
+      "poco": "Pouco recomendada"
+    },
+    "volveria_one": "{{pct}}% voltaria ({{count}} resposta)",
+    "volveria_other": "{{pct}}% voltaria ({{count}} respostas)",
+    "ultimasFechas_one": "Última data:",
+    "ultimasFechas_other": "Últimas {{count}} datas:",
+    "porFecha": "Por data",
+    "enFecha_one": "{{fecha}}: Sim {{pct}}% (1 resposta)",
+    "enFecha_other": "{{fecha}}: Sim {{pct}}% ({{count}} respostas)",
+    "sinDatosFecha": "{{fecha}}: sem respostas",
+    "cambio": "Ultimamente: Sim {{ahora}}% (antes {{antes}}%)",
+    "queFecha": "Em que data você foi?",
+    "responderOtra": "Responder outra data",
+    "aviso": {
+      "fuiste": "Você foi a {{titulo}} {{cuando}}. Suas respostas ajudam quem vai da próxima vez.",
+      "ibas": "Você ia a {{titulo}} {{cuando}}. Se foi, conte como foi.",
+      "hoy": "hoje",
+      "anoche": "ontem à noite",
+      "elDia": "em {{fecha}}",
+      "responder": "Responder",
+      "noPreguntar": "Não perguntar"
+    },
+    "push": {
+      "titulo": "Como foi {{titulo}}?",
+      "cuerpo": "Responda umas perguntas rápidas para quem vai da próxima vez."
+    }
+  },
+  "notificaciones": {
+    "canal": "Avisos"
+  },
+  "enInternet": {
+    "titulo": "Avaliações do lugar",
+    "enGoogle": "{{lugar}} no Google Maps",
+    "resenas_one": "{{n}} avaliação",
+    "resenas_other": "{{n}} avaliações",
+    "notaAccesible_one": "{{nota}} de 5 estrelas, {{count}} avaliação no Google",
+    "notaAccesible_other": "{{nota}} de 5 estrelas, {{count}} avaliações no Google",
+    "leerMas": "Ler mais",
+    "gemini": "Resumo do Gemini",
+    "reportar": "Denunciar",
+    "verEnGoogle": "Ver avaliações no Google"
+  },
+  "cuentaEliminada": "Conta excluída",
+  "ajustes": {
+    "notificaciones": {
+      "titulo": "Notificações",
+      "opinion": "Como foi? no dia seguinte",
+      "pie": "Depois de uma festa que se repete, perguntamos como foi para ajudar outras pessoas a decidir.",
+      "bloqueadas": "As notificações do Bora estão desativadas no seu celular. Ative nos ajustes do sistema para recebê-las.",
+      "abrirAjustes": "Abrir ajustes do celular"
+    },
+    "privacidad": {
+      "titulo": "Privacidade",
+      "mostrarEdad": "Mostrar minha idade",
+      "soloInicial": "Mostrar só a inicial do sobrenome"
+    },
+    "legal": {
+      "titulo": "Ajuda e jurídico",
+      "normas": "Regras da comunidade",
+      "privacidad": "Política de privacidade",
+      "terminos": "Termos de uso",
+      "contacto": "Falar com o suporte",
+      "pie": "Dúvidas, problemas ou pedidos sobre seus dados: {{correo}}"
+    },
+    "cuenta": {
+      "eliminar": "Excluir minha conta"
+    }
+  },
+  "eliminarCuenta": {
+    "titulo": "Excluir sua conta do Bora",
+    "intro": "Isso exclui sua conta para sempre. Não dá para desfazer.",
+    "introEmail": "Isso exclui para sempre a conta {{email}}. Não dá para desfazer.",
+    "seBorraTitulo": "O que é excluído",
+    "seBorra": [
+      "Seu perfil: nome, idade, país, fotos, interesses, idiomas e Instagram.",
+      "Os eventos em que você marcou vou, talvez ou esquenta.",
+      "Seu acesso aos canais e as notificações deste celular.",
+      "A verificação de idade."
+    ],
+    "quedaTitulo": "O que fica",
+    "queda": [
+      "O que você escreveu em canais e tópicos continua visível para os outros, assinado como “Conta excluída”. As mensagens dos canais são apagadas sozinhas quando cada evento termina.",
+      "Suas respostas a “Como foi?” continuam contando nas porcentagens, sem nada que as ligue a você."
+    ],
+    "entiendo": "Entendo que minha conta será excluída para sempre.",
+    "boton": "Excluir minha conta"
   }
 }

@@ -40,3 +40,6 @@ export const nombresGenero = (id: string) => {
 };
 
 export const coloresGenero = (id: string) => DATOS.find((d) => d.id === id)?.colores ?? ['#8E8E93', '#3A3A3C'];
+
+// Color sólido para etiquetas chicas con texto blanco: el tono oscuro del degradado (se lee mejor).
+export const colorEtiquetaGenero = (id: string) => (id === 'lgbt' ? '#B0124B' : coloresGenero(id)[1] ?? coloresGenero(id)[0]);

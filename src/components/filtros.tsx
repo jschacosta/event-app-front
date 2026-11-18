@@ -15,10 +15,24 @@ import { fechaDeClave, proximosDias } from '@/lib/fechas';
 import { coloresGenero, iconoGenero, nombreGenero } from '@/lib/generos';
 
 // ---------- Ciudad: botón que abre el selector ----------
-export function BotonCiudad() {
+// `grande`: la ciudad es el título de la pantalla ("Rio ⌄"), como el selector de lugar de las apps de salidas.
+export function BotonCiudad({ grande }: { grande?: boolean }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   const ciudad = useCiudad();
+  if (grande) {
+    return (
+      <Pressable
+        onPress={() => router.push('/ciudad')}
+        accessibilityRole="button"
+        accessibilityLabel={tr('ciudad.cambiar')}
+        hitSlop={8}
+        style={({ pressed }) => [styles.ciudadGrande, pressed && { opacity: 0.6 }]}>
+        <Texto v="tituloGrande" numberOfLines={1} style={{ flexShrink: 1 }}>{ciudad.nombre}</Texto>
+        <View style={{ marginTop: 6 }}><Icono nombre="chevron.down" tamano={18} color={t.textSecondary} peso="bold" /></View>
+      </Pressable>
+    );
+  }
   return (
     <Pressable
       onPress={() => router.push('/ciudad')}
@@ -34,7 +48,10 @@ export function BotonCiudad() {
 }
 
 // ---------- Buscador ----------
-export function BarraBusqueda({ valor, onCambio, placeholder }: { valor: string; onCambio: (v: string) => void; placeholder: string }) {
+export function BarraBusqueda({ valor, onCambio, placeholder, autoFocus, onFocus, onBlur }: {
+  valor: string; onCambio: (v: string) => void; placeholder: string;
+  autoFocus?: boolean; onFocus?: () => void; onBlur?: () => void;
+}) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   return (
@@ -47,6 +64,9 @@ export function BarraBusqueda({ valor, onCambio, placeholder }: { valor: string;
         placeholderTextColor={t.textSecondary}
         returnKeyType="search"
         autoCorrect={false}
+        autoFocus={autoFocus}
+        onFocus={onFocus}
+        onBlur={onBlur}
         style={[styles.busquedaTexto, { color: t.text, fontFamily: fuenteWeb }, Platform.OS === 'web' && ({ outlineStyle: 'none' } as object)]}
       />
       {valor ? (
@@ -60,36 +80,30 @@ export function BarraBusqueda({ valor, onCambio, placeholder }: { valor: string;
   );
 }
 
-// ---------- Fechas: tira de días, como el calendario semanal de iOS ----------
-function Dia({ arriba, numero, abajo, elegido, conEventos, onPress, icono = 'calendar' }: {
-  arriba: string; numero: string | null; abajo?: string; elegido: boolean; conEventos: boolean; onPress: () => void;
-  icono?: 'calendar' | 'square.grid.2x2';
-}) {
+// ---------- Fechas: píldoras "Todo · Hoy · Mañana · Vie 20…" ----------
+// Una sola fila de texto (antes eran 14 cuadros con número grande que competían con los géneros).
+// Los días sin eventos no se muestran; el ícono de calendario permite elegir cualquier fecha.
+function Pildora({ texto, elegida, onPress, icono }: { texto?: string; elegida: boolean; onPress: () => void; icono?: 'calendar' }) {
   const t = useTheme();
-  const escala = useSharedValue(1);
-  useEffect(() => {
-    escala.set(withSpring(elegido ? 1 : 0.94, { damping: 16, stiffness: 300 }));
-  }, [elegido, escala]);
-  const animado = useAnimatedStyle(() => ({ transform: [{ scale: escala.value }] }));
-  const color = elegido ? t.background : t.text;
   return (
-    <Pressable onPress={onPress} disabled={!conEventos && !elegido} accessibilityRole="button" accessibilityState={{ selected: elegido, disabled: !conEventos }}>
-      <Animated.View style={[styles.dia, { backgroundColor: elegido ? t.text : t.backgroundElement, opacity: conEventos || elegido ? 1 : 0.4 }, animado]}>
-        <Texto v="mini" style={{ color: elegido ? t.background : t.textSecondary, fontWeight: '600', textTransform: 'uppercase' }}>{arriba}</Texto>
-        {numero === null ? (
-          <Icono nombre={icono} tamano={20} color={color} />
-        ) : (
-          <Texto v="seccion" style={{ color, lineHeight: 26 }}>{numero}</Texto>
-        )}
-        <Texto v="mini" style={{ color: elegido ? t.background : t.textSecondary, opacity: abajo ? 1 : 0 }}>{abajo ?? '·'}</Texto>
-      </Animated.View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: elegida }}
+      accessibilityLabel={texto}
+      style={({ pressed }) => [
+        styles.pildora,
+        { backgroundColor: elegida ? t.accent : t.backgroundElement },
+        icono && !texto && styles.pildoraIcono,
+        pressed && { opacity: 0.7 },
+      ]}>
+      {icono ? <Icono nombre={icono} tamano={15} color={elegida ? t.onAccent : t.text} /> : null}
+      {texto ? <Texto v="detalle" style={{ fontWeight: '600', fontSize: 14, color: elegida ? t.onAccent : t.text }}>{texto}</Texto> : null}
     </Pressable>
   );
 }
 
-// `valor`: null = todas las fechas, o la clave del día ("2026-11-03"). Los días sin eventos se ven apagados.
-// Con `onCalendario`, la segunda casilla abre un calendario para elegir cualquier fecha; si la fecha
-// elegida no está en la tira, esa casilla la muestra.
+// `valor`: null = todas las fechas, o la clave del día ("2026-11-03").
 export function TiraFechas({ valor, onCambio, diasConEventos, dias = 14, onCalendario }: {
   valor: string | null; onCambio: (clave: string | null) => void; diasConEventos: Set<string>; dias?: number;
   onCalendario?: () => void;
@@ -100,30 +114,22 @@ export function TiraFechas({ valor, onCambio, diasConEventos, dias = 14, onCalen
   const lista = useMemo(() => proximosDias(dias), [dias, i18n.language, ciudad.zona]);
   const fueraDeLaTira = valor !== null && !lista.some((d) => d.clave === valor);
   const elegidaAparte = fueraDeLaTira ? fechaDeClave(valor) : null;
+  const nombre = (k: number, d: { semana: string; numero: number }) =>
+    k === 0 ? tr('fechas.hoy') : k === 1 ? tr('fechas.manana') : `${d.semana.charAt(0).toUpperCase()}${d.semana.slice(1).toLowerCase()} ${d.numero}`;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filaDias}>
-      <Dia arriba={tr('fechas.todas')} numero={null} icono="square.grid.2x2" elegido={valor === null} conEventos onPress={() => onCambio(null)} />
+      <Pildora texto={tr('fechas.todo')} elegida={valor === null} onPress={() => onCambio(null)} />
+      {lista.map((d, k) => (diasConEventos.has(d.clave) || valor === d.clave ? (
+        <Pildora key={d.clave} texto={nombre(k, d)} elegida={valor === d.clave} onPress={() => onCambio(valor === d.clave ? null : d.clave)} />
+      ) : null))}
       {onCalendario ? (
-        <Dia
-          arriba={elegidaAparte ? elegidaAparte.semana : tr('fechas.elegir')}
-          numero={elegidaAparte ? String(elegidaAparte.numero) : null}
-          abajo={elegidaAparte?.mes}
-          elegido={fueraDeLaTira}
-          conEventos
+        <Pildora
+          icono="calendar"
+          texto={elegidaAparte ? `${elegidaAparte.numero} ${elegidaAparte.mes}` : undefined}
+          elegida={fueraDeLaTira}
           onPress={onCalendario}
         />
       ) : null}
-      {lista.map((d, k) => (
-        <Dia
-          key={d.clave}
-          arriba={k === 0 ? tr('fechas.hoy') : d.semana}
-          numero={String(d.numero)}
-          abajo={k === 0 || d.numero === 1 ? d.mes : undefined}
-          elegido={valor === d.clave}
-          conEventos={diasConEventos.has(d.clave)}
-          onPress={() => onCambio(valor === d.clave ? null : d.clave)}
-        />
-      ))}
     </ScrollView>
   );
 }
@@ -155,7 +161,7 @@ function TarjetaGenero({ id, elegido, hayOtroElegido, onPress }: { id: string; e
         <LinearGradient colors={colores as [string, string, ...string[]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         <Texto v="detalle" style={styles.tarjetaTexto} numberOfLines={1}>{nombreGenero(id)}</Texto>
         <View style={styles.tarjetaIcono}>
-          <MaterialCommunityIcons name={iconoGenero(id)} size={40} color="rgba(255,255,255,0.92)" />
+          <MaterialCommunityIcons name={iconoGenero(id)} size={36} color="rgba(255,255,255,0.9)" />
         </View>
         {elegido && (
           <Animated.View entering={ZoomIn.springify().damping(14)} exiting={ZoomOut.duration(120)} style={styles.tarjetaQuitar}>
@@ -311,20 +317,22 @@ function ContenidoGeneros({ generos, cuentas, total, elegido, onElegir, onCerrar
 const styles = StyleSheet.create({
   vacio: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   filaDias: { paddingHorizontal: 20, gap: 8, paddingVertical: 2 },
-  dia: { width: 54, height: 72, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 1 },
+  pildora: { height: 30, paddingHorizontal: 11, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pildoraIcono: { width: 32, paddingHorizontal: 0, justifyContent: 'center' },
+  ciudadGrande: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
   ciudad: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 28, paddingHorizontal: 11, borderRadius: 14, alignSelf: 'flex-start' },
-  busqueda: { height: 38, borderRadius: 11, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
-  busquedaTexto: { flex: 1, fontSize: 17, height: 38, padding: 0 },
-  fila: { paddingHorizontal: 20, paddingVertical: 4, gap: 10 },
-  tarjeta: { width: 116, height: 68, borderRadius: 14, overflow: 'hidden', padding: 10 },
-  tarjetaTexto: { color: '#FFFFFF', fontWeight: '700' },
+  busqueda: { height: 36, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
+  busquedaTexto: { flex: 1, fontSize: 16, height: 36, padding: 0 },
+  fila: { paddingHorizontal: 20, paddingVertical: 2, gap: 8 },
+  tarjeta: { width: 108, height: 60, borderRadius: 6, overflow: 'hidden', padding: 9 },
+  tarjetaTexto: { color: '#FFFFFF', fontFamily: 'BarlowCondensed_800ExtraBold', fontSize: 19, lineHeight: 21 },
   tarjetaIcono: { position: 'absolute', right: -6, bottom: -8, transform: [{ rotate: '-18deg' }] },
   tarjetaQuitar: {
     position: 'absolute', right: 6, top: 6, width: 18, height: 18, borderRadius: 9,
     backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center',
   },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, height: 32, paddingHorizontal: 12, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 6, height: 30, paddingHorizontal: 10, borderRadius: 4,
     overflow: 'hidden', maxWidth: 190,
   },
   chipChico: { height: 28, paddingHorizontal: 9, gap: 4, borderRadius: 14 },
@@ -339,7 +347,7 @@ const styles = StyleSheet.create({
     width: '100%', maxWidth: 720, alignSelf: 'center',
   },
   celdaGenero: { width: '50%', padding: 6 },
-  tarjetaGrande: { height: 110, borderRadius: 18, overflow: 'hidden', padding: 14, gap: 2 },
+  tarjetaGrande: { height: 100, borderRadius: 8, overflow: 'hidden', padding: 14, gap: 2 },
   tarjetaGrandeIcono: { position: 'absolute', right: -8, bottom: -12, transform: [{ rotate: '-18deg' }] },
   marca: { position: 'absolute', right: 10, top: 10, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
 });

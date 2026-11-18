@@ -11,7 +11,6 @@ import { BotonArriba, BotonVolver, EncabezadoCompacto, useDesplazamiento } from 
 import { ListaEventos } from '@/components/fila-evento';
 import { BarraBusqueda, FilaGeneros, IconoVacio } from '@/components/filtros';
 import { BotonTexto, Texto } from '@/components/ui';
-import { MaxContentWidth } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
@@ -118,7 +117,7 @@ export default function DiaScreen() {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
-  scroll: { width: '100%', maxWidth: MaxContentWidth },
+  scroll: { width: '100%' },
   margen: { paddingHorizontal: 20 },
   vacio: { marginTop: 48, alignItems: 'center', gap: 12, paddingHorizontal: 32 },
   cuenta: { marginBottom: 8, paddingHorizontal: 4, fontWeight: '600', textTransform: 'uppercase' },

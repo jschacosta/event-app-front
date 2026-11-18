@@ -9,6 +9,7 @@ import {
 
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
+import { FuenteTitulo } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // ---------- Íconos: SF Symbols en iPhone, Ionicons en Android y web ----------
@@ -25,6 +26,11 @@ const EQUIVALENTES: Record<string, ComponentProps<typeof Ionicons>['name']> = {
   'calendar': 'calendar-outline',
   'bubble.left': 'chatbubble-outline',
   'star': 'star-outline',
+  'star.fill': 'star',
+  'star.leadinghalf.filled': 'star-half',
+  'arrow.up.right': 'open-outline',
+  'safari': 'compass-outline',
+  'map': 'map-outline',
   'person': 'person-outline',
   'xmark': 'close',
   'camera': 'camera-outline',
@@ -74,6 +80,13 @@ const EQUIVALENTES: Record<string, ComponentProps<typeof Ionicons>['name']> = {
   'bell.slash': 'notifications-off-outline',
   'arrow.uturn.backward': 'arrow-undo-outline',
   'timer': 'timer-outline',
+  'clock': 'time-outline',
+  'delete.left': 'backspace-outline',
+  'paperclip': 'attach',
+  'arrow.down': 'arrow-down',
+  'number': 'chatbox-ellipses-outline',
+  'text.bubble': 'chatbox-ellipses-outline',
+  'chevron.down.circle': 'chevron-down-circle-outline',
 };
 
 export function Icono({ nombre, tamano = 20, color, peso = 'regular' }: {
@@ -89,16 +102,17 @@ export function Icono({ nombre, tamano = 20, color, peso = 'regular' }: {
 export const fuenteWeb = Platform.select({ web: '-apple-system, "SF Pro Text", Inter, system-ui, sans-serif' });
 
 type Variante = 'tituloGrande' | 'titulo' | 'seccion' | 'cuerpo' | 'cuerpoFuerte' | 'detalle' | 'pie' | 'grupo' | 'mini';
+// Los tres primeros usan la letra del logo (Barlow Condensed negra en cursiva): ya trae su grosor, por eso no llevan fontWeight.
 const VARIANTES: Record<Variante, TextStyle> = {
-  tituloGrande: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: -0.4 },
-  titulo: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.3 },
-  seccion: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.2 },
-  cuerpo: { fontSize: 17, lineHeight: 22 },
-  cuerpoFuerte: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
-  detalle: { fontSize: 15, lineHeight: 20 },
-  pie: { fontSize: 13, lineHeight: 18 },
-  grupo: { fontSize: 13, lineHeight: 18, textTransform: 'uppercase' },
-  mini: { fontSize: 12, lineHeight: 16 },
+  tituloGrande: { fontSize: 34, lineHeight: 36, fontFamily: FuenteTitulo.cursiva, paddingRight: 3 },
+  titulo: { fontSize: 28, lineHeight: 30, fontFamily: FuenteTitulo.cursiva, paddingRight: 3 },
+  seccion: { fontSize: 22, lineHeight: 25, fontFamily: FuenteTitulo.cursiva, paddingRight: 2 },
+  cuerpo: { fontSize: 16, lineHeight: 21 },
+  cuerpoFuerte: { fontSize: 16, lineHeight: 21, fontWeight: '600' },
+  detalle: { fontSize: 14, lineHeight: 19 },
+  pie: { fontSize: 13, lineHeight: 17 },
+  grupo: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  mini: { fontSize: 11, lineHeight: 14 },
 };
 
 export function Texto({ v = 'cuerpo', secundario, acento, style, ...rest }: ComponentProps<typeof Text> & {
@@ -116,7 +130,7 @@ export function Grupo({ titulo, pie, children, style }: { titulo?: string; pie?:
   return (
     <View style={[{ gap: 6 }, style]}>
       {titulo ? <Texto v="grupo" secundario style={{ paddingHorizontal: 16 }}>{titulo}</Texto> : null}
-      <View style={{ backgroundColor: t.card, borderRadius: 12, overflow: 'hidden' }}>
+      <View style={{ backgroundColor: t.card, borderRadius: 8, overflow: 'hidden' }}>
         {hijos.map((hijo, i) => (
           <Fragment key={i}>
             {i > 0 && <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.separator, marginLeft: 16 }} />}
@@ -226,7 +240,7 @@ export function Segmentado<T extends string>({ opciones, valor, onCambio, marcas
             style={styles.segmento}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Texto v="pie" style={{ fontWeight: activo ? '600' : '500' }}>{o.texto}</Texto>
-              {marcas?.[o.id] ? <View style={[styles.marca, { backgroundColor: t.danger }]} /> : null}
+              {marcas?.[o.id] ? <View style={[styles.marca, { backgroundColor: t.accent }]} /> : null}
             </View>
           </Pressable>
         );
@@ -244,21 +258,21 @@ export function Pildora({ texto, activa, onPress }: { texto: string; activa?: bo
       disabled={!onPress}
       accessibilityState={{ selected: activa }}
       style={[styles.pildora, { backgroundColor: activa ? t.accent : t.backgroundElement }]}>
-      <Texto v="detalle" style={activa ? { color: t.onAccent, fontWeight: '500' } : undefined}>{texto}</Texto>
+      <Texto v="detalle" style={activa ? { color: t.onAccent, fontWeight: '600' } : undefined}>{texto}</Texto>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  fila: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  fila: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 9, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   filaDerecha: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  boton: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  segmentado: { flexDirection: 'row', borderRadius: 9, padding: 2 },
+  boton: { height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  segmentado: { flexDirection: 'row', borderRadius: 8, padding: 2 },
   marca: { width: 7, height: 7, borderRadius: 4 },
-  segmento: { flex: 1, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  segmento: { flex: 1, height: 30, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   pastilla: {
-    position: 'absolute', top: 2, left: 2, height: 30, borderRadius: 7,
+    position: 'absolute', top: 2, left: 2, height: 30, borderRadius: 6,
     shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2,
   },
-  pildora: { height: 34, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  pildora: { height: 32, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
 });

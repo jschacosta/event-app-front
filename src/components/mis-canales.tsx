@@ -13,7 +13,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { diaCorto, etiquetaDiaChat, hora, horaDispositivo } from '@/lib/fechas';
-import { quitarFormato } from '@/lib/formato';
+import type { AvisoSistema } from '@/lib/api';
+import { vistaPrevia } from '@/lib/sistema';
 import { textoCuenta } from '@/lib/no-leidos';
 
 export type MiCanal = {
@@ -22,7 +23,14 @@ export type MiCanal = {
   sala: string;
   evento: { titulo: string; imagen: string | null; inicio: string; fin: string };
   canal: { nombre: string; privado: boolean; esMio: boolean; soloAvisos?: boolean } | null;
-  ultimo: { texto: string; encuesta: boolean; autor: string; mio: boolean; fecha: string } | null;
+  ultimo: {
+    texto: string; encuesta: boolean; autor: string; mio: boolean; fecha: string;
+    sticker?: boolean;
+    gif?: boolean;
+    sistema?: AvisoSistema | null;
+    topico?: { nombre: string; icono: string | null } | null; // tópico donde se escribió (salas con tópicos)
+  } | null;
+  conTopicos?: boolean;
   noLeidos: number;
   actividad: string;
 };
@@ -53,9 +61,9 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
   const titulo = c.canal?.nombre ?? c.evento.titulo;
   // En las salas de idioma se dice cuál es; en los canales propios, que es un canal y de qué evento.
   const contexto = c.canal ? `${tr('canales.etiquetaCanal')} · ${c.evento.titulo}` : c.sala === 'general' ? tr('canales.general') : c.sala.toUpperCase();
-  const ultimo = c.ultimo
-    ? `${c.ultimo.mio ? tr('chat.tu') : c.ultimo.autor.split(' ')[0]}: ${c.ultimo.encuesta ? '📊 ' : ''}${quitarFormato(c.ultimo.texto)}`
-    : tr('canales.sinMensajes');
+  // Como en Telegram: en una sala con tópicos se dice en cuál se escribió.
+  const enTopico = c.conTopicos ? `${c.ultimo?.topico ? `${c.ultimo.topico.icono ?? '#'} ${c.ultimo.topico.nombre}` : `# ${tr('topicos.general')}`} · ` : '';
+  const ultimo = c.ultimo ? `${enTopico}${vistaPrevia(c.ultimo, tr)}` : tr('canales.sinMensajes');
 
   return (
     <Pressable
@@ -80,9 +88,9 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
           </View>
         )}
         {/* Sello en la foto: qué sala es (bandera, globo o el ícono del canal propio). */}
-        <View style={[styles.sello, { backgroundColor: c.canal ? t.text : t.background, borderColor: t.background }]}>
+        <View style={[styles.sello, { backgroundColor: c.canal ? t.accent : t.background, borderColor: t.background }]}>
           {c.canal
-            ? <Icono nombre={c.canal.privado ? 'lock.fill' : c.canal.soloAvisos ? 'megaphone' : 'bubble.left.and.bubble.right'} tamano={9} color={t.background} />
+            ? <Icono nombre={c.canal.privado ? 'lock.fill' : c.canal.soloAvisos ? 'megaphone' : 'bubble.left.and.bubble.right'} tamano={9} color={t.onAccent} />
             : BANDERA_SALA[c.sala]
               ? <Bandera codigo={BANDERA_SALA[c.sala]} alto={9} />
               : <Icono nombre="globe" tamano={11} color={t.text} />}
@@ -90,19 +98,19 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
       </View>
       <View style={[styles.datos, !ultima && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
         <View style={styles.linea}>
-          <Texto v="cuerpoFuerte" numberOfLines={1} style={{ flex: 1 }}>{titulo}</Texto>
-          <Texto v="mini" style={{ color: nuevos ? t.text : t.textSecondary, fontWeight: nuevos ? '700' : '400' }}>
+          <Texto v="cuerpoFuerte" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{titulo}</Texto>
+          <Texto v="pie" style={{ color: nuevos ? t.accentText : t.textSecondary, fontWeight: nuevos ? '700' : '400' }}>
             {cuando(c.ultimo?.fecha ?? c.actividad)}
           </Texto>
         </View>
         <View style={styles.linea}>
-          <View style={{ flex: 1, gap: 1 }}>
-            <Texto v="mini" secundario numberOfLines={1} style={{ fontWeight: '600' }}>{contexto}</Texto>
-            <Texto v="pie" numberOfLines={1} style={{ color: nuevos ? t.text : t.textSecondary }}>{ultimo}</Texto>
-          </View>
+          <Texto v="detalle" numberOfLines={1} style={{ flex: 1, fontSize: 14, color: t.textSecondary }}>
+            <Texto v="detalle" style={{ fontSize: 14, fontWeight: '600', color: nuevos ? t.text : t.textSecondary }}>{contexto}</Texto>
+            {` · ${ultimo}`}
+          </Texto>
           {nuevos > 0 ? (
-            <View style={[styles.cuenta, { backgroundColor: t.text }]}>
-              <Text style={[styles.cuentaTexto, { color: t.background }]}>{textoCuenta(nuevos)}</Text>
+            <View style={[styles.cuenta, { backgroundColor: t.accent }]}>
+              <Text style={[styles.cuentaTexto, { color: t.onAccent }]}>{textoCuenta(nuevos)}</Text>
             </View>
           ) : null}
         </View>
@@ -197,13 +205,13 @@ function ContenidoElegir({ eventos, ciudad, onElegir, onCerrar }: {
 
 const styles = StyleSheet.create({
   fila: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 20 },
-  foto: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  foto: { width: 56, height: 56, borderRadius: 28, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   inicial: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
   sello: {
     position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, borderRadius: 10, borderWidth: 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
-  datos: { flex: 1, gap: 2, paddingVertical: 11, paddingRight: 20, minHeight: 74, justifyContent: 'center' },
+  datos: { flex: 1, gap: 4, paddingVertical: 12, paddingRight: 20, minHeight: 78, justifyContent: 'center' },
   linea: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cuenta: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
   cuentaTexto: { fontSize: 12, fontWeight: '700' },

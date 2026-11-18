@@ -45,6 +45,13 @@ export function fechaCorta(iso: string) {
     .replace(/\.(?= )/, '');
 }
 
+// "27 oct" en la hora de la ciudad (fechas de una fiesta que se repite, que cruzan meses)
+export function diaMes(iso: string) {
+  return new Intl.DateTimeFormat(localeIntl(), { timeZone: ZONA, day: 'numeric', month: 'short' })
+    .format(new Date(iso))
+    .replace(/\.$/, '');
+}
+
 // "28 oct" (sin año), para rangos de fechas como la estadía en Rio
 export function fechaSinAnio(iso: string) {
   return new Intl.DateTimeFormat(localeIntl(), { timeZone: 'UTC', day: 'numeric', month: 'short' })
@@ -128,4 +135,32 @@ export function etiquetaDiaChat(iso: string) {
   return mayuscula(new Intl.DateTimeFormat(localeIntl(), {
     day: 'numeric', month: 'long', ...(d.getFullYear() !== hoy.getFullYear() ? { year: 'numeric' } : {}),
   }).format(d));
+}
+
+// Días entre hoy (en la ciudad) y la clave dada: 0 = hoy, 1 = mañana.
+export function diasHastaClave(clave: string) {
+  const hoy = claveDia(new Date().toISOString());
+  return Math.round((Date.parse(`${clave}T12:00:00Z`) - Date.parse(`${hoy}T12:00:00Z`)) / 86400000);
+}
+
+// Encabezado de un día en la agenda: "Hoy, martes 17", "Mañana, miércoles 18" o "Jueves 19 de noviembre".
+export function encabezadoDia(clave: string) {
+  const d = new Date(`${clave}T12:00:00Z`);
+  const semana = new Intl.DateTimeFormat(localeIntl(), { timeZone: 'UTC', weekday: 'long', day: 'numeric' }).format(d);
+  const hoy = claveDia(new Date().toISOString());
+  const manana = claveDia(new Date(Date.now() + 86400000).toISOString());
+  if (clave === hoy) return `${i18n.t('fechas.hoy')}, ${semana}`;
+  if (clave === manana) return `${i18n.t('fechas.manana')}, ${semana}`;
+  return tituloDeClave(clave);
+}
+
+// "ahora", "hace 5 min", "hace 3 h", "hace 2 d" (en el idioma de la app). Sin Intl.RelativeTimeFormat:
+// Hermes en Android no lo trae y la pantalla se caía.
+export function haceTiempo(iso: string) {
+  const seg = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seg < 60) return i18n.t('fechas.hace.ahora');
+  if (seg < 3600) return i18n.t('fechas.hace.min', { n: Math.round(seg / 60) });
+  if (seg < 86400) return i18n.t('fechas.hace.h', { n: Math.round(seg / 3600) });
+  if (seg < 86400 * 30) return i18n.t('fechas.hace.d', { n: Math.round(seg / 86400) });
+  return i18n.t('fechas.hace.mes', { n: Math.round(seg / (86400 * 30)) });
 }

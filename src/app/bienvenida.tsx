@@ -9,7 +9,9 @@ import Animated, { Easing, FadeIn, FadeInDown, cancelAnimation, useAnimatedStyle
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ESCENAS, FOTOS_INTRO } from '@/components/intro/escenas';
+import { Logo } from '@/components/logo';
 import { fuenteWeb } from '@/components/ui';
+import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { cambiarIdioma, IDIOMAS_APP } from '@/lib/i18n';
 
@@ -73,7 +75,7 @@ export default function BienvenidaScreen() {
       <View style={[s.arriba, { paddingTop: insets.top + 8 }]}>
         <Progreso total={ESCENAS.length} actual={i} avance={avance} />
         <View style={s.barra}>
-          <Text style={[s.marca, { fontFamily: fuenteWeb }]}>bora</Text>
+          <Logo alto={26} variante="sobreFoto" />
           <View style={s.idiomas}>
             {IDIOMAS_APP.map((l) => (
               <Pressable key={l.codigo} onPress={() => cambiarIdioma(l.codigo)} hitSlop={6} accessibilityLabel={l.nombre}>
@@ -93,7 +95,7 @@ export default function BienvenidaScreen() {
 
       <View style={[s.abajo, { paddingBottom: insets.bottom + 16 }]}>
         <Animated.View key={`texto-${i}`} entering={FadeInDown.duration(500)} style={{ gap: 8 }}>
-          <Text style={[s.titulo, { fontFamily: fuenteWeb }]}>{t(`intro.s${i + 1}.titulo`)}</Text>
+          <Text style={s.titulo}>{t(`intro.s${i + 1}.titulo`)}</Text>
           <Text style={[s.texto, { fontFamily: fuenteWeb }]}>{t(`intro.s${i + 1}.texto`)}</Text>
         </Animated.View>
         <View style={{ gap: 12, marginTop: 24 }}>
@@ -119,14 +121,13 @@ const s = StyleSheet.create({
   segmento: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
   relleno: { height: 3, backgroundColor: '#fff' },
   barra: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  marca: { color: '#fff', fontSize: 24, fontWeight: '800', letterSpacing: -0.8 },
   idiomas: { flexDirection: 'row', gap: 14 },
   idioma: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '600' },
   idiomaActivo: { color: '#fff' },
   escena: { flex: 1, marginVertical: 12 },
   zona: { position: 'absolute', top: 0, bottom: 0, width: '35%' },
   abajo: { paddingHorizontal: 24, width: '100%', maxWidth: 520, alignSelf: 'center' },
-  titulo: { color: '#fff', fontSize: 32, lineHeight: 38, fontWeight: '700', letterSpacing: -0.5 },
+  titulo: { color: '#fff', fontSize: 40, lineHeight: 40, fontFamily: FuenteTitulo.cursiva, paddingRight: 3 },
   texto: { color: 'rgba(255,255,255,0.75)', fontSize: 17, lineHeight: 23 },
   botonPrincipal: { height: 52, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   textoBotonPrincipal: { color: '#000', fontSize: 17, fontWeight: '600' },

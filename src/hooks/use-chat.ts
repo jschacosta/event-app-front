@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useSesion } from '@/context/sesion';
 import i18n from '@/lib/i18n';
-import { api, type Autor, type Encuesta, type MensajeChat, type Reaccion, type Sala } from '@/lib/api';
+import { api, type Autor, type Encuesta, type Gif, type MensajeChat, type Reaccion, type Sala, type Topico } from '@/lib/api';
 import { marcarSalaLeida, refrescarNoLeidos } from '@/lib/no-leidos';
 import { emitir, obtenerSocket } from '@/lib/socket';
 
@@ -14,7 +14,9 @@ type Respuesta = {
   leidoHasta?: string | null;
   modoLento?: number; esperaHasta?: string | null;
   miembro?: boolean; // si ya me uní a la sala (sale en "Mis canales")
-  soloLectura?: boolean; // canal de avisos donde no soy quien escribe
+  soloLectura?: boolean; // canal de avisos (o tópico cerrado) donde no soy quien escribe
+  topico?: Topico | null;
+  conTopicos?: boolean;
 };
 type RespuestaEnvio = { ok?: boolean; error?: string; codigo?: string; mensaje?: MensajeChat; esperaHasta?: string | null; miembro?: boolean };
 
@@ -24,7 +26,12 @@ const ESTADO_POR_CODIGO: Record<string, Estado> = {
   CANAL_NO_ENCONTRADO: 'cerrado',
 };
 
-export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
+// Ids temporales de los mensajes que se ven antes de que el servidor los confirme.
+let contadorPendientes = 0;
+
+// `topico`: id del tópico, 'general' o undefined (sala sin tópicos). `activo` en false no se conecta
+// (por ejemplo, mientras se muestra la lista de tópicos).
+export function useChat(eventoId: string | undefined, sala: Sala = 'general', topico?: string, activo = true) {
   const { token } = useSesion();
   const [estado, setEstado] = useState<Estado>(token ? 'conectando' : 'sin-sesion');
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +47,17 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
   const [esperaHasta, setEsperaHasta] = useState<number | null>(null);
   const [miembro, setMiembro] = useState(false);
   const [soloLectura, setSoloLectura] = useState(false);
+  const [infoTopico, setInfoTopico] = useState<Topico | null>(null);
+  const [conTopicos, setConTopicos] = useState(false);
   const [intento, setIntento] = useState(0); // sube para volver a entrar (tras aceptar normas o la contraseña)
   const ultimoAviso = useRef(0);
 
   // Al cambiar de sala se limpia la pantalla.
-  const [vista, setVista] = useState(`${eventoId}:${sala}`);
-  if (vista !== `${eventoId}:${sala}`) {
-    setVista(`${eventoId}:${sala}`);
+  const claveVista = `${eventoId}:${sala}:${topico ?? ''}`;
+  const [vista, setVista] = useState(claveVista);
+  if (vista !== claveVista) {
+    setVista(claveVista);
+    setInfoTopico(null);
     setMensajes([]);
     setEscribiendo(null);
     setFijado(null);
@@ -59,21 +70,27 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     setEstado(token ? 'conectando' : 'sin-sesion');
   }
 
+  const topicoId = topico && topico !== 'general' ? topico : null;
   useEffect(() => {
-    if (!token || !eventoId) return;
+    if (!token || !eventoId || !activo) return;
     const s = obtenerSocket(token);
     let timerEscribiendo: ReturnType<typeof setTimeout> | undefined;
-    const esDeAqui = (d: { eventoId: string; sala?: string }) => d.eventoId === eventoId && (d.sala ?? 'general') === sala;
+    // La sala completa llega por el mismo canal del socket: aquí solo cuenta lo de este tópico.
+    const esDeAqui = (d: { eventoId: string; sala?: string; topico?: string | null }) =>
+      d.eventoId === eventoId && (d.sala ?? 'general') === sala && (d.topico ?? null) === topicoId;
 
     const unirse = async () => {
       setEstado('conectando');
-      const r = await emitir<Respuesta>(s, 'chat:unirse', { eventoId, sala });
+      const r = await emitir<Respuesta>(s, 'chat:unirse', { eventoId, sala, ...(topicoId ? { topico: topicoId } : {}) });
       if (r.error) {
         setError(r.error);
         setEstado(ESTADO_POR_CODIGO[r.codigo ?? ''] ?? 'error');
         return;
       }
-      setMensajes(r.historial ?? []);
+      // Lo enviado sin confirmar se mantiene al final (por ejemplo, al reconectar).
+      setMensajes((prev) => [...(r.historial ?? []), ...prev.filter((m) => m.pendiente)]);
+      setInfoTopico(r.topico ?? null);
+      setConTopicos(Boolean(r.conTopicos));
       setFijado(r.fijado ?? null);
       // Solo la primera vez que entra: al reconectar no se mueve la línea.
       setLeidoHasta((antes) => (antes === undefined ? r.leidoHasta ?? null : antes));
@@ -89,7 +106,15 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
 
     const alMensaje = (m: MensajeChat) => {
       if (!esDeAqui(m)) return;
-      setMensajes((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+      setMensajes((prev) => {
+        if (prev.some((x) => x.id === m.id)) return prev;
+        // Mi propio mensaje puede llegar antes que la confirmación: reemplaza al provisorio en su lugar.
+        const i = prev.findIndex((x) => x.pendiente && x.autor.id === m.autor.id && x.texto === m.texto && (x.sticker ?? null) === (m.sticker ?? null) && (x.gif?.url ?? null) === (m.gif?.url ?? null));
+        if (i < 0) return [...prev, m];
+        const copia = [...prev];
+        copia[i] = m;
+        return copia;
+      });
       setEscribiendo((e) => (e?.id === m.autor.id ? null : e));
     };
     const alReacciones = ({ mensajeId, reacciones }: { mensajeId: string; reacciones: Reaccion[] }) =>
@@ -98,7 +123,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
       setMensajes((prev) => prev.filter((m) => m.id !== mensajeId));
       setFijado((f) => (f?.id === mensajeId ? null : f));
     };
-    const alFijado = (d: { eventoId: string; sala?: string; mensaje: MensajeChat | null }) => {
+    const alFijado = (d: { eventoId: string; sala?: string; topico?: string | null; mensaje: MensajeChat | null }) => {
       if (!esDeAqui(d)) return;
       setFijado(d.mensaje);
       setMensajes((prev) => prev.map((m) => ({ ...m, fijado: m.id === d.mensaje?.id })));
@@ -109,19 +134,28 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     };
     const alVotos = ({ mensajeId, encuesta }: { mensajeId: string; encuesta: Encuesta }) =>
       setMensajes((prev) => prev.map((m) => (m.id === mensajeId ? { ...m, encuesta } : m)));
-    const alEscribiendo = (d: { eventoId: string; sala?: string; autor: Autor }) => {
+    const alEscribiendo = (d: { eventoId: string; sala?: string; topico?: string | null; autor: Autor }) => {
       if (!esDeAqui(d)) return;
       setEscribiendo(d.autor);
       clearTimeout(timerEscribiendo);
       timerEscribiendo = setTimeout(() => setEscribiendo(null), 3000);
     };
     const alModoLento = (d: { eventoId: string; sala?: string; segundos: number }) => {
-      if (!esDeAqui(d)) return;
+      if (d.eventoId !== eventoId || (d.sala ?? 'general') !== sala) return; // el modo lento es de toda la sala
       setModoLento(d.segundos);
       if (!d.segundos) setEsperaHasta(null);
     };
     const alCanalCerrado = ({ canalId }: { canalId: string }) => {
       if (canalId === sala) setEstado('cerrado');
+    };
+    const alTopicoBorrado = (d: { eventoId: string; sala: string; topicoId: string }) => {
+      if (d.eventoId !== eventoId || d.sala !== sala || d.topicoId !== topicoId) return;
+      setError(i18n.t('topicos.borrado'));
+      setEstado('cerrado');
+    };
+    // Cambios del tópico (nombre, cerrado): se vuelve a entrar para tomar permisos y datos al día.
+    const alTopicos = (d: { eventoId: string; sala: string }) => {
+      if (d.eventoId === eventoId && d.sala === sala && topicoId) unirse();
     };
     const alErrorConexion = (e: Error) => {
       setError(e.message || i18n.t('chat.errorConexion'));
@@ -138,6 +172,8 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     s.on('chat:escribiendo', alEscribiendo);
     s.on('chat:canalCerrado', alCanalCerrado);
     s.on('chat:modoLento', alModoLento);
+    s.on('chat:topicoBorrado', alTopicoBorrado);
+    s.on('chat:topicos', alTopicos);
     s.on('connect_error', alErrorConexion);
     if (s.connected) unirse();
 
@@ -156,32 +192,54 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
       s.off('chat:escribiendo', alEscribiendo);
       s.off('chat:canalCerrado', alCanalCerrado);
       s.off('chat:modoLento', alModoLento);
+      s.off('chat:topicoBorrado', alTopicoBorrado);
+      s.off('chat:topicos', alTopicos);
       s.off('connect_error', alErrorConexion);
     };
-  }, [token, eventoId, sala, intento]);
+  }, [token, eventoId, sala, topicoId, activo, intento]);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
 
-  const enviar = useCallback(async (texto: string, respuestaA?: string) => {
-    if (!token || !eventoId) return { error: i18n.t('chat.iniciaParaEscribir') };
+  // Enviar al instante, como Telegram: el mensaje aparece con un reloj y se cambia por el del
+  // servidor cuando responde. Si el servidor lo rechaza, se quita y se devuelve el error.
+  const enviar = useCallback(async (texto: string, opciones: { respuestaA?: MensajeChat | null; sticker?: string; gif?: Gif; yo?: Autor } = {}) => {
+    if (!token || !eventoId) return { error: i18n.t('chat.iniciaParaEscribir') } as RespuestaEnvio;
+    const { respuestaA, sticker, gif, yo } = opciones;
+    const idTemporal = `pendiente-${++contadorPendientes}`;
+    if (yo) {
+      const provisorio: MensajeChat = {
+        id: idTemporal, eventoId, sala, texto, fecha: new Date().toISOString(), autor: yo,
+        respuestaA: respuestaA ? { id: respuestaA.id, autorId: respuestaA.autor.id, autorNombre: respuestaA.autor.nombreVisible, texto: respuestaA.texto } : null,
+        reacciones: [], topico: topicoId, sticker: sticker ?? null, gif: gif ?? null, pendiente: true,
+      };
+      setMensajes((prev) => [...prev, provisorio]);
+    }
     const r = await emitir<RespuestaEnvio>(
-      obtenerSocket(token), 'chat:mensaje', { eventoId, sala, texto, ...(respuestaA ? { respuestaA } : {}) },
+      obtenerSocket(token), 'chat:mensaje',
+      { eventoId, sala, texto, ...(topicoId ? { topico: topicoId } : {}), ...(respuestaA ? { respuestaA: respuestaA.id } : {}), ...(sticker ? { sticker } : {}), ...(gif ? { gif } : {}) },
     );
     // Con modo lento el servidor dice cuándo se puede volver a escribir (al enviar o al rechazar).
     if (r.esperaHasta !== undefined) setEsperaHasta(r.esperaHasta ? new Date(r.esperaHasta).getTime() : null);
     if (r.miembro !== undefined) setMiembro(Boolean(r.miembro)); // escribir no une: solo "Unirme"
-    if (r.mensaje) {
+    setMensajes((prev) => {
+      const sinTemporal = prev.filter((x) => x.id !== idTemporal);
       const m = r.mensaje;
-      setMensajes((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-    }
+      if (!m || sinTemporal.some((x) => x.id === m.id)) return sinTemporal;
+      // En el mismo lugar donde estaba el provisorio, para que no salte.
+      const i = prev.findIndex((x) => x.id === idTemporal);
+      if (i < 0) return [...sinTemporal, m];
+      const copia = [...prev];
+      copia[i] = m;
+      return copia;
+    });
     return r;
-  }, [token, eventoId, sala]);
+  }, [token, eventoId, sala, topicoId]);
 
   const avisarEscribiendo = useCallback(() => {
     if (!token || !eventoId || Date.now() - ultimoAviso.current < 2000) return;
     ultimoAviso.current = Date.now();
-    obtenerSocket(token).emit('chat:escribiendo', { eventoId, sala });
-  }, [token, eventoId, sala]);
+    obtenerSocket(token).emit('chat:escribiendo', { eventoId, sala, ...(topicoId ? { topico: topicoId } : {}) });
+  }, [token, eventoId, sala, topicoId]);
 
   // Reacción con un emoji: se muestra al instante y se corrige con lo que responda el servidor.
   const reaccionar = useCallback(async (mensajeId: string, emoji: string, yo: string) => {
@@ -235,14 +293,14 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
   const crearEncuesta = useCallback(async (pregunta: string, opciones: string[]) => {
     if (!token || !eventoId) return { error: i18n.t('chat.iniciaParaEscribir') };
     const r = await emitir<{ ok?: boolean; error?: string; mensaje?: MensajeChat }>(
-      obtenerSocket(token), 'chat:encuesta', { eventoId, sala, pregunta, opciones },
+      obtenerSocket(token), 'chat:encuesta', { eventoId, sala, ...(topicoId ? { topico: topicoId } : {}), pregunta, opciones },
     );
     if (r.mensaje) {
       const m = r.mensaje;
       setMensajes((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
     }
     return r;
-  }, [token, eventoId, sala]);
+  }, [token, eventoId, sala, topicoId]);
 
   // Votar: se marca al instante y se corrige con lo que responda el servidor.
   const votar = useCallback(async (mensajeId: string, opcion: number, yo: string) => {
@@ -305,5 +363,6 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general') {
     error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
     leidoHasta, fijado, puedeFijar: permisos.fijar, puedeEncuesta: permisos.encuesta, fijar, crearEncuesta, votar,
     modoLento, esperaHasta, cambiarModoLento,
+    infoTopico, conTopicos,
   };
 }
