@@ -802,5 +802,9 @@
     ],
     "entiendo": "Entendo que minha conta será excluída para sempre.",
     "boton": "Excluir minha conta"
+  },
+  "notaBora": {
+    "titulo": "O que você precisa saber",
+    "firma": "Nota da Bora, revisada em {{fecha}}"
   }
 }

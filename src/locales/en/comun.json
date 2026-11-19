@@ -802,5 +802,9 @@
     ],
     "entiendo": "I understand my account will be deleted forever.",
     "boton": "Delete my account"
+  },
+  "notaBora": {
+    "titulo": "Good to know",
+    "firma": "Bora's note, reviewed {{fecha}}"
   }
 }

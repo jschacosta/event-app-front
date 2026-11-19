@@ -12,6 +12,7 @@ import { HojaAsistentes, type EstadoAsistencia } from '@/components/asistentes';
 import { Banderas } from '@/components/bandera';
 import { BotonPrincipal, Icono, Texto } from '@/components/ui';
 import { EnInternet } from '@/components/en-internet';
+import { LoQueHayQueSaber } from '@/components/lo-que-hay-que-saber';
 import { HojaResponder, ListaHilos, LoQueDicen, pedirSesion, useOpiniones } from '@/components/opiniones';
 import { Caras, useYaAqui } from '@/components/ya-aqui';
 import { FuenteTitulo } from '@/constants/theme';
@@ -273,6 +274,7 @@ export default function EventoScreen() {
           {repite ? (
             <>
               <LoQueDicen datos={opiniones.datos} onResponder={() => (token ? setRespondiendo(true) : pedirSesion(tr, 'opinar', `/evento/${id}`))} />
+              {evento.notaBora ? <View style={{ paddingTop: 22 }}><LoQueHayQueSaber nota={evento.notaBora} /></View> : null}
               {/* Lo de Google va aparte y debajo de lo de Bora (en eventos de una fecha, en la info). */}
               {evento.lugarGoogle ? <View style={{ paddingTop: 22, paddingBottom: 10 }}><EnInternet lugar={evento.lugarGoogle} /></View> : null}
               <View style={[styles.pestanas, { borderBottomColor: t.separator }]}>
@@ -318,6 +320,7 @@ export default function EventoScreen() {
                   </ScrollView>
                 </View>
               ) : null}
+              {!repite && evento.notaBora ? <LoQueHayQueSaber nota={evento.notaBora} /> : null}
               {!repite && evento.lugarGoogle ? <EnInternet lugar={evento.lugarGoogle} /> : null}
             </Animated.View>
           )}

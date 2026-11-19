@@ -802,5 +802,9 @@
     ],
     "entiendo": "Entiendo que mi cuenta se borra para siempre.",
     "boton": "Eliminar mi cuenta"
+  },
+  "notaBora": {
+    "titulo": "Lo que hay que saber",
+    "firma": "Nota de Bora, revisada en {{fecha}}"
   }
 }
