@@ -34,7 +34,7 @@ function ItemComentario({ c, hijo, onVotar, onResponder }: { c: Comentario; hijo
 }
 
 export default function HiloScreen() {
-  const { hiloId } = useLocalSearchParams<{ id: string; hiloId: string }>();
+  const { id, hiloId } = useLocalSearchParams<{ id: string; hiloId: string }>();
   const t = useTheme();
   const { t: tr } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -58,7 +58,7 @@ export default function HiloScreen() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const votarHilo = async (valor: number) => {
-    if (!token || !hilo) return pedirSesion(tr);
+    if (!token || !hilo) return pedirSesion(tr, 'opinar', `/evento/${id}/hilo/${hiloId}`);
     const antes = hilo;
     setHilo({ ...hilo, miVoto: valor, puntaje: nuevoPuntaje(hilo.puntaje, hilo.miVoto, valor) });
     try {
@@ -69,7 +69,7 @@ export default function HiloScreen() {
     }
   };
   const votarComentario = async (c: Comentario, valor: number) => {
-    if (!token) return pedirSesion(tr);
+    if (!token) return pedirSesion(tr, 'opinar', `/evento/${id}/hilo/${hiloId}`);
     const cambiar = (x: Partial<Comentario>) => setComentarios((l) => l.map((y) => (y.id === c.id ? { ...y, ...x } : y)));
     cambiar({ miVoto: valor, puntaje: nuevoPuntaje(c.puntaje, c.miVoto, valor) });
     try {
@@ -80,7 +80,7 @@ export default function HiloScreen() {
   };
 
   const enviar = async () => {
-    if (!token) return pedirSesion(tr);
+    if (!token) return pedirSesion(tr, 'opinar', `/evento/${id}/hilo/${hiloId}`);
     const limpio = texto.trim();
     if (!limpio || !hilo) return;
     setEnviando(true);

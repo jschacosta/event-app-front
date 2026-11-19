@@ -109,7 +109,7 @@
   "evento": {
     "errorCarga": "Couldn’t load this event",
     "iniciaSesion": "Sign in",
-    "iniciaSesionTexto": "To say you’re going, sign in from the Profile tab.",
+    "iniciaSesionTexto": "To say you're going, sign in or create an account. It's free.",
     "noSePudoGuardar": "Couldn’t save",
     "opcion": {
       "voy": "Going",
@@ -150,7 +150,9 @@
     "termina": "Ends at {{hora}}",
     "vanCon": "{{nombres}} and {{count}} more",
     "seRepite_one": "Recurring",
-    "seRepite_other": "Recurring: {{count}} dates"
+    "seRepite_other": "Recurring: {{count}} dates",
+    "iniciaSesionOpinar": "To share how it was, vote or comment, sign in or create an account. It's free.",
+    "botonEntrar": "Sign in"
   },
   "chat": {
     "titulo": "Channel",

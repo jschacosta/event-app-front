@@ -109,7 +109,7 @@
   "evento": {
     "errorCarga": "No se pudo cargar el evento",
     "iniciaSesion": "Inicia sesión",
-    "iniciaSesionTexto": "Para marcar que vas, entra con tu cuenta en la pestaña Perfil.",
+    "iniciaSesionTexto": "Para marcar que vas, inicia sesión o crea tu cuenta. Es gratis.",
     "noSePudoGuardar": "No se pudo guardar",
     "opcion": {
       "voy": "Voy",
@@ -150,7 +150,9 @@
     "termina": "Termina a las {{hora}}",
     "vanCon": "{{nombres}} y {{count}} más",
     "seRepite_one": "Se repite",
-    "seRepite_other": "Se repite: {{count}} fechas"
+    "seRepite_other": "Se repite: {{count}} fechas",
+    "iniciaSesionOpinar": "Para contar cómo estuvo, votar o comentar, inicia sesión o crea tu cuenta. Es gratis.",
+    "botonEntrar": "Iniciar sesión"
   },
   "chat": {
     "titulo": "Canal",

@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, quiereAviso, type Evento } from '@/lib/api';
+import { compartirEvento } from '@/lib/compartir-evento';
 import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
@@ -105,8 +106,7 @@ export default function EventoScreen() {
 
   const marcar = async (estado: Estado | null, solo = evento?.miAsistencia?.solo ?? false) => {
     if (!token) {
-      avisar(tr('evento.iniciaSesion'), tr('evento.iniciaSesionTexto'));
-      router.push('/perfil');
+      pedirSesion(tr, 'voy', `/evento/${id}`);
       return;
     }
     setGuardando(true);
@@ -272,7 +272,7 @@ export default function EventoScreen() {
 
           {repite ? (
             <>
-              <LoQueDicen datos={opiniones.datos} onResponder={() => (token ? setRespondiendo(true) : pedirSesion(tr))} />
+              <LoQueDicen datos={opiniones.datos} onResponder={() => (token ? setRespondiendo(true) : pedirSesion(tr, 'opinar', `/evento/${id}`))} />
               {/* Lo de Google va aparte y debajo de lo de Bora (en eventos de una fecha, en la info). */}
               {evento.lugarGoogle ? <View style={{ paddingTop: 22, paddingBottom: 10 }}><EnInternet lugar={evento.lugarGoogle} /></View> : null}
               <View style={[styles.pestanas, { borderBottomColor: t.separator }]}>
@@ -326,7 +326,7 @@ export default function EventoScreen() {
 
       <View style={[styles.arriba, { top: insets.top + 8 }]}>
         <BotonFoto icono="chevron.left" etiqueta={tr('comun.volver')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
-        <BotonFoto icono="square.and.arrow.up" etiqueta={tr('comun.compartir')} onPress={() => Share.share({ message: `${evento.titulo} · ${cuando} ${hora(evento.inicio)} · ${lugar}` })} />
+        <BotonFoto icono="square.and.arrow.up" etiqueta={tr('comun.compartir')} onPress={() => compartirEvento(evento.id, `${evento.titulo} · ${cuando} ${hora(evento.inicio)} · ${lugar}`)} />
       </View>
 
       <View style={[styles.barraInferior, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: t.background, borderTopColor: t.separator }]}>

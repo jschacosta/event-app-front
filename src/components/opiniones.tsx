@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { api, type Autor } from '@/lib/api';
 import { claveDia, diaMes, diasHastaClave, haceTiempo } from '@/lib/fechas';
 import { cancelarAvisoLocal } from '@/lib/notificaciones';
+import { pedirSesion } from '@/lib/pedir-sesion';
 
 export type Respuesta = 'si' | 'mas' | 'no';
 type Conteo = { si: number; mas: number; no: number; total: number };
@@ -42,12 +43,7 @@ export type HiloResumen = {
 const VISIBLES = 4;
 const RESPUESTAS: Respuesta[] = ['si', 'mas', 'no'];
 
-export function pedirSesion(tr: (k: string) => string) {
-  const titulo = tr('evento.iniciaSesion');
-  const texto = tr('evento.iniciaSesionTexto');
-  if (Platform.OS === 'web') globalThis.alert?.(`${titulo}\n${texto}`);
-  else Alert.alert(titulo, texto);
-}
+export { pedirSesion } from '@/lib/pedir-sesion';
 
 // Se recarga cada vez que la pantalla vuelve a verse (por ejemplo, al volver de un hilo).
 export function useOpiniones(eventoId: string, token: string | null, activo: boolean) {
@@ -437,7 +433,7 @@ export function ListaHilos({ eventoId, token, hilos, setHilos, orden, setOrden }
   const t = useTheme();
   const { t: tr } = useTranslation();
   const votar = async (h: HiloResumen, valor: number) => {
-    if (!token) return pedirSesion(tr);
+    if (!token) return pedirSesion(tr, 'opinar', `/evento/${eventoId}`);
     setHilos((lista) => lista?.map((x) => (x.id === h.id ? { ...x, miVoto: valor, puntaje: nuevoPuntaje(x.puntaje, x.miVoto, valor) } : x)) ?? null);
     try {
       const r = await votarEn(`/hilos/${h.id}/voto`, token, valor);
@@ -447,7 +443,7 @@ export function ListaHilos({ eventoId, token, hilos, setHilos, orden, setOrden }
     }
   };
   const escribir = () => {
-    if (!token) return pedirSesion(tr);
+    if (!token) return pedirSesion(tr, 'opinar', `/evento/${eventoId}`);
     router.push({ pathname: '/evento/[id]/hilo/nuevo', params: { id: eventoId } });
   };
   return (
