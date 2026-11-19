@@ -10,7 +10,8 @@ import { BottomTabInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // El sitio de Rio Diferente tiene versión por idioma.
-const sitio = (idioma: string) => `https://www.riodiferente.com/${idioma === 'en' || idioma === 'pt' ? idioma : 'es'}`;
+// Rio Diferente está en español, inglés y portugués; en francés y alemán se abre en inglés.
+const sitio = (idioma: string) => `https://www.riodiferente.com/${idioma === 'es' || idioma === 'pt' ? idioma : 'en'}`;
 const FOTOS = 'https://sosappfiles.s3.us-east-1.amazonaws.com/services/';
 
 // Servicios de Rio Diferente ofrecidos dentro de la app (textos en comun.json → experiencias.*).

@@ -17,6 +17,7 @@
   },
   "fechas": {
     "hoy": "Today",
+    "hoyCorto": "Today",
     "manana": "Tomorrow",
     "todas": "All",
     "elegir": "Date",
@@ -121,6 +122,7 @@
     "quienVa": "Who’s going",
     "nadieTodavia": "No one yet",
     "vanSolos": "Going solo",
+    "vanSolosN": "Going solo: {{n}}",
     "previas": "Pre-parties",
     "interesados_one": "{{count}} interested",
     "interesados_other": "{{count}} interested",

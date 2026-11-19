@@ -17,6 +17,7 @@
   },
   "fechas": {
     "hoy": "Hoy",
+    "hoyCorto": "Hoy",
     "manana": "Mañana",
     "todas": "Todas",
     "elegir": "Fecha",
@@ -121,6 +122,7 @@
     "quienVa": "Quién va",
     "nadieTodavia": "Nadie todavía",
     "vanSolos": "Van solos",
+    "vanSolosN": "Van solos: {{n}}",
     "previas": "Previas",
     "interesados_one": "{{count}} interesado",
     "interesados_other": "{{count}} interesados",

@@ -38,11 +38,12 @@ export function fechaLarga(iso: string) {
   return new Intl.DateTimeFormat(localeIntl(), { timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(iso));
 }
 
-// "28 oct 2026" / "Oct 28, 2026" / "28 de out. de 2026"
+// "28 oct 2026" / "Oct 28, 2026" / "28 de out de 2026" / "28. Okt 2026"
+// Se quita el punto de la abreviatura del mes, no el del día en alemán ("28.").
 export function fechaCorta(iso: string) {
   return new Intl.DateTimeFormat(localeIntl(), { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })
     .format(new Date(iso))
-    .replace(/\.(?= )/, '');
+    .replace(/([^\d\s])\.(?= )/, '$1');
 }
 
 // "27 oct" en la hora de la ciudad (fechas de una fiesta que se repite, que cruzan meses)

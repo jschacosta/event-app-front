@@ -136,7 +136,8 @@ const Dia = memo(function Dia({ seccion, onVerTodos }: { seccion: Seccion; onVer
       <View style={styles.columnaDia} accessibilityLabel={seccion.titulo}>
         <Texto style={[styles.numeroDia, { color: t.text }]}>{numero}</Texto>
         <Texto v="mini" style={{ fontWeight: '700', color: relativo <= 1 ? t.accentText : t.textSecondary }}>
-          {relativo === 0 ? tr('fechas.hoy') : relativo === 1 ? tr('fechas.manana') : semana}
+          {/* Columna angosta: "Aujourd’hui" no cabe, se usa la forma corta */}
+          {relativo === 0 ? tr('fechas.hoyCorto') : relativo === 1 ? tr('fechas.manana') : semana}
         </Texto>
         {seccion.grupos.length > 1 ? <View style={[styles.riel, { backgroundColor: t.outline }]} /> : null}
       </View>

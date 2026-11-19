@@ -261,11 +261,11 @@ export default function EventoScreen() {
               <Banderas codigos={a.paisesTop} alto={13} max={5} />
             ) : null}
             <View style={{ flex: 1 }}>
-              <Texto v="detalle" style={{ fontWeight: '600' }} numberOfLines={1}>{resumen}</Texto>
+              <Texto v="detalle" style={{ fontWeight: '600' }} numberOfLines={2}>{resumen}</Texto>
               {aqui.abierto && aqui.total ? (
                 <Texto v="pie" style={{ color: t.accentText, fontWeight: '700' }}>{tr('evento.aquiAhora', { count: aqui.total })}</Texto>
               ) : a && a.solos > 0 ? (
-                <Texto v="pie" secundario>{`${tr('evento.vanSolos')}: ${a.solos}`}</Texto>
+                <Texto v="pie" secundario>{tr('evento.vanSolosN', { n: a.solos })}</Texto>
               ) : null}
             </View>
             {token && hayGente ? <Icono nombre="chevron.right" tamano={12} color={t.chevron} peso="bold" /> : null}
