@@ -7,11 +7,12 @@ import { StyleSheet, View } from 'react-native';
 import { Texto } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
 import type { NotaBora } from '@/lib/api';
+import { mesAnioDeClave } from '@/lib/fechas';
 
 export function LoQueHayQueSaber({ nota }: { nota: NotaBora }) {
   const t = useTheme();
-  const { t: tr, i18n } = useTranslation();
-  const revisada = new Date(`${nota.revisadaEn}T12:00:00`).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
+  const { t: tr } = useTranslation();
+  const revisada = mesAnioDeClave(nota.revisadaEn);
 
   return (
     <View style={styles.bloque}>

@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Texto } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
-import { localeIntl } from '@/lib/i18n';
+import { nombreMes } from '@/lib/fechas';
 
 const ALTO = 40;
 const VISIBLES = 5;
@@ -114,7 +114,7 @@ export function RuedaFecha({ valor, onCambio, minimo, maximo }: {
 
   const meses = useMemo(
     () => Array.from({ length: 12 }, (_, m) => {
-      const n = new Intl.DateTimeFormat(localeIntl(), { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2000, m, 1)));
+      const n = nombreMes(m);
       return n.charAt(0).toUpperCase() + n.slice(1);
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps

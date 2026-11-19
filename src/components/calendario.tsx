@@ -9,8 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonTexto, Icono, Texto } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
-import { claveDia } from '@/lib/fechas';
-import { localeIntl } from '@/lib/i18n';
+import { claveDia, inicialesSemana, mesYAnio } from '@/lib/fechas';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -73,11 +72,9 @@ export function HojaCalendario({ visible, valor, diasConEventos, onElegir, onCer
 
   const empiezaLunes = !i18n.language.startsWith('en');
   const celdas = useMemo(() => celdasDelMes(mes, empiezaLunes), [mes, empiezaLunes]);
-  const titulo = mayuscula(new Intl.DateTimeFormat(localeIntl(), { timeZone: 'UTC', month: 'long', year: 'numeric' })
-    .format(new Date(Date.UTC(Math.floor(mes / 12), mes % 12, 15))));
+  const titulo = mayuscula(mesYAnio(Math.floor(mes / 12), mes % 12));
   // Iniciales de los días: 1 de enero de 2024 fue lunes.
-  const semana = useMemo(() => Array.from({ length: 7 }, (_, k) => new Intl.DateTimeFormat(localeIntl(), { timeZone: 'UTC', weekday: 'narrow' })
-    .format(new Date(Date.UTC(2024, 0, (empiezaLunes ? 1 : 0) + k)))), [empiezaLunes, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
+  const semana = useMemo(() => Array.from({ length: 7 }, (_, k) => inicialesSemana()[(k + (empiezaLunes ? 1 : 0)) % 7]), [empiezaLunes, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onCerrar} statusBarTranslucent>

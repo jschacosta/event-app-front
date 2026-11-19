@@ -34,8 +34,13 @@ export function EnInternet({ lugar }: { lugar: LugarGoogle }) {
   const { t: tr, i18n } = useTranslation();
   const [completo, setCompleto] = useState(false);
   const abrir = (url: string | null | undefined) => url && WebBrowser.openBrowserAsync(url);
-  const numero = (n: number, decimales = 0) =>
-    n.toLocaleString(i18n.language, { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+  // Sin toLocaleString: en Android sigue el idioma del teléfono. Inglés: 4.6 y 1,234; los demás: 4,6 y 1.234.
+  const numero = (n: number, decimales = 0) => {
+    const [entero, dec] = n.toFixed(decimales).split('.');
+    const en = i18n.language === 'en';
+    const miles = entero.replace(/\B(?=(\d{3})+(?!\d))/g, en ? ',' : i18n.language === 'fr' ? '\u202f' : '.');
+    return dec ? `${miles}${en ? '.' : ','}${dec}` : miles;
+  };
 
   // ~4 líneas en un teléfono: más que eso se corta y se ofrece "Leer más" (onTextLayout no cuenta líneas en web).
   const largo = (lugar.resumen?.texto.length ?? 0) > 190;

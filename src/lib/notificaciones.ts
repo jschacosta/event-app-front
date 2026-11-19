@@ -18,6 +18,7 @@ import { AppState, Platform } from 'react-native';
 
 import { almacen } from '@/lib/almacen';
 import { api } from '@/lib/api';
+import { hora as horaEvento } from '@/lib/fechas';
 import i18n from '@/lib/i18n';
 
 const CANAL = 'avisos';
@@ -158,7 +159,7 @@ export async function programarRecordatorio(evento: { id: string; titulo: string
   try {
     await prepararCanal();
     if (!(await permiso(true))) return;
-    const hora = new Date(evento.inicio).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+    const hora = horaEvento(evento.inicio);
     await Notifications.scheduleNotificationAsync({
       identifier: `recordatorio-${evento.id}`,
       content: {
