@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type Dispa
 
 import { api, ApiError, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { almacen } from '@/lib/almacen';
+import { useCiudad } from '@/lib/ciudades';
 import i18n from '@/lib/i18n';
 import { pedirTokenApple, pedirTokenGoogle } from '@/lib/login';
 import { quitarNotificaciones } from '@/lib/notificaciones';
@@ -97,6 +98,15 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const entrarDev = useCallback(async (alias: string) => {
     await guardarSesion(await api<RespuestaLogin>('/auth/dev', { metodo: 'POST', body: { alias } }));
   }, [guardarSesion]);
+
+  // La ciudad elegida en la app también queda en la cuenta (el resumen semanal es de esa ciudad).
+  const ciudad = useCiudad();
+  useEffect(() => {
+    if (!token || !usuario || usuario.ciudad === ciudad.id) return;
+    api<{ user: Usuario }>('/me', { metodo: 'PATCH', body: { ciudad: ciudad.id }, token })
+      .then(({ user }) => setUsuario(user))
+      .catch(() => {});
+  }, [token, usuario, ciudad.id]);
 
   const actualizarPerfil = useCallback<Sesion['actualizarPerfil']>(async (cambios) => {
     const { user } = await api<{ user: Usuario }>('/me', { metodo: 'PATCH', body: cambios, token });

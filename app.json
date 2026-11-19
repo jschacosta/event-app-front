@@ -8,8 +8,9 @@
     "scheme": "bora",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.riodiferente.eventos",
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.boraapp.app",
+      "usesAppleSignIn": true,
+      "infoPlist": {}
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.riodiferente.eventos"
+      "package": "com.boraapp.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "single",
@@ -42,7 +46,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Rio Eventos usa tus fotos para tu perfil de viajero."
+          "photosPermission": "Bora usa tus fotos para tu perfil."
         }
       ],
       "expo-localization",
@@ -53,11 +57,24 @@
           "color": "#64209A",
           "defaultChannel": "avisos"
         }
-      ]
+      ],
+      "expo-background-task",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5d39085d-8fc8-4bf8-81e4-bd4a62244331"
+      }
+    },
+    "owner": "johann.schwarze"
   }
 }

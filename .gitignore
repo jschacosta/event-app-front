@@ -44,3 +44,7 @@ example
 
 # Variables de entorno (las públicas también: cada ambiente tiene las suyas)
 .env
+
+# Llave de firma de prueba (no subir)
+credentials.json
+credentials/

@@ -14,6 +14,7 @@ type Respuesta = {
   leidoHasta?: string | null;
   modoLento?: number; esperaHasta?: string | null;
   miembro?: boolean; // si ya me uní a la sala (sale en "Mis canales")
+  silenciada?: boolean; // sin avisos de mensajes nuevos de esta sala
   soloLectura?: boolean; // canal de avisos (o tópico cerrado) donde no soy quien escribe
   topico?: Topico | null;
   conTopicos?: boolean;
@@ -46,6 +47,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
   const [modoLento, setModoLento] = useState(0);
   const [esperaHasta, setEsperaHasta] = useState<number | null>(null);
   const [miembro, setMiembro] = useState(false);
+  const [silenciada, setSilenciada] = useState(false);
   const [soloLectura, setSoloLectura] = useState(false);
   const [infoTopico, setInfoTopico] = useState<Topico | null>(null);
   const [conTopicos, setConTopicos] = useState(false);
@@ -99,6 +101,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
       setModoLento(r.modoLento ?? 0);
       setEsperaHasta(r.esperaHasta ? new Date(r.esperaHasta).getTime() : null);
       setMiembro(Boolean(r.miembro));
+      setSilenciada(Boolean(r.silenciada));
       setSoloLectura(Boolean(r.soloLectura));
       setError(null);
       setEstado('listo');
@@ -357,9 +360,22 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
     }
   }, [token, eventoId, sala]);
 
+  // Avisos de mensajes nuevos de esta sala (las respuestas a mí siguen llegando).
+  const silenciar = useCallback(async (valor: boolean) => {
+    if (!token || !eventoId) return {};
+    setSilenciada(valor);
+    try {
+      await api(`/me/canales/${eventoId}/silencio`, { metodo: 'PUT', token, body: { sala, silenciada: valor } });
+      return {};
+    } catch (e) {
+      setSilenciada(!valor);
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
+  }, [token, eventoId, sala]);
+
   return {
     estado: token ? estado : 'sin-sesion',
-    miembro, unirme, salir, eliminar, editar, borrar, soloLectura,
+    miembro, unirme, salir, silenciada, silenciar, eliminar, editar, borrar, soloLectura,
     error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
     leidoHasta, fijado, puedeFijar: permisos.fijar, puedeEncuesta: permisos.encuesta, fijar, crearEncuesta, votar,
     modoLento, esperaHasta, cambiarModoLento,

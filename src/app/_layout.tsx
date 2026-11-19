@@ -1,3 +1,4 @@
+import '@/lib/error-arranque';
 import '@/lib/i18n';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold, BarlowCondensed_900Black_Italic, useFonts } from '@expo-google-fonts/barlow-condensed';
@@ -81,6 +82,8 @@ export default function RootLayout() {
             <Stack.Screen name="perfil/editar" options={{ presentation: 'modal' }} />
             <Stack.Screen name="perfil/bloqueados" options={{ presentation: 'modal' }} />
             <Stack.Screen name="perfil/eliminar" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="perfil/notificaciones" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="perfil/correo" />
             <Stack.Screen name="ciudad" options={{ presentation: 'modal' }} />
           </Stack>
         </SesionProvider>

@@ -35,8 +35,17 @@ export type Usuario = {
   edadVerificada?: boolean;
   instagram?: string | null;
   bloqueados?: string[]; // ids de las personas que bloqueó
-  avisos?: { opinion: boolean }; // notificaciones que quiere recibir
+  avisos?: Partial<Avisos>; // notificaciones que quiere recibir
+  ciudad?: string | null; // ciudad elegida en la app (para el resumen semanal)
 };
+
+// Notificaciones que se eligen en Ajustes → Notificaciones (las mismas claves que AVISOS en el backend).
+export const AVISOS = {
+  recordatorio: true, canalAbierto: true, llenandose: true, opinion: true,
+  respuestas: true, mensajes: true, canalActivo: true, semanal: false,
+} as const;
+export type Avisos = Record<keyof typeof AVISOS, boolean>;
+export const quiereAviso = (u: { avisos?: Partial<Avisos> } | null | undefined, clave: keyof Avisos) => u?.avisos?.[clave] ?? AVISOS[clave];
 
 export type CambiosPerfil = Partial<{
   nombre: string;
@@ -53,7 +62,8 @@ export type CambiosPerfil = Partial<{
   fotos: string[];
   idioma: 'es' | 'en' | 'pt';
   instagram: string;
-  avisos: Partial<{ opinion: boolean }>;
+  avisos: Partial<Avisos>;
+  ciudad: string;
 }>;
 
 // Autor de un mensaje del chat (lo que ven los demás)

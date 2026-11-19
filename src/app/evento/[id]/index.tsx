@@ -17,8 +17,8 @@ import { Caras, useYaAqui } from '@/components/ya-aqui';
 import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
-import { api, type Evento } from '@/lib/api';
-import { activarNotificaciones, programarAvisoLocal } from '@/lib/notificaciones';
+import { api, quiereAviso, type Evento } from '@/lib/api';
+import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
 
@@ -116,6 +116,8 @@ export default function EventoScreen() {
       });
       setEvento((e) => (e ? { ...e, ...r } : e));
       if (estado === 'voy') activarNotificaciones(token, { preguntar: true });
+      if (evento && estado === 'voy' && quiereAviso(usuario, 'recordatorio')) programarRecordatorio(evento);
+      else cancelarRecordatorio(id);
     } catch (e) {
       avisar(tr('evento.noSePudoGuardar'), e instanceof Error ? e.message : '');
     } finally {
@@ -130,7 +132,7 @@ export default function EventoScreen() {
       setEvento((ev) => (ev ? { ...ev, ...r } : ev));
       if (!aqui.mio && evento?.recurrente) {
         // Al llegar: push si se puede; si no, el aviso queda programado en el teléfono.
-        if (usuario?.avisos?.opinion !== false) activarNotificaciones(token, { preguntar: true }).then((push) => { if (!push) programarAvisoLocal(evento); });
+        if (quiereAviso(usuario, 'opinion')) activarNotificaciones(token, { preguntar: true }).then((push) => { if (!push) programarAvisoLocal(evento); });
       }
     }
   };

@@ -1,5 +1,5 @@
 // Grupos de Ajustes: notificaciones, privacidad, ayuda y legal, y cuenta.
-// Solo hay interruptores para avisos que de verdad existen; los nuevos se suman en GrupoNotificaciones.
+// Las notificaciones tienen su pantalla (app/perfil/notificaciones.tsx); aquí solo va la fila que lleva a ella.
 import * as Notifications from 'expo-notifications';
 import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -10,7 +10,7 @@ import { Linking, Platform, Pressable, StyleSheet } from 'react-native';
 import { Fila, FilaInterruptor, Grupo, Texto } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
-import type { CambiosPerfil, Usuario } from '@/lib/api';
+import { AVISOS, quiereAviso, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { CONTACTO, paginaSitio } from '@/lib/sitio';
 
 type Permiso = 'si' | 'no' | 'preguntar' | null;
@@ -44,18 +44,16 @@ function useCambioInmediato() {
   return { pendiente, cambiar };
 }
 
-export function GrupoNotificaciones({ usuario }: { usuario: Usuario }) {
+// Una fila que lleva a Ajustes → Notificaciones, con cuántos avisos están encendidos (o "Bloqueadas").
+export function GrupoNotificaciones({ usuario, onIr }: { usuario: Usuario; onIr: (ruta: '/perfil/notificaciones') => void }) {
   const { t: tr } = useTranslation();
   const permiso = usePermisoNotificaciones();
-  const { pendiente, cambiar } = useCambioInmediato();
-  const opinion = pendiente?.avisos?.opinion ?? usuario.avisos?.opinion !== false;
-  const pie = permiso === 'no' ? tr('ajustes.notificaciones.bloqueadas') : tr('ajustes.notificaciones.pie');
+  const claves = Object.keys(AVISOS) as (keyof typeof AVISOS)[];
+  const encendidos = claves.filter((k) => quiereAviso(usuario, k)).length;
+  const valor = permiso === 'no' ? tr('ajustes.notificaciones.bloqueadasCorto') : tr('ajustes.notificaciones.encendidas', { n: encendidos, total: claves.length });
   return (
-    <Grupo titulo={tr('ajustes.notificaciones.titulo')} pie={pie}>
-      <FilaInterruptor etiqueta={tr('ajustes.notificaciones.opinion')} valor={opinion} onCambio={(v) => cambiar({ avisos: { opinion: v } })} />
-      {permiso === 'no' ? (
-        <Fila etiqueta={tr('ajustes.notificaciones.abrirAjustes')} onPress={() => Linking.openSettings()} />
-      ) : null}
+    <Grupo>
+      <Fila etiqueta={tr('ajustes.notificaciones.titulo')} valor={valor} onPress={() => onIr('/perfil/notificaciones')} />
     </Grupo>
   );
 }
@@ -99,7 +97,10 @@ export function GrupoCuenta({ usuario, onCerrar }: { usuario: Usuario; onCerrar:
   const { t: trAuth } = useTranslation('auth');
   const { salir } = useSesion();
   return (
-    <Grupo pie={usuario.email ? trAuth('perfil.conectadoComo', { email: usuario.email }) : undefined}>
+    <Grupo pie={usuario.email && usuario.proveedor !== 'email' ? trAuth('perfil.conectadoComo', { email: usuario.email }) : undefined}>
+      {usuario.proveedor === 'email' ? (
+        <Fila etiqueta={tr('ajustes.cuenta.correo')} valor={usuario.email ?? undefined} onPress={() => { onCerrar(); router.push('/perfil/correo'); }} />
+      ) : null}
       <Pressable onPress={() => { onCerrar(); salir(); }} accessibilityRole="button" style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundSelected }]}>
         <Texto>{trAuth('perfil.cerrarSesion')}</Texto>
       </Pressable>

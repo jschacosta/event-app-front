@@ -329,7 +329,11 @@
     "guardado": "Changes saved",
     "todos": "All",
     "creadosPorMi": "Created by me",
-    "misCanalesCreados": "Channels I created"
+    "misCanalesCreados": "Channels I created",
+    "silenciar": "Mute alerts",
+    "activarAvisos": "Turn on alerts",
+    "silenciado": "Done, this channel won't alert you about new messages",
+    "avisosActivados": "Done, we'll let you know about new messages"
   },
   "normas": {
     "titulo": "Before you join",
@@ -688,7 +692,12 @@
     }
   },
   "notificaciones": {
-    "canal": "Notifications"
+    "canal": "Notifications",
+    "recordatorio": {
+      "titulo": "Today: {{titulo}}",
+      "cuerpo": "Starts at {{hora}}. Bora!",
+      "cuerpoLugar": "Starts at {{hora}} at {{lugar}}. Bora!"
+    }
   },
   "enInternet": {
     "titulo": "Venue reviews",
@@ -706,10 +715,54 @@
   "ajustes": {
     "notificaciones": {
       "titulo": "Notifications",
-      "opinion": "How was it? the next day",
-      "pie": "After a party that repeats, we ask how it went to help others decide.",
       "bloqueadas": "Bora notifications are turned off on your phone. Turn them on in your system settings to get them.",
-      "abrirAjustes": "Open phone settings"
+      "abrirAjustes": "Open phone settings",
+      "encendidas": "{{n}} of {{total}}",
+      "bloqueadasCorto": "Blocked",
+      "sinPermisoTitulo": "Bora can't notify you",
+      "sinPermiso": "Turn on notifications to get the alerts you choose below.",
+      "activar": "Turn on notifications",
+      "horario": "Non-urgent alerts arrive between 10:00 and 22:00 in your city, each one only once per event.",
+      "grupos": {
+        "eventos": "Your events",
+        "canales": "Channels and conversations",
+        "canalesPie": "To stop alerts from one channel, open it and tap ⋯ → Mute alerts.",
+        "novedades": "News"
+      },
+      "avisos": {
+        "recordatorio": {
+          "titulo": "Event reminder",
+          "detalle": "2 hours before an event you marked Going."
+        },
+        "canalAbierto": {
+          "titulo": "Channel opened",
+          "detalle": "When the channel opens for an event you marked Going or Maybe."
+        },
+        "llenandose": {
+          "titulo": "Filling up",
+          "detalle": "When lots of people suddenly join an event you're going to."
+        },
+        "opinion": {
+          "titulo": "How was it?",
+          "detalle": "The day after a recurring party, to help the people going next."
+        },
+        "respuestas": {
+          "titulo": "Replies to you",
+          "detalle": "When someone replies to your message in a channel or your comment in a thread."
+        },
+        "mensajes": {
+          "titulo": "New messages",
+          "detalle": "When there are 5 or more new messages in a channel you joined."
+        },
+        "canalActivo": {
+          "titulo": "Busy channel",
+          "detalle": "When the channel of an event you're going to passes 20 messages and you haven't joined yet."
+        },
+        "semanal": {
+          "titulo": "Best of the weekend",
+          "detalle": "On Thursdays, the highlights in your city for the weekend."
+        }
+      }
     },
     "privacidad": {
       "titulo": "Privacy",
@@ -725,7 +778,8 @@
       "pie": "Questions, problems or requests about your data: {{correo}}"
     },
     "cuenta": {
-      "eliminar": "Delete my account"
+      "eliminar": "Delete my account",
+      "correo": "Email"
     }
   },
   "eliminarCuenta": {

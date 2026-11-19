@@ -16,6 +16,9 @@ import { useSesion } from '@/context/sesion';
 import { esCancelacion } from '@/lib/login';
 import { appleDisponible, googleDisponible } from '@/lib/login';
 
+// Acceso rápido con un alias (solo contra un servidor de desarrollo): en Expo y en el APK de prueba.
+const ACCESO_PRUEBA = __DEV__ || process.env.EXPO_PUBLIC_ACCESO_PRUEBA === '1';
+
 function avisar(texto: string) {
   if (Platform.OS === 'web') globalThis.alert?.(texto);
   else Alert.alert('Bora', texto);
@@ -73,7 +76,7 @@ export default function MetodoScreen() {
         <Animated.View entering={FadeInDown.delay(300).duration(500)} style={{ gap: 14, marginTop: 18 }}>
           <Enlace pregunta={t('registro.yaTienes')} accion={t('registro.entra')} onPress={() => router.push('/auth/entrar')} />
           <TextoAuth style={s.terminos}>{t('metodo.terminos')}</TextoAuth>
-          {__DEV__ && (
+          {ACCESO_PRUEBA && (
             <View style={s.dev}>
               <TextInput
                 value={alias}

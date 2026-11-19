@@ -329,7 +329,11 @@
     "guardado": "Cambios guardados",
     "todos": "Todos",
     "creadosPorMi": "Creados por mí",
-    "misCanalesCreados": "Canales que creé"
+    "misCanalesCreados": "Canales que creé",
+    "silenciar": "Silenciar avisos",
+    "activarAvisos": "Activar avisos",
+    "silenciado": "Listo, este canal ya no te avisa de mensajes nuevos",
+    "avisosActivados": "Listo, te avisaremos de los mensajes nuevos"
   },
   "normas": {
     "titulo": "Antes de entrar",
@@ -688,7 +692,12 @@
     }
   },
   "notificaciones": {
-    "canal": "Avisos"
+    "canal": "Avisos",
+    "recordatorio": {
+      "titulo": "Hoy: {{titulo}}",
+      "cuerpo": "Empieza a las {{hora}}. ¡Bora!",
+      "cuerpoLugar": "Empieza a las {{hora}} en {{lugar}}. ¡Bora!"
+    }
   },
   "enInternet": {
     "titulo": "Reseñas del lugar",
@@ -706,10 +715,54 @@
   "ajustes": {
     "notificaciones": {
       "titulo": "Notificaciones",
-      "opinion": "¿Cómo estuvo? al día siguiente",
-      "pie": "Después de una fiesta que se repite, te preguntamos cómo estuvo para ayudar a otros a decidir.",
       "bloqueadas": "Las notificaciones de Bora están desactivadas en tu teléfono. Actívalas en los ajustes del sistema para recibirlas.",
-      "abrirAjustes": "Abrir ajustes del teléfono"
+      "abrirAjustes": "Abrir ajustes del teléfono",
+      "encendidas": "{{n}} de {{total}}",
+      "bloqueadasCorto": "Bloqueadas",
+      "sinPermisoTitulo": "Bora no puede avisarte",
+      "sinPermiso": "Activa las notificaciones para que te lleguen los avisos que elijas aquí abajo.",
+      "activar": "Activar notificaciones",
+      "horario": "Los avisos que no son urgentes llegan entre las 10:00 y las 22:00 de tu ciudad, y cada uno una sola vez por evento.",
+      "grupos": {
+        "eventos": "Tus eventos",
+        "canales": "Canales y conversaciones",
+        "canalesPie": "Para dejar de recibir avisos de un canal en particular, entra al canal y toca ⋯ → Silenciar avisos.",
+        "novedades": "Novedades"
+      },
+      "avisos": {
+        "recordatorio": {
+          "titulo": "Recordatorio del evento",
+          "detalle": "2 horas antes de un evento donde marcaste Voy."
+        },
+        "canalAbierto": {
+          "titulo": "Se abrió el canal",
+          "detalle": "Cuando abre el canal de un evento donde marcaste Voy o Tal vez."
+        },
+        "llenandose": {
+          "titulo": "Se está llenando",
+          "detalle": "Cuando se suma mucha gente de golpe a un evento al que vas."
+        },
+        "opinion": {
+          "titulo": "¿Cómo estuvo?",
+          "detalle": "Al día siguiente de una fiesta que se repite, para ayudar a quienes van después."
+        },
+        "respuestas": {
+          "titulo": "Te respondieron",
+          "detalle": "Cuando alguien responde tu mensaje en un canal o tu comentario en un hilo."
+        },
+        "mensajes": {
+          "titulo": "Mensajes nuevos",
+          "detalle": "Cuando hay 5 o más mensajes nuevos en un canal al que te uniste."
+        },
+        "canalActivo": {
+          "titulo": "Canal muy activo",
+          "detalle": "Cuando el canal de un evento al que vas pasa los 20 mensajes y aún no te unes."
+        },
+        "semanal": {
+          "titulo": "Lo mejor del fin de semana",
+          "detalle": "Los jueves, lo más destacado de tu ciudad para el finde."
+        }
+      }
     },
     "privacidad": {
       "titulo": "Privacidad",
@@ -725,7 +778,8 @@
       "pie": "Dudas, problemas o pedidos sobre tus datos: {{correo}}"
     },
     "cuenta": {
-      "eliminar": "Eliminar mi cuenta"
+      "eliminar": "Eliminar mi cuenta",
+      "correo": "Correo"
     }
   },
   "eliminarCuenta": {

@@ -415,7 +415,7 @@ export default function ChatScreen() {
     estado, error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
     leidoHasta, fijado, puedeFijar, puedeEncuesta, fijar, crearEncuesta, votar,
     modoLento, esperaHasta, cambiarModoLento, miembro, unirme, salir, eliminar, editar, borrar, soloLectura,
-    infoTopico,
+    infoTopico, silenciada, silenciar,
   } = useChat(id, sala, topicoElegido ?? (conocidos ? 'general' : undefined), modo === 'chat');
   const { ids: bloqueados } = useBloqueos();
   const [bloquear, setBloquear] = useState<Autor | null>(null);
@@ -985,6 +985,16 @@ export default function ChatScreen() {
     if (id) opciones.push({ texto: tr('asistentes.quienVa'), icono: 'person.2', onPress: () => setTimeout(() => setVerAsistentes(true), 250) });
     if (puedeFijar && estado === 'listo') opciones.push({ texto: tr('modoLento.titulo'), icono: 'timer', onPress: () => setTimeout(() => setAjusteLento(true), 250) });
     opciones.push({ texto: tr('miembros.verPersonas'), icono: 'person.2', onPress: () => setTimeout(() => setMiembros(true), 250) });
+    if (soyMiembro && !enLista) {
+      opciones.push({
+        texto: silenciada ? tr('canales.activarAvisos') : tr('canales.silenciar'), icono: silenciada ? 'bell' : 'bell.slash',
+        onPress: async () => {
+          const r = await silenciar(!silenciada);
+          if (r.error) return avisar(r.error);
+          setAviso(silenciada ? tr('canales.avisosActivados') : tr('canales.silenciado'));
+        },
+      });
+    }
     if (id) opciones.push({ texto: tr('canales.verEvento'), icono: 'calendar', onPress: () => router.push({ pathname: '/evento/[id]', params: { id } }) });
     if (soyMiembro && !canal?.esMio) {
       opciones.push({

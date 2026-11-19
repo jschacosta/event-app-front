@@ -78,6 +78,7 @@ const EQUIVALENTES: Record<string, ComponentProps<typeof Ionicons>['name']> = {
   'minus.circle': 'remove-circle-outline',
   'eye.slash': 'eye-off-outline',
   'bell.slash': 'notifications-off-outline',
+  'bell': 'notifications-outline',
   'arrow.uturn.backward': 'arrow-undo-outline',
   'timer': 'timer-outline',
   'clock': 'time-outline',
@@ -159,11 +160,18 @@ export function Fila({ etiqueta, valor, onPress, derecha, chevron = Boolean(onPr
   );
 }
 
-export function FilaInterruptor({ etiqueta, valor, onCambio }: { etiqueta: string; valor: boolean; onCambio: (v: boolean) => void }) {
+export function FilaInterruptor({ etiqueta, detalle, valor, onCambio }: {
+  etiqueta: string; detalle?: string; valor: boolean; onCambio: (v: boolean) => void;
+}) {
   const t = useTheme();
   return (
     <View style={styles.fila}>
-      <Texto style={{ flex: 1 }}>{etiqueta}</Texto>
+      {detalle ? (
+        <View style={{ flex: 1, gap: 2 }}>
+          <Texto>{etiqueta}</Texto>
+          <Texto v="detalle" secundario style={{ lineHeight: 18 }}>{detalle}</Texto>
+        </View>
+      ) : <Texto style={{ flex: 1 }}>{etiqueta}</Texto>}
       <Switch
         value={valor}
         onValueChange={onCambio}

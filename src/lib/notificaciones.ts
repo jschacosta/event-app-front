@@ -1,16 +1,22 @@
 // Notificaciones de Bora en iPhone y Android.
-// - Push (desde el servidor, vía Expo → Apple/Google): se registra el token del teléfono en /me/push.
-//   Necesita una build de la app (no funciona en Expo Go de Android) y el projectId de EAS en app.json.
+// - Bandeja (sin Firebase): el servidor guarda cada aviso (respuestas, mensajes, canal abierto…) y el
+//   teléfono los recoge cada 15 a 30 minutos, también con la app cerrada, y los muestra como avisos
+//   locales. Con la app abierta se recogen cada 2 minutos y al volver a ella.
+// - Push (opcional, vía Expo → Apple/Google): si el teléfono consigue token, se registra en /me/push
+//   y el aviso llega al instante; el servidor lo marca entregado para que la bandeja no lo repita.
 // - Local (programada en el mismo teléfono): respaldo para el "¿Cómo estuvo?" cuando no hay push,
 //   por ejemplo en Expo Go. Se programa al marcar "Estoy aquí" y se cancela al responder.
 // Se pide permiso en un momento con sentido (al decir "Voy" o "Estoy aquí"), no al abrir la app.
+import * as BackgroundTask from 'expo-background-task';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { router, type Href } from 'expo-router';
+import * as TaskManager from 'expo-task-manager';
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
+import { almacen } from '@/lib/almacen';
 import { api } from '@/lib/api';
 import i18n from '@/lib/i18n';
 
@@ -60,6 +66,57 @@ export async function activarNotificaciones(sesion: string | null, { preguntar =
   }
 }
 
+// ── Bandeja ──────────────────────────────────────────────────────────────────────────────────────
+const TAREA_BANDEJA = 'bora-bandeja';
+const CLAVE_TOKEN = 'sesion_token'; // la misma que usa la sesión
+const CADA_ABIERTA = 2 * 60 * 1000;
+type AvisoBandeja = { id: string; titulo: string; cuerpo: string; datos: { url?: string; clave?: string } };
+
+let recogiendo = false;
+export async function recogerBandeja() {
+  if (!disponible || recogiendo) return;
+  recogiendo = true;
+  try {
+    const sesion = await almacen.leer(CLAVE_TOKEN);
+    if (!sesion || !(await Notifications.getPermissionsAsync()).granted) return;
+    await prepararCanal();
+    const { avisos } = await api<{ avisos: AvisoBandeja[] }>('/me/bandeja', { metodo: 'POST', token: sesion });
+    for (const a of avisos) {
+      // Un aviso con clave reemplaza al local que ya estaba programado (p. ej. el "¿Cómo estuvo?").
+      const identifier = a.datos?.clave ?? `bandeja-${a.id}`;
+      if (a.datos?.clave) await Notifications.cancelScheduledNotificationAsync(a.datos.clave).catch(() => {});
+      await Notifications.scheduleNotificationAsync({
+        identifier,
+        content: { title: a.titulo, body: a.cuerpo, data: a.datos ?? {} },
+        trigger: Platform.OS === 'android' ? { channelId: CANAL } : null,
+      });
+    }
+  } catch {
+    // sin red o sin servidor: se intenta en la próxima vuelta
+  } finally {
+    recogiendo = false;
+  }
+}
+
+// Con la app cerrada, Android/iOS despiertan esta tarea cada 15 minutos como mínimo (el sistema decide
+// el momento exacto según batería y uso). Se define al cargar el módulo, como pide expo-task-manager.
+if (disponible) {
+  TaskManager.defineTask(TAREA_BANDEJA, async () => {
+    await recogerBandeja();
+    return BackgroundTask.BackgroundTaskResult.Success;
+  });
+}
+
+async function registrarTareaBandeja() {
+  try {
+    if ((await BackgroundTask.getStatusAsync()) !== BackgroundTask.BackgroundTaskStatus.Available) return;
+    if (await TaskManager.isTaskRegisteredAsync(TAREA_BANDEJA)) return;
+    await BackgroundTask.registerTaskAsync(TAREA_BANDEJA, { minimumInterval: 15 });
+  } catch {
+    // Expo Go o sin soporte: quedan la revisión con la app abierta y los avisos locales
+  }
+}
+
 // Al cerrar sesión, este teléfono deja de recibir los avisos de la cuenta.
 export async function quitarNotificaciones(sesion: string | null) {
   if (!tokenPush || !sesion) return;
@@ -92,6 +149,45 @@ export async function programarAvisoLocal(evento: { id: string; titulo: string; 
   }
 }
 
+// Recordatorio antes de un evento donde marcó Voy: lo programa el teléfono (no necesita push).
+const HORAS_RECORDATORIO = 2;
+export async function programarRecordatorio(evento: { id: string; titulo: string; inicio: string; lugar?: string | null }) {
+  if (!disponible) return;
+  const cuando = new Date(new Date(evento.inicio).getTime() - HORAS_RECORDATORIO * 3600000);
+  if (cuando.getTime() < Date.now() + 60000) return; // ya pasó la hora del recordatorio
+  try {
+    await prepararCanal();
+    if (!(await permiso(true))) return;
+    const hora = new Date(evento.inicio).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+    await Notifications.scheduleNotificationAsync({
+      identifier: `recordatorio-${evento.id}`,
+      content: {
+        title: i18n.t('notificaciones.recordatorio.titulo', { titulo: evento.titulo }),
+        body: evento.lugar
+          ? i18n.t('notificaciones.recordatorio.cuerpoLugar', { hora, lugar: evento.lugar })
+          : i18n.t('notificaciones.recordatorio.cuerpo', { hora }),
+        data: { url: `/evento/${evento.id}` },
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: cuando, channelId: CANAL },
+    });
+  } catch {
+    // sin permiso: no hay recordatorio
+  }
+}
+
+export function cancelarRecordatorio(eventoId: string) {
+  if (!disponible) return;
+  Notifications.cancelScheduledNotificationAsync(`recordatorio-${eventoId}`).catch(() => {});
+}
+
+// Al apagar los recordatorios en Ajustes se cancelan los que ya estaban programados.
+export async function cancelarRecordatorios() {
+  if (!disponible) return;
+  const programadas = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  await Promise.all(programadas.filter((n) => n.identifier.startsWith('recordatorio-'))
+    .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})));
+}
+
 export function cancelarAvisoLocal(eventoId: string) {
   if (!disponible) return;
   Notifications.cancelScheduledNotificationAsync(`opinion-${eventoId}`).catch(() => {});
@@ -105,6 +201,23 @@ function useNotificacionesNativo(sesion: string | null) {
 
   useEffect(() => {
     activarNotificaciones(sesion);
+  }, [sesion]);
+
+  // Bandeja: tarea en segundo plano + revisión periódica mientras la app está abierta.
+  useEffect(() => {
+    if (!sesion) return;
+    registrarTareaBandeja();
+    recogerBandeja();
+    const cada = setInterval(() => {
+      if (AppState.currentState === 'active') recogerBandeja();
+    }, CADA_ABIERTA);
+    const sub = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') recogerBandeja();
+    });
+    return () => {
+      clearInterval(cada);
+      sub.remove();
+    };
   }, [sesion]);
 
   useEffect(() => {

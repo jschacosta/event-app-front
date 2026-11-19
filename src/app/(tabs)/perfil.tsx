@@ -271,7 +271,7 @@ function ContenidoAjustes({ usuario, onCerrar }: { usuario: Usuario | null; onCe
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, gap: 24, paddingBottom: insets.bottom + 32 }}>
-        {usuario ? <GrupoNotificaciones usuario={usuario} /> : null}
+        {usuario ? <GrupoNotificaciones usuario={usuario} onIr={(ruta) => { onCerrar(); router.push(ruta); }} /> : null}
         {usuario ? <GrupoPrivacidad usuario={usuario} onIr={(ruta) => { onCerrar(); router.push(ruta); }} /> : null}
         <SelectorApariencia />
         <SelectorIdioma />
