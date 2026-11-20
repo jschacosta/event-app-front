@@ -14,7 +14,9 @@
     "listo": "OK",
     "buscar": "Rechercher",
     "volverArriba": "Revenir en haut",
-    "cerrar": "Fermer"
+    "cerrar": "Fermer",
+    "ahoraNo": "Plus tard",
+    "entendido": "Compris"
   },
   "fechas": {
     "hoy": "Aujourd’hui",

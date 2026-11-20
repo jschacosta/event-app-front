@@ -1,8 +1,9 @@
 // Aviso cuando algo necesita sesión (marcar que vas, responder cómo estuvo, votar o comentar).
-// Trae dos botones: "Cancelar" y "Iniciar sesión", que abre el acceso. Al entrar, se vuelve a la
+// Hoja propia de Bora con "Iniciar sesión" y "Ahora no", que abre el acceso. Al entrar, se vuelve a la
 // pantalla desde donde se pidió (no a la agenda).
 import { router, type Href } from 'expo-router';
-import { Alert, Platform } from 'react-native';
+
+import { abrirDialogo } from '@/lib/dialogo';
 
 let volverA: Href | null = null;
 
@@ -22,12 +23,10 @@ export function pedirSesion(tr: Tr, motivo: 'voy' | 'opinar' = 'opinar', volver?
     volverA = volver ?? null;
     router.push('/auth');
   };
-  if (Platform.OS === 'web') {
-    if (globalThis.confirm?.(`${titulo}\n${texto}`)) entrar();
-    return;
-  }
-  Alert.alert(titulo, texto, [
-    { text: tr('comun.cancelar'), style: 'cancel' },
-    { text: tr('evento.botonEntrar'), onPress: entrar },
-  ]);
+  abrirDialogo({
+    icono: motivo === 'voy' ? 'entrada' : 'canal',
+    titulo,
+    texto,
+    botones: [{ texto: tr('evento.botonEntrar'), tipo: 'principal', onPress: entrar }, { texto: tr('comun.ahoraNo') }],
+  });
 }

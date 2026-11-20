@@ -5,7 +5,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator, Alert, BackHandler, FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, BackHandler, FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View,
   type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 import { useKeyboardHandler, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -48,6 +48,7 @@ import { obtenerSocket } from '@/lib/socket';
 import { textoAviso } from '@/lib/sistema';
 import { emojisSolos } from '@/lib/stickers';
 import { FotoEvento } from '@/components/foto-evento';
+import { avisar as avisarConHoja } from '@/lib/avisos';
 
 // Mensajes seguidos de la misma persona (con menos de 5 minutos entre sí) se agrupan:
 // sin repetir nombre ni foto, y con las esquinas de las burbujas unidas, como en Telegram.
@@ -110,8 +111,7 @@ function colores(t: Tema) {
 }
 
 function avisar(texto: string) {
-  if (Platform.OS === 'web') globalThis.alert?.(texto);
-  else Alert.alert(i18n.t('chat.titulo'), texto);
+  avisarConHoja(i18n.t('chat.titulo'), texto);
 }
 
 const vibrar = (estilo: 'leve' | 'seleccion' = 'leve') => {

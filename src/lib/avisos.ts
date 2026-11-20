@@ -1,23 +1,23 @@
-import { Alert, Platform } from 'react-native';
-
+// Errores, avisos y confirmaciones con la hoja propia de Bora (lib/dialogo.ts), no la alerta del sistema.
+import { abrirDialogo } from '@/lib/dialogo';
 import i18n from '@/lib/i18n';
 import { esCancelacion } from '@/lib/login';
 
 export function mostrarError(err: unknown) {
   if (esCancelacion(err)) return;
   const mensaje = err instanceof Error && err.message ? err.message : i18n.t('comun.intentaDeNuevo');
-  if (Platform.OS === 'web') globalThis.alert?.(mensaje);
-  else Alert.alert(i18n.t('comun.noSePudo'), mensaje);
+  avisar(i18n.t('comun.noSePudo'), mensaje);
 }
 
-// Pregunta antes de una acción destructiva (borrar, reportar).
+// Un aviso con un solo botón ("Entendido").
+export function avisar(titulo: string, texto?: string) {
+  abrirDialogo({ titulo, texto: texto || undefined, botones: [{ texto: i18n.t('comun.entendido'), tipo: 'principal' }] });
+}
+
+// Pregunta antes de una acción destructiva (borrar, reportar). Suele pedirse desde otra hoja.
 export function confirmar(titulo: string, boton: string, accion: () => void) {
-  if (Platform.OS === 'web') {
-    if (globalThis.confirm?.(titulo)) accion();
-    return;
-  }
-  Alert.alert(titulo, undefined, [
-    { text: i18n.t('comun.cancelar'), style: 'cancel' },
-    { text: boton, style: 'destructive', onPress: accion },
-  ]);
+  abrirDialogo({
+    titulo,
+    botones: [{ texto: boton, tipo: 'destructivo', onPress: accion }, { texto: i18n.t('comun.cancelar') }],
+  }, { trasHoja: true });
 }

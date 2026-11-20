@@ -3,7 +3,7 @@ import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +29,7 @@ import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, progr
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
+import { avisar } from '@/lib/avisos';
 
 // Ficha de un evento, como un afiche: el título va sobre la foto. Debajo, los datos en dos columnas
 // (cuándo / dónde), "¿Vas?" compacto y quién va. En fiestas que se repiten, además: "Lo que dicen"
@@ -41,11 +42,6 @@ const OPCIONES: { id: Estado; icono: 'checkmark' | 'questionmark' | 'wineglass' 
   { id: 'previa', icono: 'wineglass' },
 ];
 type Pestana = 'hilos' | 'info';
-
-function avisar(titulo: string, texto: string) {
-  if (Platform.OS === 'web') globalThis.alert?.(`${titulo}\n${texto}`);
-  else Alert.alert(titulo, texto);
-}
 
 function BotonFoto({ icono, etiqueta, onPress }: { icono: 'chevron.left' | 'square.and.arrow.up'; etiqueta: string; onPress: () => void }) {
   return (

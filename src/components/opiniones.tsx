@@ -4,7 +4,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ import { claveDia, diaMes, diasHastaClave, haceTiempo } from '@/lib/fechas';
 import { cancelarAvisoLocal } from '@/lib/notificaciones';
 import { pedirSesion } from '@/lib/pedir-sesion';
 import { FotoEvento } from '@/components/foto-evento';
+import { avisar } from '@/lib/avisos';
 
 export type Respuesta = 'si' | 'mas' | 'no';
 type Conteo = { si: number; mas: number; no: number; total: number };
@@ -282,8 +283,7 @@ export function HojaResponder({ visible, datos, eventoId, token, fechaInicial, o
       onCerrar();
     } catch (e) {
       const texto = e instanceof Error ? e.message : '';
-      if (Platform.OS === 'web') globalThis.alert?.(texto);
-      else Alert.alert(tr('evento.noSePudoGuardar'), texto);
+      avisar(tr('evento.noSePudoGuardar'), texto);
     } finally {
       setGuardando(false);
     }

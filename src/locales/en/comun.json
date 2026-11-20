@@ -14,7 +14,9 @@
     "listo": "Done",
     "buscar": "Search",
     "volverArriba": "Back to top",
-    "cerrar": "Close"
+    "cerrar": "Close",
+    "ahoraNo": "Not now",
+    "entendido": "Got it"
   },
   "fechas": {
     "hoy": "Today",

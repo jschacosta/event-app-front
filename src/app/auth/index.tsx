@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,13 +15,13 @@ import { fuenteWeb } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
 import { esCancelacion } from '@/lib/login';
 import { appleDisponible, googleDisponible } from '@/lib/login';
+import { avisar as avisarConHoja } from '@/lib/avisos';
 
 // Acceso rápido con un alias (solo contra un servidor de desarrollo): en Expo y en el APK de prueba.
 const ACCESO_PRUEBA = __DEV__ || process.env.EXPO_PUBLIC_ACCESO_PRUEBA === '1';
 
 function avisar(texto: string) {
-  if (Platform.OS === 'web') globalThis.alert?.(texto);
-  else Alert.alert('Bora', texto);
+  avisarConHoja('Bora', texto);
 }
 
 // Elegir cómo entrar: Apple, Google o correo.

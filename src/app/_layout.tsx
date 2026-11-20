@@ -12,6 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SesionProvider, useSesion } from '@/context/sesion';
 import { useNotificaciones } from '@/lib/notificaciones';
+import { DialogoGlobal } from '@/components/dialogo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -87,6 +88,7 @@ export default function RootLayout() {
             <Stack.Screen name="perfil/correo" />
             <Stack.Screen name="ciudad" options={{ presentation: 'modal' }} />
           </Stack>
+          <DialogoGlobal />
         </SesionProvider>
       </ThemeProvider>
       </KeyboardProvider>
