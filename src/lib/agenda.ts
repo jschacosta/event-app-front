@@ -3,7 +3,7 @@
 // - primero los próximos DIAS_PRIMERA días, más la lista de días y categorías con eventos (liviana);
 // - al bajar hasta el final se suman los días siguientes (cargarMas);
 // - al elegir una fecha que aún no está, se baja solo ese día (asegurarDia);
-// - al elegir una categoría, se bajan sus eventos de todas las fechas (asegurarGenero);
+// - al elegir una categoría, se bajan sus eventos de todas las fechas (asegurarGenero); lo mismo con un barrio;
 // - el buscador pregunta al servidor, que busca en todas las fechas (buscarEnServidor).
 // La lista unida vive en eventos-cache (así el evento abre al instante y los cambios de asistencia llegan).
 import { useSyncExternalStore } from 'react';
@@ -16,14 +16,19 @@ import { claveDia, claveHoy, inicioDeClave, sumarDias } from '@/lib/fechas';
 const DIAS_PRIMERA = 7;
 const DIAS_MAS = 7;
 
+export type Barrio = { nombre: string; cuenta: number };
+
 export type Agenda = {
   eventos: Evento[] | null;
   // Todo lo que empieza antes de este instante está cargado. Infinity = lista del teléfono (sin datos de qué cubre).
   hasta: number;
   dias: string[] | null; // días con eventos en toda la agenda
   generos: string[] | null; // categorías con eventos en toda la agenda
+  barrios: Barrio[] | null; // barrios con eventos en toda la agenda, de más a menos
   diasPorGenero: Record<string, string[]>;
   generosCompletos: ReadonlySet<string>;
+  diasPorBarrio: Record<string, string[]>;
+  barriosCompletos: ReadonlySet<string>;
   diasSueltos: ReadonlySet<string>;
 };
 
@@ -34,7 +39,8 @@ const oyentes = new Set<() => void>();
 const enCurso = new Map<string, Promise<unknown>>();
 
 const metaVacia = (): Meta => ({
-  hasta: Infinity, dias: null, generos: null, diasPorGenero: {}, generosCompletos: new Set(), diasSueltos: new Set(),
+  hasta: Infinity, dias: null, generos: null, barrios: null, diasPorGenero: {}, generosCompletos: new Set(),
+  diasPorBarrio: {}, barriosCompletos: new Set(), diasSueltos: new Set(),
 });
 const metaDe = (ciudad: string) => metas.get(ciudad) ?? metaVacia();
 
@@ -72,7 +78,7 @@ function unir(ciudad: string, nuevos: Evento[], base = eventosGuardados(ciudad) 
   guardarEventos(ciudad, lista);
 }
 
-type Respuesta = { eventos: Evento[]; dias?: string[]; generos?: string[] };
+type Respuesta = { eventos: Evento[]; dias?: string[]; generos?: string[]; barrios?: Barrio[] };
 const pedir = (ciudad: string, extra: string, token: string | null) =>
   api<Respuesta>(`/events?ciudad=${ciudad}&ligero=1${extra}`, { token });
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -89,7 +95,7 @@ function unaVez<T>(clave: string, f: () => Promise<T>): Promise<T> {
 
 // Días y categorías con eventos: también quedan en el teléfono, para que la tira de días y los filtros
 // funcionen sin señal.
-type Indice = { dias: string[] | null; generos: string[] | null };
+type Indice = { dias: string[] | null; generos: string[] | null; barrios?: Barrio[] | null };
 const archivoIndice = (ciudad: string) => `agenda-indice-${nombreSeguro(ciudad)}`;
 
 // Al abrir la app (o sin señal): lo guardado en el teléfono mientras llega lo nuevo.
@@ -101,7 +107,7 @@ export async function agendaDelTelefono(ciudad: string) {
   guardarEventos(ciudad, l, 'agenda', false);
   if (indice && !metas.has(ciudad)) {
     const desdeHoy = hoy();
-    metas.set(ciudad, { ...metaVacia(), dias: indice.dias?.filter((d) => d >= desdeHoy) ?? null, generos: indice.generos });
+    metas.set(ciudad, { ...metaVacia(), dias: indice.dias?.filter((d) => d >= desdeHoy) ?? null, generos: indice.generos, barrios: indice.barrios ?? null });
   }
   avisar(ciudad);
 }
@@ -115,8 +121,8 @@ export function cargarInicio(ciudad: string, token: string | null) {
   return unaVez(`inicio-${ciudad}`, async () => {
     const hasta = inicioDeClave(sumarDias(hoy(), DIAS_PRIMERA));
     const r = await pedir(ciudad, `&dias=1&hasta=${iso(hasta)}`, token);
-    metas.set(ciudad, { ...metaVacia(), hasta, dias: r.dias ?? null, generos: r.generos ?? null });
-    guardarEnTelefono(archivoIndice(ciudad), (): Indice => ({ dias: r.dias ?? null, generos: r.generos ?? null }));
+    metas.set(ciudad, { ...metaVacia(), hasta, dias: r.dias ?? null, generos: r.generos ?? null, barrios: r.barrios ?? null });
+    guardarEnTelefono(archivoIndice(ciudad), (): Indice => ({ dias: r.dias ?? null, generos: r.generos ?? null, barrios: r.barrios ?? null }));
     guardarEventos(ciudad, r.eventos);
     marcarDescarga(ciudad, 'agenda', token);
     avisar(ciudad);
@@ -177,11 +183,28 @@ export function asegurarGenero(ciudad: string, genero: string, token: string | n
   });
 }
 
+// Todos los eventos de un barrio (de todas las fechas), como con las categorías.
+export function asegurarBarrio(ciudad: string, barrio: string, token: string | null) {
+  if (instantanea(ciudad).barriosCompletos.has(barrio)) return Promise.resolve();
+  return unaVez(`barrio-${ciudad}-${barrio}`, async () => {
+    const r = await pedir(ciudad, `&dias=1&barrio=${encodeURIComponent(barrio)}`, token);
+    unir(ciudad, r.eventos);
+    const m = metaDe(ciudad);
+    metas.set(ciudad, {
+      ...m,
+      diasPorBarrio: { ...m.diasPorBarrio, [barrio]: r.dias ?? [] },
+      barriosCompletos: new Set([...m.barriosCompletos, barrio]),
+    });
+    avisar(ciudad);
+  });
+}
+
 // ¿Se muestra este evento en la lista del inicio? Solo lo que está cubierto entero (para no dejar días a medias).
-export function cubierto(a: Agenda, e: Evento, genero: string | null) {
+export function cubierto(a: Agenda, e: Evento, genero: string | null, barrio: string | null = null) {
   return new Date(e.inicio).getTime() < a.hasta
     || a.diasSueltos.has(claveDia(e.inicio))
-    || (genero !== null && a.generosCompletos.has(genero) && e.generos.includes(genero));
+    || (genero !== null && a.generosCompletos.has(genero) && e.generos.includes(genero))
+    || (barrio !== null && a.barriosCompletos.has(barrio) && e.barrio === barrio);
 }
 
 // Búsqueda en toda la agenda (el servidor revisa todas las fechas). Los resultados quedan para abrir el evento al instante.

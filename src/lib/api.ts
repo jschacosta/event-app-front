@@ -163,6 +163,9 @@ export type Evento = {
   fin: string;
   lugar: string | null;
   barrio: string | null;
+  direccion?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   precioDesde: number | null;
   generos: string[];
   imagen: string | null;

@@ -18,9 +18,10 @@ import { useCiudad } from '@/lib/ciudades';
 import { asegurarDia, cargarInicio, cubreDia, useAgenda } from '@/lib/agenda';
 import { claveDia, claveHoy, diasDesdeHoy, tituloDeClave } from '@/lib/fechas';
 import { GENEROS } from '@/lib/generos';
+import { BotonBarrio, HojaBarrios } from '@/components/barrios';
 
 export default function DiaScreen() {
-  const params = useLocalSearchParams<{ clave: string; genero?: string }>();
+  const params = useLocalSearchParams<{ clave: string; genero?: string; barrio?: string }>();
   const clave = params.clave;
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -32,6 +33,8 @@ export default function DiaScreen() {
   const [fallo, setFallo] = useState(false);
   const eventos = agenda.eventos && (cubreDia(agenda, clave) || fallo) ? agenda.eventos : null;
   const [genero, setGenero] = useState<string | null>(params.genero ?? null);
+  const [barrio, setBarrio] = useState<string | null>(params.barrio ?? null);
+  const [hojaBarrios, setHojaBarrios] = useState(false);
   const [consulta, setConsulta] = useState('');
   const { ref: refScroll, onScroll, medirBuscador, compacto, arriba, subir } = useDesplazamiento();
   const volver = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -53,13 +56,19 @@ export default function DiaScreen() {
   }, [eventos, clave, ciudad.zona]);
 
   const generos = useMemo(() => GENEROS.filter((g) => delDia.some((e) => e.generos.includes(g))), [delDia]);
+  // Barrios de este día, de más a menos (para la misma hoja de la Agenda).
+  const barrios = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const e of delDia) if (e.barrio) n.set(e.barrio, (n.get(e.barrio) ?? 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([nombre, cuenta]) => ({ nombre, cuenta }));
+  }, [delDia]);
   const buscar = useMemo(() => crearBuscador(delDia), [delDia]);
   const buscando = consulta.trim().length >= 2;
   const lista = useMemo(() => {
     const base = buscando ? buscar(consulta) : delDia;
-    return (genero ? base.filter((e) => e.generos.includes(genero)) : base).map((evento) => ({ evento, repeticiones: 1 }));
+    return base.filter((e) => (!genero || e.generos.includes(genero)) && (!barrio || e.barrio === barrio)).map((evento) => ({ evento, repeticiones: 1 }));
     // i18n.language: los nombres de los géneros cambian con el idioma
-  }, [buscando, buscar, consulta, delDia, genero, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buscando, buscar, consulta, delDia, genero, barrio, i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const titulo = tituloDeClave(clave);
 
@@ -82,9 +91,14 @@ export default function DiaScreen() {
         <View style={styles.margen}>
           <BotonVolver onPress={volver} />
         </View>
-        <View style={[styles.margen, { marginTop: 14 }]}>
-          <Texto v="tituloGrande">{titulo}</Texto>
-          {eventos ? <Texto v="detalle" secundario>{tr('dia.eventos', { count: delDia.length })}</Texto> : null}
+        <View style={[styles.margen, styles.cabeza]}>
+          <View style={{ flex: 1 }}>
+            <Texto v="tituloGrande">{titulo}</Texto>
+            {eventos ? <Texto v="detalle" secundario>{tr('dia.eventos', { count: delDia.length })}</Texto> : null}
+          </View>
+          {barrios.length >= 3 || barrio ? (
+            <BotonBarrio elegido={barrio} onAbrir={() => setHojaBarrios(true)} onQuitar={() => setBarrio(null)} />
+          ) : null}
         </View>
         <View style={[styles.margen, { marginTop: 16 }]} onLayout={medirBuscador}>
           <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr('dia.buscar')} />
@@ -101,11 +115,12 @@ export default function DiaScreen() {
             <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>
               {buscando ? tr('agenda.sinResultados', { q: consulta.trim() }) : tr('dia.vacio')}
             </Texto>
-            {genero ? <BotonTexto texto={tr('agenda.verTodosTipos')} onPress={() => setGenero(null)} /> : null}
+            {barrio ? <BotonTexto texto={tr('barrio.todos')} onPress={() => setBarrio(null)} />
+              : genero ? <BotonTexto texto={tr('agenda.verTodosTipos')} onPress={() => setGenero(null)} /> : null}
           </View>
         ) : (
           <Animated.View entering={FadeIn.duration(200)} style={[styles.margen, { marginTop: 18 }]}>
-            {genero || buscando ? (
+            {genero || barrio || buscando ? (
               <Texto v="pie" secundario style={styles.cuenta}>{tr('agenda.resultados', { count: lista.length })}</Texto>
             ) : null}
             <ListaEventos grupos={lista} soloHora />
@@ -113,11 +128,13 @@ export default function DiaScreen() {
         )}
       </Animated.ScrollView>
       <BotonArriba visible={arriba} onPress={subir} sinPestanas />
+      <HojaBarrios visible={hojaBarrios} barrios={barrios} elegido={barrio} onElegir={setBarrio} onCerrar={() => setHojaBarrios(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cabeza: { marginTop: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   pantalla: { flex: 1, alignItems: 'center' },
   scroll: { width: '100%' },
   margen: { paddingHorizontal: 20 },

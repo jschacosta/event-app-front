@@ -703,7 +703,8 @@
     "recordatorio": {
       "titulo": "Hoje: {{titulo}}",
       "cuerpo": "Começa às {{hora}}. Bora!",
-      "cuerpoLugar": "Começa às {{hora}} em {{lugar}}. Bora!"
+      "cuerpoLugar": "Começa às {{hora}} em {{lugar}}. Bora!",
+      "tituloManana": "Amanhã: {{titulo}}"
     }
   },
   "enInternet": {
@@ -740,7 +741,7 @@
       "avisos": {
         "recordatorio": {
           "titulo": "Lembrete do evento",
-          "detalle": "2 horas antes de um evento em que você marcou Vou."
+          "detalle": "Antes dos eventos em que você marcou Vou, Talvez ou Esquenta. Em cada evento você escolhe quando."
         },
         "canalAbierto": {
           "titulo": "O canal abriu",
@@ -857,5 +858,57 @@
     "actualizar": "Atualizar",
     "obligatoria": "Atualize o Bora",
     "obligatoriaTexto": "Esta versão do Bora não é mais compatível. Baixe a mais recente na {{tienda}} para continuar usando. Sua conta e seus planos continuam iguais."
+  },
+  "llegar": {
+    "titulo": "Como chegar",
+    "google": "Google Maps",
+    "apple": "Mapas",
+    "waze": "Waze",
+    "uber": "Uber",
+    "rutaDetalle": "Rota a partir de onde você está",
+    "wazeDetalle": "Rota para ir de carro",
+    "uberDetalle": "Peça uma corrida até a porta",
+    "verLugar": "Ver o lugar",
+    "verLugarDetalle": "Fotos, horários e avaliações no Google Maps",
+    "copiar": "Copiar o endereço",
+    "copiarDetalle": "Para colar em outro app ou enviar",
+    "copiada": "Endereço copiado"
+  },
+  "recordatorio": {
+    "titulo": "Lembrete",
+    "apagados": "Os lembretes estão desativados",
+    "activar": "Ativar",
+    "bloqueadas": "O celular está bloqueando as notificações do Bora",
+    "abrirAjustes": "Abrir ajustes",
+    "cambiar": "Mudar",
+    "fila": {
+      "antes": "Vamos te avisar 2 h antes",
+      "dia": "Vamos te avisar no dia anterior",
+      "ambos": "Vamos te avisar no dia anterior e 2 h antes",
+      "no": "Sem lembrete"
+    },
+    "opcion": {
+      "antes": "2 horas antes",
+      "dia": "No dia anterior",
+      "ambos": "As duas vezes",
+      "no": "Não me avisar deste evento"
+    },
+    "aLas": "Às {{hora}}",
+    "diaAntesDetalle": "No dia anterior, às {{hora}}",
+    "todos": "Desativar todos os lembretes",
+    "todosDetalle": "Em Ajustes → Notificações"
+  },
+  "barrio": {
+    "boton": "Bairro",
+    "elegir": "Escolher bairro",
+    "cambiar": "Bairro: {{barrio}}. Mudar",
+    "quitar": "Tirar o filtro de bairro",
+    "titulo": "Bairros",
+    "ayuda_one": "{{count}} bairro com eventos",
+    "ayuda_other": "{{count}} bairros com eventos",
+    "buscar": "Buscar bairro",
+    "todos": "Todos os bairros",
+    "sinResultados": "Nenhum bairro com esse nome",
+    "sinEventos": "Não há eventos em {{barrio}} com esses filtros."
   }
 }

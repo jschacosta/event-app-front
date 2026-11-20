@@ -703,7 +703,8 @@
     "recordatorio": {
       "titulo": "Aujourd’hui : {{titulo}}",
       "cuerpo": "Ça commence à {{hora}}. Bora !",
-      "cuerpoLugar": "Ça commence à {{hora}} à {{lugar}}. Bora !"
+      "cuerpoLugar": "Ça commence à {{hora}} à {{lugar}}. Bora !",
+      "tituloManana": "Demain : {{titulo}}"
     }
   },
   "enInternet": {
@@ -740,7 +741,7 @@
       "avisos": {
         "recordatorio": {
           "titulo": "Rappel d’événement",
-          "detalle": "2 heures avant un événement où vous avez coché J’y vais."
+          "detalle": "Avant les événements où vous avez coché J’y vais, Peut-être ou Before. Vous choisissez quand pour chaque événement."
         },
         "canalAbierto": {
           "titulo": "Canal ouvert",
@@ -857,5 +858,57 @@
     "actualizar": "Mettre à jour",
     "obligatoria": "Mettez Bora à jour",
     "obligatoriaTexto": "Cette version de Bora n’est plus prise en charge. Téléchargez la dernière depuis {{tienda}} pour continuer. Votre compte et vos sorties sont conservés."
+  },
+  "llegar": {
+    "titulo": "Y aller",
+    "google": "Google Maps",
+    "apple": "Plans",
+    "waze": "Waze",
+    "uber": "Uber",
+    "rutaDetalle": "Itinéraire depuis votre position",
+    "wazeDetalle": "Itinéraire en voiture",
+    "uberDetalle": "Commandez une course jusqu’à la porte",
+    "verLugar": "Voir le lieu",
+    "verLugarDetalle": "Photos, horaires et avis sur Google Maps",
+    "copiar": "Copier l’adresse",
+    "copiarDetalle": "Pour la coller dans une autre app ou l’envoyer",
+    "copiada": "Adresse copiée"
+  },
+  "recordatorio": {
+    "titulo": "Rappel",
+    "apagados": "Les rappels sont désactivés",
+    "activar": "Activer",
+    "bloqueadas": "Votre téléphone bloque les notifications de Bora",
+    "abrirAjustes": "Ouvrir les réglages",
+    "cambiar": "Modifier",
+    "fila": {
+      "antes": "Rappel 2 h avant",
+      "dia": "Rappel la veille",
+      "ambos": "Rappel la veille et 2 h avant",
+      "no": "Pas de rappel"
+    },
+    "opcion": {
+      "antes": "2 heures avant",
+      "dia": "La veille",
+      "ambos": "Les deux",
+      "no": "Pas de rappel pour cet événement"
+    },
+    "aLas": "À {{hora}}",
+    "diaAntesDetalle": "La veille, à {{hora}}",
+    "todos": "Désactiver tous les rappels",
+    "todosDetalle": "Dans Réglages → Notifications"
+  },
+  "barrio": {
+    "boton": "Quartier",
+    "elegir": "Choisir un quartier",
+    "cambiar": "Quartier : {{barrio}}. Modifier",
+    "quitar": "Retirer le filtre de quartier",
+    "titulo": "Quartiers",
+    "ayuda_one": "{{count}} quartier avec des événements",
+    "ayuda_other": "{{count}} quartiers avec des événements",
+    "buscar": "Rechercher un quartier",
+    "todos": "Tous les quartiers",
+    "sinResultados": "Aucun quartier de ce nom",
+    "sinEventos": "Aucun événement à {{barrio}} avec ces filtres."
   }
 }

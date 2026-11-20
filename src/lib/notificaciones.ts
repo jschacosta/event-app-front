@@ -150,35 +150,80 @@ export async function programarAvisoLocal(evento: { id: string; titulo: string; 
   }
 }
 
-// Recordatorio antes de un evento donde marcó Voy: lo programa el teléfono (no necesita push).
+// Recordatorios de los eventos marcados (Voy, Tal vez, Previa): los programa el teléfono, sin push.
+// "antes" = 2 horas antes; "dia" = el día anterior a las 18:00; "ambos". Lo elige la persona en cada
+// evento (lib/recordatorios.ts). Cada uno tiene su identificador para reemplazarlo o cancelarlo.
+export type ModoRecordatorio = 'antes' | 'dia' | 'ambos' | 'no';
 const HORAS_RECORDATORIO = 2;
-export async function programarRecordatorio(evento: { id: string; titulo: string; inicio: string; lugar?: string | null }) {
+const HORA_DIA_ANTES = 18;
+type EventoRecordatorio = { id: string; titulo: string; inicio: string; lugar?: string | null };
+
+// Cuándo suena cada recordatorio (null si ya pasó o no corresponde).
+export function horasRecordatorio(inicio: string) {
+  const i = new Date(inicio);
+  const antes = new Date(i.getTime() - HORAS_RECORDATORIO * 3600000);
+  const dia = new Date(i);
+  dia.setDate(dia.getDate() - 1);
+  dia.setHours(HORA_DIA_ANTES, 0, 0, 0);
+  const pronto = Date.now() + 60000;
+  return {
+    antes: antes.getTime() > pronto ? antes : null,
+    // Solo si queda lejos del de 2 h antes: una fiesta a las 2 de la mañana es "esta noche", no "mañana".
+    dia: dia.getTime() > pronto && dia.getTime() <= antes.getTime() - 12 * 3600000 ? dia : null,
+  };
+}
+
+async function agendar(identifier: string, cuando: Date, title: string, body: string, eventoId: string) {
+  await Notifications.scheduleNotificationAsync({
+    identifier,
+    content: { title, body, data: { url: `/evento/${eventoId}` } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: cuando, channelId: CANAL },
+  });
+}
+
+// `preguntar`: pedir permiso si todavía no lo dio (al marcar Voy sí; al sincronizar en segundo plano no).
+export async function programarRecordatorio(evento: EventoRecordatorio, modo: ModoRecordatorio = 'antes', { preguntar = true } = {}) {
   if (!disponible) return;
-  const cuando = new Date(new Date(evento.inicio).getTime() - HORAS_RECORDATORIO * 3600000);
-  if (cuando.getTime() < Date.now() + 60000) return; // ya pasó la hora del recordatorio
+  await quitarRecordatorio(evento.id); // antes de programar: si no, podría borrar el nuevo
+  if (modo === 'no') return;
+  const h = horasRecordatorio(evento.inicio);
+  const quiereAntes = modo === 'antes' || modo === 'ambos';
+  const quiereDia = modo === 'dia' || modo === 'ambos';
+  if (!(quiereAntes && h.antes) && !(quiereDia && h.dia)) return;
   try {
     await prepararCanal();
-    if (!(await permiso(true))) return;
+    if (!(await permiso(preguntar))) return;
     const hora = horaEvento(evento.inicio);
-    await Notifications.scheduleNotificationAsync({
-      identifier: `recordatorio-${evento.id}`,
-      content: {
-        title: i18n.t('notificaciones.recordatorio.titulo', { titulo: evento.titulo }),
-        body: evento.lugar
-          ? i18n.t('notificaciones.recordatorio.cuerpoLugar', { hora, lugar: evento.lugar })
-          : i18n.t('notificaciones.recordatorio.cuerpo', { hora }),
-        data: { url: `/evento/${evento.id}` },
-      },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: cuando, channelId: CANAL },
-    });
+    const cuerpo = evento.lugar
+      ? i18n.t('notificaciones.recordatorio.cuerpoLugar', { hora, lugar: evento.lugar })
+      : i18n.t('notificaciones.recordatorio.cuerpo', { hora });
+    if (quiereAntes && h.antes) {
+      await agendar(`recordatorio-${evento.id}`, h.antes, i18n.t('notificaciones.recordatorio.titulo', { titulo: evento.titulo }), cuerpo, evento.id);
+    }
+    if (quiereDia && h.dia) {
+      await agendar(`recordatorio-${evento.id}-dia`, h.dia, i18n.t('notificaciones.recordatorio.tituloManana', { titulo: evento.titulo }), cuerpo, evento.id);
+    }
   } catch {
     // sin permiso: no hay recordatorio
   }
 }
 
+function quitarRecordatorio(eventoId: string) {
+  return Promise.all([`recordatorio-${eventoId}`, `recordatorio-${eventoId}-dia`]
+    .map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})));
+}
+
 export function cancelarRecordatorio(eventoId: string) {
   if (!disponible) return;
-  Notifications.cancelScheduledNotificationAsync(`recordatorio-${eventoId}`).catch(() => {});
+  quitarRecordatorio(eventoId);
+}
+
+// Recordatorios ya programados en este teléfono (ids de evento).
+export async function eventosConRecordatorio() {
+  if (!disponible) return new Set<string>();
+  const programadas = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  return new Set(programadas.filter((n) => n.identifier.startsWith('recordatorio-'))
+    .map((n) => n.identifier.slice('recordatorio-'.length).replace(/-dia$/, '')));
 }
 
 // Al apagar los recordatorios en Ajustes se cancelan los que ya estaban programados.
@@ -187,6 +232,13 @@ export async function cancelarRecordatorios() {
   const programadas = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
   await Promise.all(programadas.filter((n) => n.identifier.startsWith('recordatorio-'))
     .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})));
+}
+
+// ¿Puede avisar este teléfono? 'si', 'preguntar' (todavía no decide) o 'no' (lo negó: solo desde Ajustes).
+export async function estadoPermiso(): Promise<'si' | 'preguntar' | 'no'> {
+  if (!disponible) return 'no';
+  const p = await Notifications.getPermissionsAsync().catch(() => null);
+  return p?.granted ? 'si' : p?.canAskAgain === false ? 'no' : 'preguntar';
 }
 
 export function cancelarAvisoLocal(eventoId: string) {

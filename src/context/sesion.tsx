@@ -3,11 +3,12 @@ import { API_URL } from '@/config/api';
 import { Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 
-import { api, ApiError, type CambiosPerfil, type Usuario } from '@/lib/api';
+import { api, ApiError, quiereAviso, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { almacen } from '@/lib/almacen';
 import { olvidarHistoriales } from '@/lib/historial-chat';
 import { fijarSesionPlanes, olvidarPlanes } from '@/lib/planes';
 import { fijarTokenPrecarga, olvidarRespuestasDeSesion } from '@/lib/precarga';
+import { fijarRecordatoriosActivos } from '@/lib/recordatorios';
 import { useCiudad } from '@/lib/ciudades';
 import i18n from '@/lib/i18n';
 import { pedirTokenApple, pedirTokenGoogle } from '@/lib/login';
@@ -119,6 +120,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   useEffect(() => { fijarTokenPrecarga(token); }, [token]);
   // "Mis planes" se descarga apenas se sabe quién es (y queda en el teléfono para usarlo sin señal).
   useEffect(() => { if (!cargando) fijarSesionPlanes(token); }, [cargando, token]);
+  // Interruptor "Recordatorios" de Ajustes → Notificaciones (sin sesión no hay planes que recordar).
+  const conRecordatorios = Boolean(usuario) && quiereAviso(usuario, 'recordatorio');
+  useEffect(() => { if (!cargando) fijarRecordatoriosActivos(conRecordatorios); }, [cargando, conRecordatorios]);
 
   // El perfil queda guardado en el teléfono para el próximo arranque (y se borra al salir).
   useEffect(() => {

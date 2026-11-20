@@ -10,6 +10,7 @@ import { HojaCalendario } from '@/components/calendario';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
 import { EsqueletoAgenda } from '@/components/esqueleto';
 import { BarraBusqueda, BotonCiudad, FilaGeneros, IconoVacio, TiraFechas } from '@/components/filtros';
+import { BotonBarrio, HojaBarrios } from '@/components/barrios';
 import { AvisoSinConexion, VacioSinConexion } from '@/components/aviso-sin-conexion';
 import { AvisoComoEstuvo } from '@/components/opiniones';
 import { BotonTexto, Icono, Texto } from '@/components/ui';
@@ -18,7 +19,7 @@ import { BottomTabInset, FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import type { Evento } from '@/lib/api';
-import { agendaDelTelefono, agendaReciente, asegurarDia, asegurarGenero, buscarEnServidor, cargarInicio, cargarMas, cubierto, cubreDia, hayMas, useAgenda } from '@/lib/agenda';
+import { agendaDelTelefono, agendaReciente, asegurarBarrio, asegurarDia, asegurarGenero, buscarEnServidor, cargarInicio, cargarMas, cubierto, cubreDia, hayMas, useAgenda } from '@/lib/agenda';
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { cuandoVuelvaLaConexion, useSinConexion } from '@/lib/conexion';
 import { horaDeLista } from '@/lib/eventos-cache';
@@ -182,6 +183,9 @@ export default function AgendaScreen() {
   const [generoElegido, setGenero] = useState<string | null>(null);
   // La tarjeta de la categoría se marca al instante; la lista se redibuja después, sin trabar el toque.
   const genero = useDeferredValue(generoElegido);
+  const [barrioElegido, setBarrio] = useState<string | null>(null);
+  const barrio = useDeferredValue(barrioElegido);
+  const [hojaBarrios, setHojaBarrios] = useState(false);
   const [calendario, setCalendario] = useState(false);
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
   const lista = useRef<FlatList<Seccion>>(null);
@@ -204,6 +208,7 @@ export default function AgendaScreen() {
   if (ciudadVista !== ciudad.id) {
     setCiudadVista(ciudad.id);
     setGenero(null);
+    setBarrio(null);
     setConsulta('');
     setDia(null);
   }
@@ -226,7 +231,11 @@ export default function AgendaScreen() {
     if (genero) asegurarGenero(ciudad.id, genero, token ?? null).catch(() => {});
   }, [genero, ciudad.id, token]);
   const diaPendiente = Boolean(dia && eventos && !cubreDia(agenda, dia) && diaFallido !== dia);
-  const generoPendiente = Boolean(genero && !agenda.generosCompletos.has(genero));
+  useEffect(() => {
+    if (barrio) asegurarBarrio(ciudad.id, barrio, token ?? null).catch(() => {});
+  }, [barrio, ciudad.id, token]);
+  const generoPendiente = Boolean(genero && !agenda.generosCompletos.has(genero))
+    || Boolean(barrio && !agenda.barriosCompletos.has(barrio));
 
   // Al llegar al final de la lista se suman los días siguientes.
   const [cargandoMas, setCargandoMas] = useState(false);
@@ -263,12 +272,13 @@ export default function AgendaScreen() {
     const ids = new Set(locales.map((e) => e.id));
     const remotos = delServidor?.q === consultaDiferida ? delServidor.eventos.filter((e) => !ids.has(e.id)) : [];
     const r = [...locales, ...remotos];
-    return agruparSeries(genero ? r.filter((e) => e.generos.includes(genero)) : r);
-  }, [buscando, buscar, consultaDiferida, delServidor, genero]);
+    return agruparSeries(r.filter((e) => (!genero || e.generos.includes(genero)) && (!barrio || e.barrio === barrio)));
+  }, [buscando, buscar, consultaDiferida, delServidor, genero, barrio]);
 
   const { enVivo, secciones } = useMemo(() => {
     const hoy = claveHoy();
-    const deGenero = (eventos ?? []).filter((e) => (!genero || e.generos.includes(genero)) && cubierto(agenda, e, genero));
+    const deGenero = (eventos ?? []).filter((e) => (!genero || e.generos.includes(genero)) && (!barrio || e.barrio === barrio)
+      && cubierto(agenda, e, genero, barrio));
     const vivo = (e: Evento) => new Date(e.inicio).getTime() <= ahora && ahora < new Date(e.fin).getTime();
     // En vivo también va primero lo que vale la pena (si no, gana el almuerzo que empezó a mediodía).
     const enVivo = dia && dia !== hoy ? [] : deGenero.filter(vivo)
@@ -291,21 +301,25 @@ export default function AgendaScreen() {
     return { enVivo, secciones };
     // i18n.language y ciudad.zona: los títulos de los días cambian con el idioma y la zona horaria
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, agenda, dia, genero, ahora, i18n.language, ciudad.zona]);
+  }, [eventos, agenda, dia, genero, barrio, ahora, i18n.language, ciudad.zona]);
 
   // Días con eventos: los manda el servidor (de toda la agenda), así la tira y el calendario no necesitan bajar todo.
   const diasConEventos = useMemo(() => {
-    const delServidorDias = genero ? agenda.diasPorGenero[genero] : agenda.dias;
+    // Con categoría y barrio a la vez: se calcula con lo cargado (los eventos del barrio ya están todos).
+    const delServidorDias = barrio ? (genero ? null : agenda.diasPorBarrio[barrio]) : genero ? agenda.diasPorGenero[genero] : agenda.dias;
     if (delServidorDias) return new Set(delServidorDias);
     const hoy = claveHoy();
     return new Set((eventos ?? [])
-      .filter((e) => !genero || e.generos.includes(genero))
+      .filter((e) => (!genero || e.generos.includes(genero)) && (!barrio || e.barrio === barrio))
       .map((e) => (diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, agenda.dias, agenda.diasPorGenero, genero, ahora, ciudad.zona]);
+  }, [eventos, agenda.dias, agenda.diasPorGenero, agenda.diasPorBarrio, genero, barrio, ahora, ciudad.zona]);
 
   const mostrarSecciones = !error && Boolean(eventos?.length) && !buscando && !diaPendiente;
-  const verDia = useCallback((clave: string) => router.push({ pathname: '/dia/[clave]', params: genero ? { clave, genero } : { clave } }), [genero]);
+  const verDia = useCallback((clave: string) => router.push({
+    pathname: '/dia/[clave]',
+    params: { clave, ...(genero ? { genero } : {}), ...(barrio ? { barrio } : {}) },
+  }), [genero, barrio]);
   const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0 && !generoPendiente;
 
   const refrescar = async () => {
@@ -349,6 +363,9 @@ export default function AgendaScreen() {
         ListHeaderComponent={<View style={{ paddingTop: insets.top + 10 }}>
           <View style={styles.encabezado}>
             <BotonCiudad grande />
+            {(agenda.barrios?.length ?? 0) >= 3 || barrioElegido ? (
+              <BotonBarrio elegido={barrioElegido} onAbrir={() => setHojaBarrios(true)} onQuitar={() => setBarrio(null)} />
+            ) : null}
           </View>
           <View style={styles.margen}><AvisoSinConexion desde={horaDeLista(ciudad.id)} style={{ marginBottom: 10 }} /></View>
 
@@ -405,9 +422,10 @@ export default function AgendaScreen() {
           ) : nada ? (
             <View style={styles.vacio}>
               <Texto secundario style={{ textAlign: 'center' }}>
-                {genero ? tr('agenda.sinEventosGenero', { genero: nombreGenero(genero) }) : tr('agenda.sinEventos')}
+                {barrio ? tr('barrio.sinEventos', { barrio }) : genero ? tr('agenda.sinEventosGenero', { genero: nombreGenero(genero) }) : tr('agenda.sinEventos')}
               </Texto>
               {dia ? <BotonTexto texto={tr('agenda.verTodasFechas')} onPress={() => setDia(null)} />
+                : barrio ? <BotonTexto texto={tr('barrio.todos')} onPress={() => setBarrio(null)} />
                 : genero ? <BotonTexto texto={tr('agenda.verTodosTipos')} onPress={() => setGenero(null)} /> : null}
             </View>
           ) : enVivo.length ? (
@@ -425,6 +443,13 @@ export default function AgendaScreen() {
         </View>}
       />
       <BotonArriba visible={arriba} onPress={subir} />
+      <HojaBarrios
+        visible={hojaBarrios}
+        barrios={agenda.barrios ?? []}
+        elegido={barrioElegido}
+        onElegir={(b) => { setBarrio(b); subir(); }}
+        onCerrar={() => setHojaBarrios(false)}
+      />
       <HojaCalendario
         visible={calendario}
         valor={dia}

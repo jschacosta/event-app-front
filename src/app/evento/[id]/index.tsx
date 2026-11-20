@@ -3,7 +3,7 @@ import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import { LoQueHayQueSaber } from '@/components/lo-que-hay-que-saber';
 import { AvisoSinConexion } from '@/components/aviso-sin-conexion';
 import { HojaResponder, ListaHilos, LoQueDicen, pedirSesion, useOpiniones } from '@/components/opiniones';
 import { Caras, useYaAqui } from '@/components/ya-aqui';
+import { IconoBora } from '@/components/iconos-bora';
 import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +26,10 @@ import { cuandoVuelvaLaConexion } from '@/lib/conexion';
 import { cargarPlanes } from '@/lib/planes';
 import { fechaGuardado, guardado, pedir } from '@/lib/precarga';
 import { compartirEvento } from '@/lib/compartir-evento';
-import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
+import { activarNotificaciones, programarAvisoLocal } from '@/lib/notificaciones';
+import { recordatorioAlMarcar } from '@/lib/recordatorios';
+import { HojaComoLlegar } from '@/components/como-llegar';
+import { FilaRecordatorio } from '@/components/recordatorio';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
@@ -87,6 +91,7 @@ export default function EventoScreen() {
   const [asistentes, setAsistentes] = useState<EstadoAsistencia | null>(null);
   const [pestana, setPestana] = useState<Pestana>('hilos');
   const [respondiendo, setRespondiendo] = useState(false);
+  const [llegar, setLlegar] = useState(false);
   const aqui = useYaAqui(evento);
   const opiniones = useOpiniones(id, token, Boolean(evento?.recurrente));
   // Desde el aviso "¿Cómo estuvo?" de la agenda: se abren las preguntas de esa fecha apenas cargan.
@@ -138,8 +143,8 @@ export default function EventoScreen() {
       actualizarEnListas(id, r); // el inicio y Canales muestran el cambio al volver, sin recargar
       cargarPlanes(true); // "Mis planes" en Perfil (y su copia sin señal)
       if (estado === 'voy') activarNotificaciones(token, { preguntar: true });
-      if (evento && estado === 'voy' && quiereAviso(usuario, 'recordatorio')) programarRecordatorio(evento);
-      else cancelarRecordatorio(id);
+      // Recordatorio con lo que eligió para este evento (2 h antes si no eligió nada).
+      if (evento) recordatorioAlMarcar(evento, estado);
     } catch (e) {
       avisar(tr('evento.noSePudoGuardar'), e instanceof Error ? e.message : '');
     } finally {
@@ -176,10 +181,6 @@ export default function EventoScreen() {
   const lugar = evento.lugar ?? evento.barrio ?? '';
   const hayGente = Boolean(a && a.van + a.talvez + a.previa > 0);
   const repite = Boolean(evento.recurrente);
-  const abrirMapa = () => {
-    const q = encodeURIComponent([evento.lugar, evento.barrio, evento.ciudad].filter(Boolean).join(', '));
-    Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`).catch(() => {});
-  };
   const resumen = hayGente
     ? [a!.van ? tr('agenda.van', { count: a!.van }) : null, a!.talvez ? tr('evento.nTalvez', { count: a!.talvez }) : null, a!.previa ? tr('evento.nPrevia', { count: a!.previa }) : null].filter(Boolean).join(', ')
     : tr('evento.nadieTodavia');
@@ -228,8 +229,13 @@ export default function EventoScreen() {
               rotulo={evento.barrio && evento.lugar ? evento.barrio : tr('evento.mapa')}
               valor={lugar}
               extra={(
-                <Pressable onPress={abrirMapa} hitSlop={8} accessibilityRole="link">
-                  {({ pressed }) => <Texto v="pie" style={{ color: t.accentText, fontWeight: '700', opacity: pressed ? 0.5 : 1 }}>{tr('evento.verMapa')}</Texto>}
+                <Pressable onPress={() => setLlegar(true)} hitSlop={8} accessibilityRole="button" style={styles.llegar}>
+                  {({ pressed }) => (
+                    <>
+                      <IconoBora nombre="ruta" tamano={14} color={t.accentText} />
+                      <Texto v="pie" style={{ color: t.accentText, fontWeight: '700', opacity: pressed ? 0.5 : 1 }}>{tr('llegar.titulo')}</Texto>
+                    </>
+                  )}
                 </Pressable>
               )}
             />
@@ -272,6 +278,7 @@ export default function EventoScreen() {
               <Texto v="pie" secundario>{tr('evento.voySoloGrupo')}</Texto>
             </Pressable>
           ) : null}
+          <FilaRecordatorio evento={evento} />
 
           {/* Quién va. */}
           <Pressable
@@ -397,6 +404,7 @@ export default function EventoScreen() {
         onCerrar={() => setRespondiendo(false)}
         onListo={opiniones.recargar}
       />
+      <HojaComoLlegar evento={evento} visible={llegar} onCerrar={() => setLlegar(false)} />
       <HojaAsistentes visible={Boolean(asistentes)} eventoId={evento.id} inicial={asistentes ?? 'voy'} onCerrar={() => setAsistentes(null)} />
     </View>
   );
@@ -431,5 +439,6 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
+  llegar: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
   botonAqui: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

@@ -7,6 +7,7 @@ import { api, type Evento } from '@/lib/api';
 import { cuandoVuelvaLaConexion } from '@/lib/conexion';
 import { borrarLista, escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
 import { fijarRutas, pedir } from '@/lib/precarga';
+import { sincronizarRecordatorios } from '@/lib/recordatorios';
 
 const LISTA = 'todas'; // una sola lista, de todas las ciudades
 const DIAS_CON_FICHA = 7;
@@ -55,6 +56,7 @@ export function cargarPlanes(forzar = false) {
       ultima = Date.now();
       guardarEventos(LISTA, r.eventos, 'planes');
       avisar();
+      sincronizarRecordatorios(r.eventos);
       guardarFichas(r.eventos);
     })
     .catch(() => {})

@@ -703,7 +703,8 @@
     "recordatorio": {
       "titulo": "Heute: {{titulo}}",
       "cuerpo": "Beginnt um {{hora}} Uhr. Bora!",
-      "cuerpoLugar": "Beginnt um {{hora}} Uhr in {{lugar}}. Bora!"
+      "cuerpoLugar": "Beginnt um {{hora}} Uhr in {{lugar}}. Bora!",
+      "tituloManana": "Morgen: {{titulo}}"
     }
   },
   "enInternet": {
@@ -740,7 +741,7 @@
       "avisos": {
         "recordatorio": {
           "titulo": "Event-Erinnerung",
-          "detalle": "2 Stunden vor einem Event, bei dem du Dabei gewählt hast."
+          "detalle": "Vor Events, bei denen du Dabei, Vielleicht oder Vorglühen gewählt hast. Wann, wählst du bei jedem Event."
         },
         "canalAbierto": {
           "titulo": "Kanal geöffnet",
@@ -857,5 +858,57 @@
     "actualizar": "Aktualisieren",
     "obligatoria": "Aktualisiere Bora",
     "obligatoriaTexto": "Diese Version von Bora wird nicht mehr unterstützt. Lade die neueste über {{tienda}} herunter, um sie weiter zu nutzen. Dein Konto und deine Pläne bleiben erhalten."
+  },
+  "llegar": {
+    "titulo": "Anfahrt",
+    "google": "Google Maps",
+    "apple": "Karten",
+    "waze": "Waze",
+    "uber": "Uber",
+    "rutaDetalle": "Route von deinem Standort",
+    "wazeDetalle": "Route mit dem Auto",
+    "uberDetalle": "Fahrt bis vor die Tür bestellen",
+    "verLugar": "Ort ansehen",
+    "verLugarDetalle": "Fotos, Öffnungszeiten und Bewertungen auf Google Maps",
+    "copiar": "Adresse kopieren",
+    "copiarDetalle": "Zum Einfügen in eine andere App oder zum Verschicken",
+    "copiada": "Adresse kopiert"
+  },
+  "recordatorio": {
+    "titulo": "Erinnerung",
+    "apagados": "Erinnerungen sind ausgeschaltet",
+    "activar": "Einschalten",
+    "bloqueadas": "Dein Handy blockiert die Mitteilungen von Bora",
+    "abrirAjustes": "Einstellungen öffnen",
+    "cambiar": "Ändern",
+    "fila": {
+      "antes": "Wir erinnern dich 2 Std. vorher",
+      "dia": "Wir erinnern dich am Vortag",
+      "ambos": "Wir erinnern dich am Vortag und 2 Std. vorher",
+      "no": "Keine Erinnerung"
+    },
+    "opcion": {
+      "antes": "2 Stunden vorher",
+      "dia": "Am Vortag",
+      "ambos": "Beides",
+      "no": "Für dieses Event nicht erinnern"
+    },
+    "aLas": "Um {{hora}}",
+    "diaAntesDetalle": "Am Vortag um {{hora}}",
+    "todos": "Alle Erinnerungen ausschalten",
+    "todosDetalle": "In Einstellungen → Mitteilungen"
+  },
+  "barrio": {
+    "boton": "Viertel",
+    "elegir": "Viertel wählen",
+    "cambiar": "Viertel: {{barrio}}. Ändern",
+    "quitar": "Viertel-Filter entfernen",
+    "titulo": "Viertel",
+    "ayuda_one": "{{count}} Viertel mit Events",
+    "ayuda_other": "{{count}} Viertel mit Events",
+    "buscar": "Viertel suchen",
+    "todos": "Alle Viertel",
+    "sinResultados": "Kein Viertel mit diesem Namen",
+    "sinEventos": "Keine Events in {{barrio}} mit diesen Filtern."
   }
 }

@@ -703,7 +703,8 @@
     "recordatorio": {
       "titulo": "Today: {{titulo}}",
       "cuerpo": "Starts at {{hora}}. Bora!",
-      "cuerpoLugar": "Starts at {{hora}} at {{lugar}}. Bora!"
+      "cuerpoLugar": "Starts at {{hora}} at {{lugar}}. Bora!",
+      "tituloManana": "Tomorrow: {{titulo}}"
     }
   },
   "enInternet": {
@@ -740,7 +741,7 @@
       "avisos": {
         "recordatorio": {
           "titulo": "Event reminder",
-          "detalle": "2 hours before an event you marked Going."
+          "detalle": "Before events you marked Going, Maybe or Pre-party. You choose when on each event."
         },
         "canalAbierto": {
           "titulo": "Channel opened",
@@ -857,5 +858,57 @@
     "actualizar": "Update",
     "obligatoria": "Update Bora",
     "obligatoriaTexto": "This version of Bora is no longer supported. Get the latest one from {{tienda}} to keep using it. Your account and plans stay as they are."
+  },
+  "llegar": {
+    "titulo": "Get there",
+    "google": "Google Maps",
+    "apple": "Maps",
+    "waze": "Waze",
+    "uber": "Uber",
+    "rutaDetalle": "Directions from where you are",
+    "wazeDetalle": "Directions by car",
+    "uberDetalle": "Get a ride to the door",
+    "verLugar": "See the place",
+    "verLugarDetalle": "Photos, hours and reviews on Google Maps",
+    "copiar": "Copy the address",
+    "copiarDetalle": "To paste it in another app or send it",
+    "copiada": "Address copied"
+  },
+  "recordatorio": {
+    "titulo": "Reminder",
+    "apagados": "Reminders are turned off",
+    "activar": "Turn on",
+    "bloqueadas": "Your phone is blocking Bora notifications",
+    "abrirAjustes": "Open settings",
+    "cambiar": "Change",
+    "fila": {
+      "antes": "We’ll remind you 2 h before",
+      "dia": "We’ll remind you the day before",
+      "ambos": "We’ll remind you the day before and 2 h before",
+      "no": "No reminder"
+    },
+    "opcion": {
+      "antes": "2 hours before",
+      "dia": "The day before",
+      "ambos": "Both",
+      "no": "Don’t remind me about this event"
+    },
+    "aLas": "At {{hora}}",
+    "diaAntesDetalle": "The day before, at {{hora}}",
+    "todos": "Turn off all reminders",
+    "todosDetalle": "In Settings → Notifications"
+  },
+  "barrio": {
+    "boton": "Area",
+    "elegir": "Choose an area",
+    "cambiar": "Area: {{barrio}}. Change",
+    "quitar": "Remove the area filter",
+    "titulo": "Areas",
+    "ayuda_one": "{{count}} area with events",
+    "ayuda_other": "{{count}} areas with events",
+    "buscar": "Search areas",
+    "todos": "All areas",
+    "sinResultados": "No areas with that name",
+    "sinEventos": "No events in {{barrio}} with these filters."
   }
 }
