@@ -10,6 +10,7 @@ import type { Evento } from '@/lib/api';
 import { diaCorto, hora, precioTexto } from '@/lib/fechas';
 import { iconoGenero, nombreGenero } from '@/lib/generos';
 import type { Grupo } from '@/lib/series';
+import { precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
 
 export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Evento; repeticiones?: number; soloHora?: boolean }) {
@@ -23,6 +24,7 @@ export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Eve
   ].filter(Boolean).join(' · ');
   return (
     <Pressable
+      onPressIn={() => precargarEvento(evento)}
       onPress={() => router.push({ pathname: '/evento/[id]', params: { id: evento.id } })}
       style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundSelected }]}>
       <View style={[styles.foto, { backgroundColor: t.backgroundElement }]}>

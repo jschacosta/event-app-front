@@ -13,6 +13,7 @@ import { Bandera } from '@/components/bandera';
 import { BotonPrincipal, BotonTexto, Icono, Texto } from '@/components/ui';
 import { FuenteTitulo } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { guardado, pedir } from '@/lib/precarga';
 import { api, type Autor } from '@/lib/api';
 import { claveDia, diaMes, diasHastaClave, haceTiempo } from '@/lib/fechas';
 import { cancelarAvisoLocal } from '@/lib/notificaciones';
@@ -47,15 +48,17 @@ export { pedirSesion } from '@/lib/pedir-sesion';
 
 // Se recarga cada vez que la pantalla vuelve a verse (por ejemplo, al volver de un hilo).
 export function useOpiniones(eventoId: string, token: string | null, activo: boolean) {
-  const [datos, setDatos] = useState<DatosOpiniones | null>(null);
-  const [hilos, setHilos] = useState<HiloResumen[] | null>(null);
+  // Parte con lo precargado al tocar el evento (o lo de la visita anterior) y se actualiza por detrás.
+  const [datos, setDatos] = useState<DatosOpiniones | null>(() => guardado<DatosOpiniones>(`/events/${eventoId}/opiniones`, token));
+  const [hilos, setHilos] = useState<HiloResumen[] | null>(() => guardado<{ hilos: HiloResumen[] }>(`/events/${eventoId}/hilos?orden=mejores`, token)?.hilos ?? null);
   const [orden, setOrden] = useState<'mejores' | 'nuevas'>('mejores');
-  const cargar = useCallback(async () => {
+  const cargar = useCallback(async (forzar = false) => {
     if (!activo) return;
     try {
+      const edad = forzar ? 0 : undefined;
       const [d, h] = await Promise.all([
-        api<DatosOpiniones>(`/events/${eventoId}/opiniones`, { token }),
-        api<{ hilos: HiloResumen[] }>(`/events/${eventoId}/hilos?orden=${orden}`, { token }),
+        pedir<DatosOpiniones>(`/events/${eventoId}/opiniones`, token, edad),
+        pedir<{ hilos: HiloResumen[] }>(`/events/${eventoId}/hilos?orden=${orden}`, token, edad),
       ]);
       setDatos(d);
       setHilos(h.hilos);
@@ -64,7 +67,9 @@ export function useOpiniones(eventoId: string, token: string | null, activo: boo
     }
   }, [eventoId, token, activo, orden]);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  return { datos, hilos, setHilos, orden, setOrden, recargar: cargar };
+  // recargar (después de responder o publicar) siempre pide al servidor.
+  const recargar = useCallback(() => cargar(true), [cargar]);
+  return { datos, hilos, setHilos, orden, setOrden, recargar };
 }
 
 // ---------- Lo que dicen ----------

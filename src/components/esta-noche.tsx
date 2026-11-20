@@ -23,14 +23,14 @@ const puntaje = (e: Evento) => (e.destaque ?? 0) + Math.min((e.asistencia?.van ?
 export function useEstaNoche(ciudad: string, cuantos = 5) {
   // Usa la misma agenda por partes que el inicio: la primera semana alcanza para "esta noche"
   // y así, al entrar al inicio, ya está cargada.
-  const { token } = useSesion();
+  const { token, cargando: leyendoSesion } = useSesion();
   const { eventos } = useAgenda(ciudad);
   const [ahora, setAhora] = useState(() => Date.now()); // se renueva con cada carga
   useEffect(() => {
     agendaDelTelefono(ciudad);
-    if (agendaReciente(ciudad, token ?? null)) return;
+    if (leyendoSesion || agendaReciente(ciudad, token ?? null)) return;
     cargarInicio(ciudad, token ?? null).then(() => setAhora(Date.now())).catch(() => {});
-  }, [ciudad, token]);
+  }, [ciudad, token, leyendoSesion]);
 
   return useMemo(() => {
     if (!eventos) return { destacados: null, total: 0, ahora };

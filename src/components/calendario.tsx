@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonTexto, Icono, Texto } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
-import { claveDia, inicialesSemana, mesYAnio } from '@/lib/fechas';
+import { claveDia, claveHoy, inicialesSemana, mesYAnio } from '@/lib/fechas';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -55,7 +55,7 @@ export function HojaCalendario({ visible, valor, diasConEventos, onElegir, onCer
   const t = useTheme();
   const { t: tr, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const hoy = claveDia(new Date().toISOString());
+  const hoy = claveHoy();
   const primerMes = mesDe(hoy);
   // Se puede avanzar hasta el último mes que tiene eventos.
   const ultimoMes = useMemo(

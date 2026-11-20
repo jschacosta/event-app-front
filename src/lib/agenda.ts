@@ -10,7 +10,7 @@ import { useSyncExternalStore } from 'react';
 
 import { api, type Evento } from '@/lib/api';
 import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
-import { claveDia, inicioDeClave, sumarDias } from '@/lib/fechas';
+import { claveDia, claveHoy, inicioDeClave, sumarDias } from '@/lib/fechas';
 
 const DIAS_PRIMERA = 7;
 const DIAS_MAS = 7;
@@ -75,7 +75,7 @@ type Respuesta = { eventos: Evento[]; dias?: string[]; generos?: string[] };
 const pedir = (ciudad: string, extra: string, token: string | null) =>
   api<Respuesta>(`/events?ciudad=${ciudad}&ligero=1${extra}`, { token });
 const iso = (ms: number) => new Date(ms).toISOString();
-const hoy = () => claveDia(new Date().toISOString());
+const hoy = () => claveHoy();
 
 // Una sola descarga a la vez por cada parte pedida (dos toques seguidos no la piden dos veces).
 function unaVez<T>(clave: string, f: () => Promise<T>): Promise<T> {

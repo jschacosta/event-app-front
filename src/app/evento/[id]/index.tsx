@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, quiereAviso, type Evento } from '@/lib/api';
 import { actualizarEnListas, eventoConocido, guardarDetalle } from '@/lib/eventos-cache';
+import { guardado, pedir } from '@/lib/precarga';
 import { compartirEvento } from '@/lib/compartir-evento';
 import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
@@ -81,7 +82,7 @@ export default function EventoScreen() {
   const { token, usuario } = useSesion();
   const { t: tr } = useTranslation();
   // Al instante con lo que ya trae la lista (o lo que se abrió antes); el detalle completo llega por detrás.
-  const [evento, setEvento] = useState<Evento | null>(() => eventoConocido(id));
+  const [evento, setEvento] = useState<Evento | null>(() => guardado<{ evento: Evento }>(`/events/${id}`, token)?.evento ?? eventoConocido(id));
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [asistentes, setAsistentes] = useState<EstadoAsistencia | null>(null);
@@ -96,10 +97,19 @@ export default function EventoScreen() {
     setRespondiendo(true);
   }
   const [ahora] = useState(() => Date.now());
+  const navigation = useNavigation();
+  const [montarResto, setMontarResto] = useState(false);
+  useEffect(() => {
+    const listo = () => setMontarResto(true);
+    const quitar = navigation.addListener('transitionEnd' as never, listo);
+    const respaldo = setTimeout(listo, 450); // por si la pantalla se abrió sin animación
+    return () => { quitar(); clearTimeout(respaldo); };
+  }, [navigation]);
 
   const cargar = useCallback(async () => {
     try {
-      const r = await api<{ evento: Evento }>(`/events/${id}`, { token });
+      // Si se precargó al tocar la fila (precarga.ts), esta es la misma petición: no se repite.
+      const r = await pedir<{ evento: Evento }>(`/events/${id}`, token);
       setEvento(r.evento);
       guardarDetalle(r.evento);
     } catch (e) {
@@ -277,6 +287,9 @@ export default function EventoScreen() {
             {token && hayGente ? <Icono nombre="chevron.right" tamano={12} color={t.chevron} peso="bold" /> : null}
           </Pressable>
 
+          {/* Lo de más abajo se monta al terminar la animación de entrada: la pantalla abre sin esperar a dibujarlo. */}
+          {montarResto ? (
+            <>
           {evento.chatAbierto ? (
             <View style={{ paddingTop: 14 }}>
               <AdelantoCanal eventoId={evento.id} onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: evento.id } })} />
@@ -336,6 +349,8 @@ export default function EventoScreen() {
               {!repite && evento.lugarGoogle ? <EnInternet lugar={evento.lugarGoogle} /> : null}
             </Animated.View>
           )}
+            </>
+          ) : null}
         </View>
       </ScrollView>
 

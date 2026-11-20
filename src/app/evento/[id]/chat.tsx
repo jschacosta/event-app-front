@@ -36,6 +36,8 @@ import { useChat } from '@/hooks/use-chat';
 import { tieneTopicos, useTopicos } from '@/hooks/use-topicos';
 import { useTheme } from '@/hooks/use-theme';
 import { api, MOTIVOS_REPORTE, SALAS_IDIOMA, type Autor, type CanalPropio, type Evento, type Gif, type MensajeChat, type Topico, type TopicoResumen } from '@/lib/api';
+import { guardado, pedir } from '@/lib/precarga';
+import { eventoConocido } from '@/lib/eventos-cache';
 import { compartirCanal } from '@/lib/compartir-canal';
 import { claveDiaDispositivo, etiquetaDiaChat, hora, horaDispositivo } from '@/lib/fechas';
 import { aplicarFormato, quitarFormato, textoConFormato, type Formato } from '@/lib/formato';
@@ -453,9 +455,10 @@ export default function ChatScreen() {
   const faltan = esperaHasta ? segundosRestantes : 0;
   const esperando = faltan > 0;
   const [nuevaEncuesta, setNuevaEncuesta] = useState(false);
-  const [evento, setEvento] = useState<Evento | null>(null);
+  // Parte con lo precargado al tocar el canal (precarga.ts) o lo que ya trae la lista.
+  const [evento, setEvento] = useState<Evento | null>(() => (id ? guardado<{ evento: Evento }>(`/events/${id}`, token)?.evento ?? eventoConocido(id) : null));
   const aqui = useYaAqui(evento, true);
-  const [canales, setCanales] = useState<CanalPropio[]>([]);
+  const [canales, setCanales] = useState<CanalPropio[]>(() => (id ? guardado<{ canales: CanalPropio[] }>(`/canales/evento/${id}`, token)?.canales ?? [] : []));
   const [texto, setTexto] = useState('');
   const seleccion = useRef({ start: 0, end: 0 });
   const [haySeleccionTexto, setHaySeleccionTexto] = useState(false);
@@ -474,12 +477,12 @@ export default function ChatScreen() {
   const campo = useRef<ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
-    if (id) api<{ evento: Evento }>(`/events/${id}`, { token }).then((r) => setEvento(r.evento)).catch(() => {});
+    if (id) pedir<{ evento: Evento }>(`/events/${id}`, token).then((r) => setEvento(r.evento)).catch(() => {});
   }, [id, token]);
 
   // Canales propios del evento (se recargan al volver, por ejemplo después de crear uno).
   const cargarCanales = useCallback(() => {
-    if (id) api<{ canales: CanalPropio[] }>(`/canales/evento/${id}`, { token }).then((r) => setCanales(r.canales)).catch(() => {});
+    if (id) pedir<{ canales: CanalPropio[] }>(`/canales/evento/${id}`, token, 0).then((r) => setCanales(r.canales)).catch(() => {});
   }, [id, token]);
   useFocusEffect(cargarCanales);
   // Si quien creó el canal cambia su nombre o descripción, se ve al instante.

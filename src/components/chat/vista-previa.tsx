@@ -17,7 +17,8 @@ import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import { api, type Evento, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
+import { type Evento, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
+import { guardado, pedir } from '@/lib/precarga';
 import { diaCorto, hora, horaDispositivo } from '@/lib/fechas';
 import { colorEtiquetaGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
@@ -32,16 +33,18 @@ function conAlfa(hex: string, a: number) {
 
 export function useVistaCanal(eventoId: string | undefined, activo = true, sala = 'general') {
   const { token } = useSesion();
-  const [vista, setVista] = useState<VistaCanal | null>(null);
+  const ruta = `/events/${eventoId}/canal${sala === 'general' ? '' : `?sala=${sala}`}`;
+  // Parte con lo precargado al tocar el evento (precarga.ts).
+  const [vista, setVista] = useState<VistaCanal | null>(() => (eventoId && activo ? guardado<VistaCanal>(ruta, token) : null));
   useEffect(() => {
     if (!eventoId || !activo) return;
     let vivo = true;
-    const cargar = () => api<VistaCanal>(`/events/${eventoId}/canal${sala === 'general' ? '' : `?sala=${sala}`}`, { token }).then((r) => vivo && setVista(r)).catch(() => {});
+    const cargar = (edad?: number) => pedir<VistaCanal>(ruta, token, edad).then((r) => vivo && setVista(r)).catch(() => {});
     cargar();
     // Se refresca cada 30 s: la conversación sigue mientras se mira.
-    const intervalo = setInterval(cargar, 30000);
+    const intervalo = setInterval(() => cargar(0), 30000);
     return () => { vivo = false; clearInterval(intervalo); };
-  }, [eventoId, activo, token, sala]);
+  }, [eventoId, activo, token, ruta]);
   return vista;
 }
 

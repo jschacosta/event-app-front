@@ -21,8 +21,9 @@ import { agendaDelTelefono, agendaReciente, asegurarDia, asegurarGenero, buscarE
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
-import { claveDia, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
+import { claveDia, claveHoy, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
 import { colorEtiquetaGenero, GENEROS, nombreGenero } from '@/lib/generos';
+import { precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
 
 // Agenda de Bora, armada como un line-up: el número del día va grande en su propia columna,
@@ -40,7 +41,7 @@ const TarjetaAhora = memo(function TarjetaAhora({ evento }: { evento: Evento }) 
   const { t: tr } = useTranslation();
   const a = evento.asistencia;
   return (
-    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.ahora, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.8 }]}>
+    <Pressable onPressIn={() => precargarEvento(evento)} onPress={() => abrir(evento)} style={({ pressed }) => [styles.ahora, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.8 }]}>
       <View style={[styles.fotoAhora, { backgroundColor: t.backgroundSelected }]}>
         {evento.imagen ? <FotoEvento url={evento.imagen} style={StyleSheet.absoluteFill} recyclingKey={evento.id} transition={150} /> : null}
       </View>
@@ -67,7 +68,7 @@ const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { 
   const genero = evento.generos[0];
   const precio = precioTexto(evento.precioDesde);
   return (
-    <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundElement }]}>
+    <Pressable onPressIn={() => precargarEvento(evento)} onPress={() => abrir(evento)} style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundElement }]}>
       {/* Sin afiche: el color del género con la inicial del evento */}
       <View style={[styles.miniatura, { backgroundColor: evento.imagen ? t.backgroundElement : colorEtiquetaGenero(genero ?? 'otro') }]}>
         {evento.imagen
@@ -161,7 +162,8 @@ const Dia = memo(function Dia({ seccion, onVerTodos }: { seccion: Seccion; onVer
 export default function AgendaScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { token } = useSesion();
+  // cargando: hasta leer la sesión guardada (milisegundos) no se descarga nada, así no se baja dos veces.
+  const { token, cargando: leyendoSesion } = useSesion();
   const { t: tr, i18n } = useTranslation();
   const ciudad = useCiudad();
   const [dia, setDia] = useState<string | null>(null); // null = todas las fechas
@@ -204,8 +206,8 @@ export default function AgendaScreen() {
 
   // Al volver a la pestaña (por ejemplo desde un evento) no se descarga de nuevo si es reciente.
   useFocusEffect(useCallback(() => {
-    if (!agendaReciente(ciudad.id, token ?? null)) cargar();
-  }, [cargar, ciudad.id, token]));
+    if (!leyendoSesion && !agendaReciente(ciudad.id, token ?? null)) cargar();
+  }, [cargar, ciudad.id, token, leyendoSesion]));
   // Al abrir la app: la agenda guardada en el teléfono se muestra mientras llega la nueva.
   useEffect(() => { agendaDelTelefono(ciudad.id); }, [ciudad.id]);
 
@@ -259,7 +261,7 @@ export default function AgendaScreen() {
   }, [buscando, buscar, consultaDiferida, delServidor, genero]);
 
   const { enVivo, secciones } = useMemo(() => {
-    const hoy = claveDia(new Date(ahora).toISOString());
+    const hoy = claveHoy();
     const deGenero = (eventos ?? []).filter((e) => (!genero || e.generos.includes(genero)) && cubierto(agenda, e, genero));
     const vivo = (e: Evento) => new Date(e.inicio).getTime() <= ahora && ahora < new Date(e.fin).getTime();
     // En vivo también va primero lo que vale la pena (si no, gana el almuerzo que empezó a mediodía).
@@ -289,7 +291,7 @@ export default function AgendaScreen() {
   const diasConEventos = useMemo(() => {
     const delServidorDias = genero ? agenda.diasPorGenero[genero] : agenda.dias;
     if (delServidorDias) return new Set(delServidorDias);
-    const hoy = claveDia(new Date(ahora).toISOString());
+    const hoy = claveHoy();
     return new Set((eventos ?? [])
       .filter((e) => !genero || e.generos.includes(genero))
       .map((e) => (diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio))));

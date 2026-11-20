@@ -1,10 +1,11 @@
-import { File } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import { API_URL } from '@/config/api';
 import { Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 
 import { api, ApiError, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { almacen } from '@/lib/almacen';
+import { fijarTokenPrecarga } from '@/lib/precarga';
 import { useCiudad } from '@/lib/ciudades';
 import i18n from '@/lib/i18n';
 import { pedirTokenApple, pedirTokenGoogle } from '@/lib/login';
@@ -44,6 +45,28 @@ type Sesion = {
 
 const SesionContext = createContext<Sesion | null>(null);
 
+// Copia del perfil propio en el teléfono (fuera de SecureStore, que tiene un límite de tamaño).
+const archivoPerfil = () => new File(Paths.document, 'sesion-perfil.json');
+async function perfilDelTelefono(): Promise<Usuario | null> {
+  if (Platform.OS === 'web') return null;
+  try {
+    const f = archivoPerfil();
+    return f.exists ? (JSON.parse(await f.text()) as Usuario) : null;
+  } catch {
+    return null;
+  }
+}
+function guardarPerfil(usuario: Usuario | null) {
+  if (Platform.OS === 'web') return;
+  try {
+    const f = archivoPerfil();
+    if (usuario) Promise.resolve(f.write(JSON.stringify(usuario))).catch(() => {});
+    else if (f.exists) f.delete();
+  } catch {
+    // sin copia: el próximo arranque espera a /me como antes
+  }
+}
+
 type RespuestaLogin = { token: string; user: Usuario };
 
 export function SesionProvider({ children }: { children: ReactNode }) {
@@ -61,22 +84,43 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setIntroVista(true);
   }, []);
 
-  // Al abrir la app, recupera la sesión guardada y comprueba que siga válida.
+  // Al abrir la app, recupera la sesión guardada. Si el perfil quedó guardado en el teléfono, la sesión
+  // queda lista al instante y /me se comprueba por detrás (antes se esperaba ~0,6 s y, mientras tanto, el inicio
+  // y Canales se descargaban como invitado y después otra vez con la sesión).
   useEffect(() => {
     (async () => {
-      const guardado = await almacen.leer(CLAVE_TOKEN);
-      if (guardado) {
-        try {
-          const { user } = await api<{ user: Usuario }>('/me', { token: guardado });
-          setToken(guardado);
-          setUsuario(user);
-        } catch (err) {
-          if (err instanceof ApiError && err.status === 401) await almacen.borrar(CLAVE_TOKEN);
+      const [guardado, perfil] = await Promise.all([almacen.leer(CLAVE_TOKEN), perfilDelTelefono()]);
+      if (!guardado) {
+        setCargando(false);
+        return;
+      }
+      if (perfil) {
+        setToken(guardado);
+        setUsuario(perfil);
+        setCargando(false);
+      }
+      try {
+        const { user } = await api<{ user: Usuario }>('/me', { token: guardado });
+        setToken(guardado);
+        setUsuario(user);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          await almacen.borrar(CLAVE_TOKEN);
+          setToken(null);
+          setUsuario(null);
         }
       }
       setCargando(false);
     })();
   }, []);
+
+  useEffect(() => { fijarTokenPrecarga(token); }, [token]);
+
+  // El perfil queda guardado en el teléfono para el próximo arranque (y se borra al salir).
+  useEffect(() => {
+    if (cargando) return;
+    guardarPerfil(token ? usuario : null);
+  }, [cargando, token, usuario]);
 
   const guardarSesion = useCallback(async ({ token: t, user }: RespuestaLogin) => {
     await almacen.guardar(CLAVE_TOKEN, t);

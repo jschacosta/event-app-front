@@ -26,8 +26,9 @@ import { crearBuscador } from '@/lib/buscar-eventos';
 import { obtenerSocket } from '@/lib/socket';
 import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { useCiudad } from '@/lib/ciudades';
-import { claveDia, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
+import { claveDia, claveHoy, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
 import { refrescarNoLeidos, textoCuenta, useNoLeidos } from '@/lib/no-leidos';
+import { precargarChat, precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
 
 const DIAS_ABREN_PRONTO = 7;
@@ -72,7 +73,7 @@ const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice, ultima }: {
 
   return (
     <Animated.View entering={indice < ANIMADAS ? FadeInDown.delay(40 * indice).duration(300) : undefined}>
-      <Pressable onPress={abrir} style={({ pressed }) => [styles.filaCanal, pressed && { backgroundColor: t.backgroundElement }]}>
+      <Pressable onPressIn={() => (abierto ? precargarChat(e.id) : precargarEvento(e))} onPress={abrir} style={({ pressed }) => [styles.filaCanal, pressed && { backgroundColor: t.backgroundElement }]}>
         <View style={[styles.aroCanal, { borderColor: abierto ? t.sun : 'transparent' }]}>
           <View style={[styles.fotoCanal, { backgroundColor: t.backgroundElement }]}>
             {e.imagen ? <FotoEvento url={e.imagen} style={StyleSheet.absoluteFill} recyclingKey={e.id} transition={150} /> : null}
@@ -145,7 +146,7 @@ const FilaTopicoMio = memo(function FilaTopicoMio({ x, ultima, onAbrir }: { x: M
 export default function CanalesScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { token, usuario } = useSesion();
+  const { token, usuario, cargando: leyendoSesion } = useSesion();
   const { t: tr } = useTranslation();
   const ciudad = useCiudad();
   // Parte con los últimos canales que se vieron (memoria o teléfono) y se actualiza por detrás.
@@ -184,35 +185,48 @@ export default function CanalesScreen() {
 
   // Canales por partes: primero los abiertos (lo que se ve arriba) y "Abren pronto" recién al bajar hasta el
   // final, elegir una fecha o buscar. Antes se bajaban los ~580 de una vez y la pestaña tardaba en aparecer.
-  const descargar = useCallback(async (incluirPronto: boolean) => {
+  // abiertos: true baja los abiertos; pronto: true baja "Abren pronto". Lo que no se baja se conserva.
+  const bajarCanales = async ({ abiertos: conAbiertos, pronto: conPronto }: { abiertos: boolean; pronto: boolean }) => {
     const base = `/events?ciudad=${ciudad.id}&ligero=1`;
     const enTresDias = new Date(Date.now() + DIAS_CHAT * 864e5).toISOString();
     const [abiertos, pronto] = await Promise.all([
-      api<{ eventos: Evento[]; dias?: string[] }>(`${base}&dias=1&canalesEnDias=0`, { token }),
-      incluirPronto ? api<{ eventos: Evento[] }>(`${base}&desde=${enTresDias}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token }) : null,
+      conAbiertos ? api<{ eventos: Evento[]; dias?: string[] }>(`${base}&dias=1&canalesEnDias=0`, { token }) : null,
+      conPronto ? api<{ eventos: Evento[] }>(`${base}&desde=${enTresDias}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token }) : null,
     ]);
-    // Si "Abren pronto" no se pidió esta vez, se dejan los que ya estaban.
-    const antes = incluirPronto ? [] : (eventosGuardados(ciudad.id, 'canales') ?? []).filter((e) => !e.chatAbierto);
-    const ids = new Set(abiertos.eventos.map((e) => e.id));
-    const lista = [...abiertos.eventos, ...(pronto?.eventos ?? antes).filter((e) => !ids.has(e.id))]
+    const antes = eventosGuardados(ciudad.id, 'canales') ?? [];
+    const listaAbiertos = abiertos?.eventos ?? antes.filter((e) => e.chatAbierto);
+    const ids = new Set(listaAbiertos.map((e) => e.id));
+    const listaPronto = (pronto?.eventos ?? antes.filter((e) => !e.chatAbierto)).filter((e) => !ids.has(e.id));
+    const lista = [...listaAbiertos, ...listaPronto]
       .filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO);
     setEventos(lista);
     guardarEventos(ciudad.id, lista, 'canales');
-    marcarDescarga(ciudad.id, 'canales', token ?? null);
-    if (abiertos.dias) { diasCanales.set(ciudad.id, abiertos.dias); setDiasServidor(abiertos.dias); }
-    if (incluirPronto) { prontoCargado.add(ciudad.id); setConPronto(true); }
+    if (abiertos) marcarDescarga(ciudad.id, 'canales', token ?? null);
+    if (abiertos?.dias) { diasCanales.set(ciudad.id, abiertos.dias); setDiasServidor(abiertos.dias); }
+    if (conPronto) { prontoCargado.add(ciudad.id); setConPronto(true); }
+  };
+  // Una descarga a la vez: volver a la pestaña mientras llega no la pide otra vez.
+  const descargando = useRef<Promise<void> | null>(null);
+  const descargar = useCallback((incluirPronto: boolean) => {
+    if (descargando.current && !incluirPronto) return descargando.current;
+    const p = bajarCanales({ abiertos: true, pronto: incluirPronto }).finally(() => { if (descargando.current === p) descargando.current = null; });
+    descargando.current = p;
+    return p;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ciudad.id, token]);
   useFocusEffect(useCallback(() => {
     refrescarNoLeidos();
-    if (listaReciente(ciudad.id, 'canales', token ?? null)) return; // recién descargada: no trabar al volver
+    if (leyendoSesion || listaReciente(ciudad.id, 'canales', token ?? null)) return; // recién descargada: no trabar al volver
     descargar(prontoCargado.has(ciudad.id)).catch(() => setEventos((e) => e ?? []));
-  }, [token, ciudad.id, descargar]));
+  }, [token, ciudad.id, descargar, leyendoSesion]));
   const [pidiendoPronto, setPidiendoPronto] = useState(false);
   const pedirPronto = useCallback(() => {
     if (conPronto || pidiendoPronto) return;
     setPidiendoPronto(true);
-    descargar(true).catch(() => {}).finally(() => setPidiendoPronto(false));
-  }, [conPronto, pidiendoPronto, descargar]);
+    // Solo "Abren pronto": los abiertos ya están (si todavía no, van juntos).
+    bajarCanales({ abiertos: !eventos, pronto: true }).catch(() => {}).finally(() => setPidiendoPronto(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conPronto, pidiendoPronto, eventos, ciudad.id, token]);
   useEffect(() => escucharCambios(() => {
     const l = eventosGuardados(ciudad.id, 'canales');
     if (l) setEventos(l);
@@ -283,7 +297,7 @@ export default function CanalesScreen() {
   // Al buscar o elegir una fecha también cuentan los que abren pronto.
   const cambiarConsulta = (v: string) => { setConsulta(v); if (v.trim().length >= 2) pedirPronto(); };
   const cambiarDia = (d: string | null) => { setDia(d); if (d) pedirPronto(); };
-  const diaDe = (e: Evento) => (diasDesdeHoy(e.inicio) < 0 ? claveDia(new Date().toISOString()) : claveDia(e.inicio));
+  const diaDe = (e: Evento) => (diasDesdeHoy(e.inicio) < 0 ? claveHoy() : claveDia(e.inicio));
   // Los días los manda el servidor: así la tira marca también los que abren pronto antes de bajarlos.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const diasConEventos = useMemo(() => new Set(diasServidor ?? (eventos ?? []).map(diaDe)), [diasServidor, eventos, ciudad.zona]);
@@ -377,7 +391,7 @@ export default function CanalesScreen() {
         maxToRenderPerBatch={5}
         onScrollBeginDrag={() => { desplazada.current = true; }}
         // Solo cuando la persona baja: con pocas filas dibujadas la lista "llega al final" sin que nadie la mueva.
-        onEndReached={vistaActual === 'explorar' ? () => { if (desplazada.current || abiertos.length < 12) pedirPronto(); } : undefined}
+        onEndReached={vistaActual === 'explorar' ? () => { if (eventos?.length && (desplazada.current || abiertos.length < 12)) pedirPronto(); } : undefined}
         onEndReachedThreshold={1.5}
         ListFooterComponent={vistaActual === 'explorar' && eventos?.length && !conPronto ? (
           <View style={styles.cargandoMas}><ActivityIndicator color={t.textSecondary} /></View>

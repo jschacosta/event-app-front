@@ -16,7 +16,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { useCiudad } from '@/lib/ciudades';
 import { asegurarDia, cargarInicio, cubreDia, useAgenda } from '@/lib/agenda';
-import { claveDia, diasDesdeHoy, tituloDeClave } from '@/lib/fechas';
+import { claveDia, claveHoy, diasDesdeHoy, tituloDeClave } from '@/lib/fechas';
 import { GENEROS } from '@/lib/generos';
 
 export default function DiaScreen() {
@@ -45,7 +45,7 @@ export default function DiaScreen() {
 
   // Los eventos de ese día (uno que ya empezó cuenta como de hoy), en orden de hora.
   const delDia = useMemo(() => {
-    const hoy = claveDia(new Date().toISOString());
+    const hoy = claveHoy();
     return (eventos ?? [])
       .filter((e) => (diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio)) === clave)
       .sort((a, b) => a.inicio.localeCompare(b.inicio));

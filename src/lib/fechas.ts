@@ -7,8 +7,36 @@ let ZONA = 'America/Sao_Paulo';
 let MONEDA = 'BRL';
 
 export function fijarZonaYMoneda(zona: string, moneda: string) {
+  if (zona !== ZONA) {
+    porClave.clear();
+    porPartes.clear();
+    hoyCache.minuto = -1;
+  }
   ZONA = zona;
   MONEDA = moneda;
+}
+
+// Crear un Intl.DateTimeFormat es caro (en Android, Hermes pasa por ICU): antes se creaban dos por cada
+// fecha calculada, miles al dibujar la agenda. Ahora se crea uno por zona y cada resultado se guarda por fecha:
+// la misma fecha (inicio de un evento) se pide muchas veces en cada dibujo.
+const formatos = new Map<string, { dia: Intl.DateTimeFormat; hora: Intl.DateTimeFormat }>();
+function formatosDe(zona: string) {
+  let f = formatos.get(zona);
+  if (!f) {
+    f = {
+      dia: new Intl.DateTimeFormat('en-CA', { timeZone: zona }),
+      hora: new Intl.DateTimeFormat('en-GB', { timeZone: zona, hour: '2-digit', minute: '2-digit', hour12: false }),
+    };
+    formatos.set(zona, f);
+  }
+  return f;
+}
+const MAX_GUARDADOS = 5000;
+const porClave = new Map<string, string>();
+const porPartes = new Map<string, Partes>();
+function guardar<T>(m: Map<string, T>, k: string, v: T) {
+  if (m.size >= MAX_GUARDADOS) m.clear();
+  m.set(k, v);
 }
 
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -25,11 +53,15 @@ const desdeClave = (clave: string, hh = 12, mm = 0): Partes => {
 };
 
 function enZona(iso: string, zona = ZONA): Partes {
+  const k = zona === ZONA ? iso : `${zona}|${iso}`;
+  const ya = porPartes.get(k);
+  if (ya) return ya;
   const d = new Date(iso);
-  const clave = new Intl.DateTimeFormat('en-CA', { timeZone: zona }).format(d);
-  const [hh, mm] = new Intl.DateTimeFormat('en-GB', { timeZone: zona, hour: '2-digit', minute: '2-digit', hour12: false })
-    .format(d).match(/\d+/g)!.map(Number);
-  return desdeClave(clave, hh % 24, mm);
+  const f = formatosDe(zona);
+  const [hh, mm] = f.hora.format(d).match(/\d+/g)!.map(Number);
+  const p = desdeClave(f.dia.format(d), hh % 24, mm);
+  guardar(porPartes, k, p);
+  return p;
 }
 
 const enUTC = (iso: string | Date) => {
@@ -97,12 +129,31 @@ export const nombreMes = (mes: number) => n().mes[mes];
 export const inicialesSemana = () => n().diaInicial;
 
 export function claveDia(iso: string) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA }).format(new Date(iso)); // 2026-11-01
+  let c = porClave.get(iso);
+  if (c === undefined) {
+    c = formatosDe(ZONA).dia.format(new Date(iso)); // 2026-11-01
+    guardar(porClave, iso, c);
+  }
+  return c;
 }
 
+// "Hoy" y "mañana" se piden en cada fila: se calculan una vez por minuto (con la hora exacta, la caché
+// por fecha se llenaría de instantes distintos).
+let hoyCache = { minuto: -1, hoy: '', manana: '' };
+function hoyYManana() {
+  const minuto = Math.floor(Date.now() / 60000);
+  if (hoyCache.minuto !== minuto) {
+    const f = formatosDe(ZONA).dia;
+    hoyCache = { minuto, hoy: f.format(new Date()), manana: f.format(new Date(Date.now() + 86400000)) };
+  }
+  return hoyCache;
+}
+export const claveHoy = () => hoyYManana().hoy;
+export const claveManana = () => hoyYManana().manana;
+
 export function tituloDia(iso: string) {
-  const hoy = claveDia(new Date().toISOString());
-  const manana = claveDia(new Date(Date.now() + 86400000).toISOString());
+  const hoy = claveHoy();
+  const manana = claveManana();
   const clave = claveDia(iso);
   if (clave === hoy) return i18n.t('fechas.hoy');
   if (clave === manana) return i18n.t('fechas.manana');
@@ -149,17 +200,18 @@ export function mesAnioDeClave(clave: string) {
 
 // Días entre hoy (hora de Rio) y la fecha del evento: 0 = hoy, 1 = mañana…
 export function diasDesdeHoy(iso: string) {
-  const a = new Date(claveDia(new Date().toISOString()) + 'T00:00:00Z').getTime();
+  const a = new Date(claveHoy() + 'T00:00:00Z').getTime();
   const b = new Date(claveDia(iso) + 'T00:00:00Z').getTime();
   return Math.round((b - a) / 86400000);
 }
 
 // "R$ 60" en Brasil, "$30.000" en Colombia y Chile: símbolo antes, miles con punto.
+const formatoPrecio = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
 const SIMBOLO: Record<string, string> = { BRL: 'R$ ', COP: '$', CLP: '$' };
 export function precioTexto(p: number | null) {
   if (p === null) return null;
   if (p === 0) return i18n.t('comun.gratis');
-  return `${SIMBOLO[MONEDA] ?? `${MONEDA} `}${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(p)}`;
+  return `${SIMBOLO[MONEDA] ?? `${MONEDA} `}${formatoPrecio.format(p)}`;
 }
 
 // Los próximos `n` días en la zona de la ciudad: clave "2026-11-03", número, día de la semana corto.
@@ -179,8 +231,8 @@ export function fechaDeClave(clave: string) {
 
 // "Sábado 21 de noviembre" (u "Hoy"/"Mañana") a partir de la clave del día.
 export function tituloDeClave(clave: string) {
-  const hoy = claveDia(new Date().toISOString());
-  const manana = claveDia(new Date(Date.now() + 86400000).toISOString());
+  const hoy = claveHoy();
+  const manana = claveManana();
   if (clave === hoy) return i18n.t('fechas.hoy');
   if (clave === manana) return i18n.t('fechas.manana');
   return mayuscula(largo(desdeClave(clave), { semana: true }));
@@ -217,15 +269,15 @@ export function etiquetaDiaChat(iso: string) {
 
 // Días entre hoy (en la ciudad) y la clave dada: 0 = hoy, 1 = mañana.
 export function diasHastaClave(clave: string) {
-  const hoy = claveDia(new Date().toISOString());
+  const hoy = claveHoy();
   return Math.round((Date.parse(`${clave}T12:00:00Z`) - Date.parse(`${hoy}T12:00:00Z`)) / 86400000);
 }
 
 // Encabezado de un día en la agenda: "Hoy, martes 17", "Mañana, miércoles 18" o "Jueves 19 de noviembre".
 export function encabezadoDia(clave: string) {
   const semana = semanaYDia(desdeClave(clave));
-  const hoy = claveDia(new Date().toISOString());
-  const manana = claveDia(new Date(Date.now() + 86400000).toISOString());
+  const hoy = claveHoy();
+  const manana = claveManana();
   if (clave === hoy) return `${i18n.t('fechas.hoy')}, ${semana}`;
   if (clave === manana) return `${i18n.t('fechas.manana')}, ${semana}`;
   return tituloDeClave(clave);
