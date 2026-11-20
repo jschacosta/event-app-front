@@ -1,14 +1,15 @@
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Banderas } from '@/components/bandera';
 import { HojaCalendario } from '@/components/calendario';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
+import { EsqueletoAgenda } from '@/components/esqueleto';
 import { BarraBusqueda, BotonCiudad, FilaGeneros, IconoVacio, TiraFechas } from '@/components/filtros';
 import { AvisoComoEstuvo } from '@/components/opiniones';
 import { BotonTexto, Icono, Texto } from '@/components/ui';
@@ -18,7 +19,7 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
-import { guardarEventos } from '@/lib/eventos-cache';
+import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
@@ -67,8 +68,11 @@ const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { 
   const precio = precioTexto(evento.precioDesde);
   return (
     <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundElement }]}>
-      <View style={[styles.miniatura, { backgroundColor: t.backgroundElement }]}>
-        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+      {/* Sin afiche: el color del género con la inicial del evento */}
+      <View style={[styles.miniatura, { backgroundColor: evento.imagen ? t.backgroundElement : colorEtiquetaGenero(genero ?? 'otro') }]}>
+        {evento.imagen
+          ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+          : <Texto style={styles.inicial}>{evento.titulo.trim().charAt(0).toUpperCase()}</Texto>}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Texto v="cuerpoFuerte" numberOfLines={2} style={{ fontSize: 15, lineHeight: 19 }}>{evento.titulo}</Texto>
@@ -161,12 +165,14 @@ export default function AgendaScreen() {
   const { t: tr, i18n } = useTranslation();
   const ciudad = useCiudad();
   const [dia, setDia] = useState<string | null>(null); // null = todas las fechas
-  const [eventos, setEventos] = useState<Evento[] | null>(null);
+  // Parte con la última agenda que se vio (memoria o teléfono) y se actualiza por detrás.
+  const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad.id));
   const [ahora, setAhora] = useState(() => Date.now()); // se renueva en cada carga
-  const [error, setError] = useState<string | null>(null);
+  const [errorCarga, setError] = useState<string | null>(null);
+  // Si ya hay una agenda en pantalla (la guardada), se deja: mejor eso que un error.
+  const error = eventos ? null : errorCarga;
   const [refrescando, setRefrescando] = useState(false);
   const [consulta, setConsulta] = useState('');
-  const [buscador, setBuscador] = useState(false);
   const [genero, setGenero] = useState<string | null>(null);
   const [calendario, setCalendario] = useState(false);
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
@@ -189,13 +195,19 @@ export default function AgendaScreen() {
   const [ciudadVista, setCiudadVista] = useState(ciudad.id);
   if (ciudadVista !== ciudad.id) {
     setCiudadVista(ciudad.id);
-    setEventos(null);
+    setEventos(eventosGuardados(ciudad.id));
     setGenero(null);
     setConsulta('');
     setDia(null);
   }
 
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  // Al abrir la app: la agenda guardada en el teléfono se muestra mientras llega la nueva.
+  useEffect(() => {
+    let vigente = true;
+    eventosDelTelefono(ciudad.id).then((l) => { if (vigente && l) setEventos((e) => e ?? l); });
+    return () => { vigente = false; };
+  }, [ciudad.id]);
 
   const generosDisponibles = useMemo(
     () => GENEROS.filter((g) => (eventos ?? []).some((e) => e.generos.includes(g))),
@@ -246,7 +258,6 @@ export default function AgendaScreen() {
 
   const mostrarSecciones = !error && Boolean(eventos?.length) && !buscando;
   const verDia = useCallback((clave: string) => router.push({ pathname: '/dia/[clave]', params: genero ? { clave, genero } : { clave } }), [genero]);
-  const cerrarBuscador = () => { setBuscador(false); setConsulta(''); };
   const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0;
 
   const refrescar = async () => {
@@ -281,22 +292,14 @@ export default function AgendaScreen() {
         ListHeaderComponent={<View style={{ paddingTop: insets.top + 10 }}>
           <View style={styles.encabezado}>
             <BotonCiudad grande />
-            <Pressable
-              onPress={() => (buscador ? cerrarBuscador() : setBuscador(true))}
-              accessibilityRole="button"
-              accessibilityLabel={tr(buscador ? 'agenda.cerrarBuscador' : 'agenda.abrirBuscador')}
-              style={({ pressed }) => [styles.botonBuscar, { backgroundColor: buscador ? t.text : t.backgroundElement }, pressed && { opacity: 0.7 }]}>
-              <Icono nombre={buscador ? 'xmark' : 'magnifyingglass'} tamano={16} color={buscador ? t.background : t.text} peso="semibold" />
-            </Pressable>
           </View>
 
-          {buscador ? null : <AvisoComoEstuvo token={token} />}
+          {/* El buscador siempre a la vista; al bajar pasa al encabezado compacto */}
+          <View style={styles.margen}>
+            <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr('agenda.buscar')} />
+          </View>
 
-          {buscador ? (
-            <Animated.View entering={FadeInDown.duration(160)} style={styles.margen}>
-              <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr('agenda.buscar')} autoFocus />
-            </Animated.View>
-          ) : null}
+          {buscando ? null : <AvisoComoEstuvo token={token} />}
 
           <View style={{ marginTop: 12 }}>
             <FilaGeneros generos={generosDisponibles} elegido={genero} onCambio={setGenero} />
@@ -313,7 +316,7 @@ export default function AgendaScreen() {
               <BotonTexto texto={tr('comun.reintentar')} onPress={cargar} />
             </View>
           ) : eventos === null ? (
-            <ActivityIndicator style={styles.vacio} />
+            <EsqueletoAgenda />
           ) : buscando ? (
             <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.margen}>
               <Texto v="pie" secundario style={styles.cuenta}>{tr('agenda.resultados', { count: resultados.length })}</Texto>
@@ -375,7 +378,6 @@ const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
   scroll: { width: '100%' },
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16 },
-  botonBuscar: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   margen: { paddingHorizontal: 16, marginTop: 10 },
   cabezaAhora: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, marginBottom: 8 },
   puntoVivo: { width: 7, height: 7, borderRadius: 4, marginLeft: 4 },
@@ -389,7 +391,8 @@ const styles = StyleSheet.create({
   riel: { width: 2, flex: 1, marginTop: 8, marginLeft: 2, marginBottom: 4, borderRadius: 1 },
   fila: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 9, paddingLeft: 6, paddingRight: 16, borderRadius: 6 },
   hora: { fontFamily: FuenteTitulo.cursiva, fontSize: 17, lineHeight: 19, paddingRight: 1 },
-  miniatura: { width: 56, height: 56, borderRadius: 6, overflow: 'hidden' },
+  miniatura: { width: 56, height: 56, borderRadius: 6, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  inicial: { color: '#FFFFFF', fontFamily: FuenteTitulo.cursiva, fontSize: 28, lineHeight: 32, paddingRight: 2 },
   linea: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   genero: { height: 17, paddingHorizontal: 5, borderRadius: 3, justifyContent: 'center' },
   verMas: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 6, paddingVertical: 10 },

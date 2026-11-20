@@ -1,7 +1,5 @@
 // Perfil — monocromo, como las pantallas de Apple: el color lo ponen las fotos.
-import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +10,8 @@ import Animated, {
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bandera, Banderas } from '@/components/bandera';
-import { FOTOS_INTRO } from '@/components/intro/escenas';
+import { LineupNoche, useEstaNoche, type ColoresLineup } from '@/components/esta-noche';
+import { IconoBora } from '@/components/iconos-bora';
 import { Logo } from '@/components/logo';
 import { GrupoCuenta, GrupoLegal, GrupoNotificaciones, GrupoPrivacidad } from '@/components/ajustes';
 import { Grupo, Icono, Texto } from '@/components/ui';
@@ -24,6 +23,7 @@ import { cambiarApariencia, useApariencia, type Apariencia } from '@/lib/aparien
 import { cambiarIdioma, IDIOMAS_APP } from '@/lib/i18n';
 import { nombreInteres } from '@/lib/intereses';
 import { nombrePais } from '@/lib/paises';
+import { useCiudad } from '@/lib/ciudades';
 
 const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).springify().damping(20);
 
@@ -150,46 +150,78 @@ function PieApp() {
 }
 
 // ---------- Sin cuenta ----------
+// Lo mismo que la bienvenida, en los colores del tema: qué pasa esta noche en tu ciudad (eventos reales,
+// con quién va), lo que se desbloquea con la cuenta y, abajo, los ajustes que no la necesitan.
+const PUNTOS_SIN_CUENTA = [
+  { icono: 'entrada', clave: 'p1' },
+  { icono: 'canal', clave: 'p2' },
+  { icono: 'grupo', clave: 'p3' },
+] as const;
+
 function SinCuenta() {
   const { t } = useTranslation('auth');
+  const { t: tc } = useTranslation();
+  const tema = useTheme();
   const insets = useSafeAreaInsets();
-  const beneficios: { icono: 'calendar' | 'bubble.left.and.bubble.right' | 'person.2'; texto: string }[] = [
-    { icono: 'calendar', texto: t('perfil.invitado.b1') },
-    { icono: 'bubble.left.and.bubble.right', texto: t('perfil.invitado.b2') },
-    { icono: 'person.2', texto: t('perfil.invitado.b3') },
-  ];
+  const ciudad = useCiudad();
+  const { destacados, total, ahora } = useEstaNoche(ciudad.id, 3);
+  const colores: ColoresLineup = {
+    texto: tema.text, secundario: tema.textSecondary, acento: tema.accentText, vivo: tema.sun, onVivo: tema.onSun,
+    separador: tema.separator, miniatura: tema.backgroundSelected,
+  };
   return (
-    <View style={{ gap: 30, paddingTop: insets.top + 12, paddingHorizontal: 16 }}>
-      <Animated.View entering={entrada(0)} style={styles.portada}>
-        <Image source={{ uri: FOTOS_INTRO.grupo }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
-        <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.9)']} locations={[0, 0.3, 0.72]} style={StyleSheet.absoluteFill} />
-        <View style={styles.marca}><Logo alto={30} variante="sobreFoto" /></View>
-        <View style={styles.portadaContenido}>
-          <Texto v="titulo" style={styles.blanco}>{t('perfil.invitado.titulo')}</Texto>
-          <View style={{ gap: 12, marginTop: 4 }}>
-            {beneficios.map((b, i) => (
-              <Animated.View key={b.icono} entering={entrada(i + 2)} style={styles.beneficio}>
-                <BlurView intensity={30} tint="light" style={styles.beneficioIcono}>
-                  <Icono nombre={b.icono} tamano={15} color="#FFFFFF" peso="semibold" />
-                </BlurView>
-                <Texto v="detalle" style={[styles.blanco, { flex: 1, fontWeight: '500' }]}>{b.texto}</Texto>
-              </Animated.View>
-            ))}
-          </View>
-          <Tocable onPress={() => router.push('/auth')} style={styles.botonBlanco}>
-            <Texto v="cuerpoFuerte" style={{ color: '#000000' }}>{t('intro.crearCuenta')}</Texto>
-          </Tocable>
-          <Pressable onPress={() => router.push('/auth/entrar')} hitSlop={8} style={{ alignSelf: 'center' }}>
-            {({ pressed }) => (
-              <Texto v="detalle" style={[styles.blanco, { opacity: pressed ? 0.5 : 0.85 }]}>
-                {t('registro.yaTienes')} <Texto v="detalle" style={[styles.blanco, { fontWeight: '700' }]}>{t('registro.entra')}</Texto>
-              </Texto>
-            )}
-          </Pressable>
+    <View style={{ gap: 30, paddingTop: insets.top + 14, paddingHorizontal: 20 }}>
+      <Animated.View entering={entrada(0)} style={{ gap: 18 }}>
+        <Logo alto={30} />
+        <View>
+          <Texto v="seccion" acento>{t('bienvenida.estaNoche')}</Texto>
+          <Texto v="tituloGrande" numberOfLines={2} style={{ fontSize: 46, lineHeight: 46, paddingTop: 2 }}>{ciudad.nombre}</Texto>
         </View>
       </Animated.View>
-      <Animated.View entering={entrada(3)}><SelectorApariencia /></Animated.View>
-      <Animated.View entering={entrada(4)}><SelectorIdioma /></Animated.View>
+
+      {destacados?.length ? (
+        <View style={[styles.lineupSinCuenta, { backgroundColor: tema.backgroundElement }]}>
+          <LineupNoche eventos={destacados} ahora={ahora} colores={colores} retraso={120} />
+          {total > destacados.length ? (
+            <Pressable onPress={() => router.navigate('/')} accessibilityRole="button" style={({ pressed }) => [styles.verAgenda, { borderTopColor: tema.separator }, pressed && { opacity: 0.6 }]}>
+              <Texto v="detalle" style={{ fontWeight: '700', color: tema.accentText }}>{t('bienvenida.verAgenda', { count: total })}</Texto>
+              <IconoBora nombre="flecha" tamano={15} color={tema.accentText} grosor={2.4} />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
+      <View style={{ gap: 14 }}>
+        {PUNTOS_SIN_CUENTA.map((p, i) => (
+          <Animated.View key={p.clave} entering={entrada(i + 2)} style={styles.beneficio}>
+            <View style={[styles.beneficioIcono, { backgroundColor: tema.accentSoft }]}>
+              <IconoBora nombre={p.icono} tamano={20} color={tema.accentSoftText} />
+            </View>
+            <Texto style={{ flex: 1, fontWeight: '500' }}>{t(`bienvenida.${p.clave}`)}</Texto>
+          </Animated.View>
+        ))}
+      </View>
+
+      <View style={{ gap: 14 }}>
+        <Tocable onPress={() => router.push('/auth')} style={[styles.botonCuenta, { backgroundColor: tema.accent }]}>
+          <Texto v="cuerpoFuerte" style={{ color: tema.onAccent, fontWeight: '700' }}>{t('intro.crearCuenta')}</Texto>
+        </Tocable>
+        <Pressable onPress={() => router.push('/auth/entrar')} hitSlop={8} style={{ alignSelf: 'center' }} accessibilityRole="button">
+          {({ pressed }) => (
+            <Texto v="detalle" secundario style={{ opacity: pressed ? 0.5 : 1 }}>
+              {t('registro.yaTienes')} <Texto v="detalle" style={{ fontWeight: '700', color: tema.accentText }}>{t('registro.entra')}</Texto>
+            </Texto>
+          )}
+        </Pressable>
+      </View>
+
+      <View style={[styles.separadorAjustes, { backgroundColor: tema.separator }]} />
+      <View style={styles.cabezaAjustes}>
+        <IconoBora nombre="ajustes" tamano={18} color={tema.textSecondary} />
+        <Texto v="grupo" secundario>{tc('ajustes.titulo')}</Texto>
+      </View>
+      <Animated.View entering={entrada(5)} style={{ marginTop: -18 }}><SelectorApariencia /></Animated.View>
+      <Animated.View entering={entrada(6)}><SelectorIdioma /></Animated.View>
       <PieApp />
     </View>
   );
@@ -442,12 +474,13 @@ const styles = StyleSheet.create({
   blanco: { color: '#FFFFFF' },
 
   // sin cuenta
-  portada: { minHeight: 520, borderRadius: 28, overflow: 'hidden', justifyContent: 'flex-end' },
-  marca: { position: 'absolute', top: 22, left: 22 },
-  portadaContenido: { padding: 22, gap: 14 },
+  lineupSinCuenta: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 4 },
+  verAgenda: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth },
   beneficio: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  beneficioIcono: { width: 32, height: 32, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  botonBlanco: { height: 52, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginTop: 10 },
+  beneficioIcono: { width: 36, height: 36, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  botonCuenta: { height: 52, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  separadorAjustes: { height: StyleSheet.hairlineWidth },
+  cabezaAjustes: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: -12 },
 
   // apariencia
   apariencia: { flexDirection: 'row', justifyContent: 'space-around', borderRadius: 12, paddingVertical: 18, paddingHorizontal: 8 },

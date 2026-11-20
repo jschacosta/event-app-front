@@ -6,6 +6,7 @@
     "cancelar": "Abbrechen",
     "sinConexion": "Server nicht erreichbar ({{url}}).",
     "reintentar": "Erneut versuchen",
+    "cargando": "Wird geladen",
     "volver": "Zurück",
     "compartir": "Teilen",
     "guardar": "Speichern",
@@ -717,6 +718,7 @@
   },
   "cuentaEliminada": "Gelöschtes Konto",
   "ajustes": {
+    "titulo": "Einstellungen",
     "notificaciones": {
       "titulo": "Benachrichtigungen",
       "bloqueadas": "Benachrichtigungen von Bora sind auf deinem Handy ausgeschaltet. Schalte sie in den Systemeinstellungen ein, um sie zu bekommen.",
@@ -819,5 +821,13 @@
     "unirme": "Beitreten und alles lesen",
     "vacio": "Noch keine Nachrichten. Fang das Gespräch an.",
     "sticker": "Sticker"
+  },
+  "chatVacio": {
+    "titulo": "Schreib die erste Nachricht",
+    "ayuda": "Tippe auf eine Idee, um loszulegen",
+    "previa": "Wer ist beim Vorglühen dabei?",
+    "llegar": "Wie kommt ihr hin?",
+    "solo": "Geht noch jemand allein hin?",
+    "tituloPrevia": "Das Gespräch fängt gerade erst an"
   }
 }

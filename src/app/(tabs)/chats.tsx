@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, ZoomIn,
 } from 'react-native-reanimated';
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Banderas } from '@/components/bandera';
 import { IconoTopico } from '@/components/chat/topicos';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
+import { EsqueletoCanales } from '@/components/esqueleto';
 import { BarraBusqueda, IconoVacio, TiraFechas } from '@/components/filtros';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { FilaMiCanal, HojaElegirEvento, type MiCanal } from '@/components/mis-canales';
@@ -23,6 +24,7 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
+import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
 import { refrescarNoLeidos, textoCuenta, useNoLeidos } from '@/lib/no-leidos';
@@ -141,7 +143,8 @@ export default function CanalesScreen() {
   const { token, usuario } = useSesion();
   const { t: tr } = useTranslation();
   const ciudad = useCiudad();
-  const [eventos, setEventos] = useState<Evento[] | null>(null);
+  // Parte con los últimos canales que se vieron (memoria o teléfono) y se actualiza por detrás.
+  const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad.id, 'canales'));
   const [consulta, setConsulta] = useState('');
   const [dia, setDia] = useState<string | null>(null);
   const [misCanalesApi, setMisCanales] = useState<MiCanal[] | null>(null);
@@ -164,7 +167,7 @@ export default function CanalesScreen() {
   const [ciudadVista, setCiudadVista] = useState(ciudad.id);
   if (ciudadVista !== ciudad.id) {
     setCiudadVista(ciudad.id);
-    setEventos(null);
+    setEventos(eventosGuardados(ciudad.id, 'canales'));
     setConsulta('');
     setDia(null);
   }
@@ -173,10 +176,20 @@ export default function CanalesScreen() {
   useFocusEffect(useCallback(() => {
     // Solo los eventos con canal (abierto o que abre pronto): mucho menos que la agenda completa.
     api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token })
-      .then((r) => setEventos(r.eventos.filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO)))
-      .catch(() => setEventos([]));
+      .then((r) => {
+        const lista = r.eventos.filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO);
+        setEventos(lista);
+        guardarEventos(ciudad.id, lista, 'canales');
+      })
+      .catch(() => setEventos((e) => e ?? []));
     refrescarNoLeidos();
   }, [token, ciudad.id]));
+
+  useEffect(() => {
+    let vigente = true;
+    eventosDelTelefono(ciudad.id, 'canales').then((l) => { if (vigente && l) setEventos((e) => e ?? l); });
+    return () => { vigente = false; };
+  }, [ciudad.id]);
 
   // Mis canales: al volver a la pestaña y cada vez que cambian los no leídos (para el último mensaje).
   const noLeidos = useNoLeidos();
@@ -376,7 +389,7 @@ export default function CanalesScreen() {
             ) : <View style={{ height: 6 }} />}
           </>
         }
-        ListEmptyComponent={vistaActual === 'mis' ? (misCanales === null ? <ActivityIndicator style={{ marginTop: 40 }} /> : (
+        ListEmptyComponent={vistaActual === 'mis' ? (misCanales === null ? <EsqueletoCanales filas={4} /> : (
           <View style={styles.vacio}>
             <IconoVacio nombre={consulta.trim() ? 'magnifyingglass' : 'bubble.left.and.bubble.right'} />
             <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>
@@ -385,7 +398,7 @@ export default function CanalesScreen() {
             {!consulta.trim() && <Texto v="detalle" secundario style={{ textAlign: 'center' }}>{tr('canales.misVacioAyuda')}</Texto>}
             {!consulta.trim() && <BotonTexto texto={tr('canales.explorar')} onPress={() => setVista('explorar')} />}
           </View>
-        )) : eventos === null ? <ActivityIndicator style={{ marginTop: 40 }} /> : vacio ? (
+        )) : eventos === null ? <EsqueletoCanales /> : vacio ? (
           <View style={styles.vacio}>
             <IconoVacio nombre={buscando ? 'magnifyingglass' : 'bubble.left.and.bubble.right'} />
             <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>

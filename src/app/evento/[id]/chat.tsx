@@ -20,7 +20,7 @@ import { HojaEditarCanal } from '@/components/chat/editar-canal';
 import { NOMBRES_IDIOMA, PanelClave, PanelNormas, SelectorSalas } from '@/components/canales';
 import { PanelExpresion, type ModoPanel } from '@/components/chat/panel-expresion';
 import { StickerAnimado } from '@/components/chat/sticker-animado';
-import { FondoEvento, VistaPreviaCanal } from '@/components/chat/vista-previa';
+import { ChatVacio, FondoEvento, VistaPreviaCanal } from '@/components/chat/vista-previa';
 import { AvisoTopicos, HojaTopico, IconoTopico, ListaTopicos } from '@/components/chat/topicos';
 import { DeslizarParaResponder } from '@/components/deslizar-responder';
 import { FilaReacciones, PanelEmojis, Pop, useSalto } from '@/components/emojis';
@@ -410,8 +410,9 @@ export default function ChatScreen() {
     : conocidos === undefined ? (topicos.error ? 'chat' : 'cargando')
     : conocidos ? 'lista' : 'chat';
   const enLista = modo === 'lista';
-  // Sin cuenta o sin aceptar las normas, la sala General se muestra en modo lectura (últimos mensajes).
-  const vistaPrevia = Boolean(id) && sala === 'general' && !topicoElegido;
+  // Sin cuenta o sin aceptar las normas, las salas abiertas (General y de idioma) se muestran en modo
+  // lectura con sus últimos mensajes. Los canales propios no se adelantan.
+  const vistaPrevia = Boolean(id) && (SALAS_IDIOMA as readonly string[]).includes(sala) && !topicoElegido;
   const [verNormas, setVerNormas] = useState(false);
 
   const {
@@ -1204,9 +1205,9 @@ export default function ChatScreen() {
             onRecargar={topicos.recargar}
           />
         ) : estado === 'sin-sesion' && vistaPrevia ? (
-          <VistaPreviaCanal eventoId={id!} textoBoton={tr('vistaPrevia.crearCuenta')} onUnirme={() => router.push('/auth')} />
+          <VistaPreviaCanal eventoId={id!} evento={evento} sala={sala} textoBoton={tr('vistaPrevia.crearCuenta')} onUnirme={() => router.push('/auth')} />
         ) : estado === 'normas' && vistaPrevia && !verNormas ? (
-          <VistaPreviaCanal eventoId={id!} textoBoton={tr('vistaPrevia.unirme')} onUnirme={() => setVerNormas(true)} />
+          <VistaPreviaCanal eventoId={id!} evento={evento} sala={sala} textoBoton={tr('vistaPrevia.unirme')} onUnirme={() => setVerNormas(true)} />
         ) : estado === 'sin-sesion' ? (
           <View style={styles.centro}>
             <Text style={styles.aviso}>{tr('chat.sinSesion')}</Text>
@@ -1256,13 +1257,17 @@ export default function ChatScreen() {
               }
               ListFooterComponent={
                 <View style={{ gap: 2, marginBottom: 6 }}>
+                  {/* Sala vacía: el evento e ideas para el primer mensaje (al tocar una queda escrita en el campo) */}
+                  {!items.length && estado === 'listo' && !enTopico && !soloLectura && puedeEscribir ? (
+                    <ChatVacio evento={evento} onElegir={(frase) => { setTexto(frase); campo.current?.focus(); }} />
+                  ) : null}
                   {!enTopico && !conocidos && puedeCrearTopico && miembro ? <View style={{ marginBottom: 6 }}><AvisoTopicos onCrear={nuevoTopico} /></View> : null}
                   {canal?.descripcion && !enTopico ? <Text style={[styles.nota, { color: t.text }]}>{canal.descripcion}</Text> : null}
                   <Text style={styles.nota}>
                     {evento ? tr('chat.seBorraHora', { hora: hora(evento.fin) }) : tr('chat.seBorra')}
                   </Text>
                   <Text style={styles.nota}>{tr('chat.teVen')}</Text>
-                  {!items.length && estado === 'listo' ? (
+                  {!items.length && estado === 'listo' && !(!enTopico && !soloLectura && puedeEscribir) ? (
                     <Text style={[styles.nota, { marginTop: 18 }]}>
                       {soloLectura && !datosTopico?.cerrado ? tr('chat.vacioAvisos') : enTopico ? tr('topicos.vacio') : esIdioma && sala !== 'general' ? tr('chat.vacioIdioma') : tr('chat.vacio')}
                     </Text>

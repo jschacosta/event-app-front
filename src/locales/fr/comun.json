@@ -6,6 +6,7 @@
     "cancelar": "Annuler",
     "sinConexion": "Impossible de joindre le serveur ({{url}}).",
     "reintentar": "Réessayer",
+    "cargando": "Chargement",
     "volver": "Retour",
     "compartir": "Partager",
     "guardar": "Enregistrer",
@@ -717,6 +718,7 @@
   },
   "cuentaEliminada": "Compte supprimé",
   "ajustes": {
+    "titulo": "Réglages",
     "notificaciones": {
       "titulo": "Notifications",
       "bloqueadas": "Les notifications de Bora sont désactivées sur votre téléphone. Activez-les dans les réglages du système pour les recevoir.",
@@ -819,5 +821,13 @@
     "unirme": "Rejoindre et tout lire",
     "vacio": "Pas encore de messages. Lancez la conversation.",
     "sticker": "Autocollant"
+  },
+  "chatVacio": {
+    "titulo": "Écrivez le premier message",
+    "ayuda": "Touchez une idée pour commencer",
+    "previa": "Qui organise le before ?",
+    "llegar": "Comment vous y allez ?",
+    "solo": "Quelqu’un d’autre y va en solo ?",
+    "tituloPrevia": "La conversation ne fait que commencer"
   }
 }

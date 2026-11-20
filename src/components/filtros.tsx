@@ -9,6 +9,7 @@ import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring, wit
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { fuenteWeb, Icono, Texto } from '@/components/ui';
+import { IconoBora } from '@/components/iconos-bora';
 import { useTheme } from '@/hooks/use-theme';
 import { useCiudad } from '@/lib/ciudades';
 import { fechaDeClave, proximosDias } from '@/lib/fechas';
@@ -56,7 +57,7 @@ export function BarraBusqueda({ valor, onCambio, placeholder, autoFocus, onFocus
   const { t: tr } = useTranslation();
   return (
     <View style={[styles.busqueda, { backgroundColor: t.backgroundElement }]}>
-      <Icono nombre="magnifyingglass" tamano={16} color={t.textSecondary} />
+      <IconoBora nombre="buscar" tamano={18} color={t.textSecondary} />
       <TextInput
         value={valor}
         onChangeText={onCambio}
@@ -72,7 +73,9 @@ export function BarraBusqueda({ valor, onCambio, placeholder, autoFocus, onFocus
       {valor ? (
         <Animated.View entering={ZoomIn.duration(150)} exiting={ZoomOut.duration(120)}>
           <Pressable onPress={() => onCambio('')} hitSlop={10} accessibilityLabel={tr('agenda.borrarBusqueda')}>
-            <Icono nombre="xmark.circle.fill" tamano={17} color={t.textSecondary} />
+            <View style={[styles.borrar, { backgroundColor: t.textSecondary }]}>
+              <IconoBora nombre="cerrar" tamano={12} color={t.backgroundElement} grosor={3} />
+            </View>
           </Pressable>
         </Animated.View>
       ) : null}
@@ -315,6 +318,7 @@ function ContenidoGeneros({ generos, cuentas, total, elegido, onElegir, onCerrar
 }
 
 const styles = StyleSheet.create({
+  borrar: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   vacio: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
   filaDias: { paddingHorizontal: 20, gap: 8, paddingVertical: 2 },
   pildora: { height: 30, paddingHorizontal: 11, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 5 },

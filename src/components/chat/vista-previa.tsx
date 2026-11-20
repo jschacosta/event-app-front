@@ -1,24 +1,25 @@
-// Lo que ve quien todavía no entra a un canal (sin cuenta o sin aceptar las normas): los últimos
-// mensajes de la sala General, legibles, y arriba burbujas difuminadas que invitan a unirse.
-// También el adelanto de la ficha del evento y el fondo del chat (afiche difuminado + color del género).
-import { BlurView } from 'expo-blur';
+// Lo que ve quien todavía no entra a una sala (sin cuenta o sin aceptar las normas): los últimos
+// mensajes de esa sala, legibles, y arriba burbujas de relleno que se desvanecen e invitan a unirse.
+// También el adelanto de la ficha del evento, el fondo del chat y el chat vacío con ideas para empezar.
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { Bandera } from '@/components/bandera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { IconoBora } from '@/components/iconos-bora';
 import { BotonPrincipal, Texto, fuenteWeb } from '@/components/ui';
+import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
-import { api, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
-import { horaDispositivo } from '@/lib/fechas';
-import { coloresGenero } from '@/lib/generos';
+import { api, type Evento, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
+import { diaCorto, hora, horaDispositivo } from '@/lib/fechas';
+import { colorEtiquetaGenero } from '@/lib/generos';
 
 const fuente = fuenteWeb;
 
@@ -28,51 +29,75 @@ function conAlfa(hex: string, a: number) {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-export function useVistaCanal(eventoId: string | undefined, activo = true) {
+export function useVistaCanal(eventoId: string | undefined, activo = true, sala = 'general') {
   const { token } = useSesion();
   const [vista, setVista] = useState<VistaCanal | null>(null);
   useEffect(() => {
     if (!eventoId || !activo) return;
     let vivo = true;
-    const cargar = () => api<VistaCanal>(`/events/${eventoId}/canal`, { token }).then((r) => vivo && setVista(r)).catch(() => {});
+    const cargar = () => api<VistaCanal>(`/events/${eventoId}/canal${sala === 'general' ? '' : `?sala=${sala}`}`, { token }).then((r) => vivo && setVista(r)).catch(() => {});
     cargar();
     // Se refresca cada 30 s: la conversación sigue mientras se mira.
     const intervalo = setInterval(cargar, 30000);
     return () => { vivo = false; clearInterval(intervalo); };
-  }, [eventoId, activo, token]);
+  }, [eventoId, activo, token, sala]);
   return vista;
 }
 
 // ---------- Fondo del chat ----------
-// El afiche del evento muy difuminado, teñido con el color del género y aclarado hacia abajo para que
-// las burbujas se lean. Sin afiche: solo el degradado del género.
-export function FondoEvento({ imagen, generos }: { imagen?: string | null; generos?: string[] }) {
+// Liso, del color del tema: el afiche difuminado de antes ensuciaba la pantalla, sobre todo sin mensajes.
+// Se conservan los parámetros para no tocar a quien lo usa.
+export function FondoEvento(_: { imagen?: string | null; generos?: string[] }) {
   const t = useTheme();
-  const oscuro = useColorScheme() === 'dark';
-  // LGBT+ tiene 5 colores: se usan el primero y el último.
-  const colores = generos?.length ? coloresGenero(generos[0]) : ['#64209A', '#1A1023'];
-  const c1 = colores[0];
-  const c2 = colores[colores.length - 1];
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: t.chatWallpaper }]} pointerEvents="none" />;
+}
+
+// ---------- Chat vacío ----------
+// El afiche del evento y tres ideas para romper el hielo: al tocar una, queda escrita en el campo.
+const IDEAS = ['previa', 'llegar', 'solo'] as const;
+
+export function ChatVacio({ evento, onElegir, titulo }: { evento: Evento | null; onElegir: (frase: string) => void; titulo?: string }) {
+  const t = useTheme();
+  const { t: tr } = useTranslation();
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: t.chatWallpaper }]} />
-      {imagen ? (
-        <Image
-          source={{ uri: imagen }}
-          style={[StyleSheet.absoluteFill, { opacity: oscuro ? 0.55 : 0.4 }]}
-          contentFit="cover"
-          blurRadius={Platform.OS === 'web' ? 0 : 60}
-          cachePolicy="memory-disk"
-          transition={250}
-        />
+    <Animated.View entering={FadeIn.duration(260)} style={estilos.vacio}>
+      {evento ? (
+        <View style={estilos.cabezaVacio}>
+          <View style={[estilos.afiche, { backgroundColor: evento.imagen ? t.backgroundSelected : colorEtiquetaGenero(evento.generos[0] ?? 'otro') }]}>
+            {evento.imagen
+              ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
+              : <Text style={estilos.inicialAfiche}>{evento.titulo.trim().charAt(0).toUpperCase()}</Text>}
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={[estilos.tituloVacio, { color: t.text }]} numberOfLines={2}>{evento.titulo}</Text>
+            <Text style={[estilos.datoVacio, { color: t.textSecondary }]} numberOfLines={1}>
+              {[`${diaCorto(evento.inicio)} ${hora(evento.inicio)}`, evento.lugar ?? evento.barrio].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+        </View>
       ) : null}
-      {imagen && Platform.OS === 'web' ? <BlurView intensity={80} tint={oscuro ? 'dark' : 'light'} style={StyleSheet.absoluteFill} /> : null}
-      <LinearGradient
-        colors={[conAlfa(c1, oscuro ? 0.32 : 0.22), conAlfa(c2, oscuro ? 0.22 : 0.1), conAlfa(t.chatWallpaper, oscuro ? 0.78 : 0.82), t.chatWallpaper]}
-        locations={[0, 0.35, 0.75, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
+      <View style={{ gap: 4 }}>
+        <Text style={[estilos.invitacionVacio, { color: t.text }]}>{titulo ?? tr('chatVacio.titulo')}</Text>
+        <View style={estilos.lineaIdeas}>
+          <IconoBora nombre="chispa" tamano={15} color={t.accentText} />
+          <Text style={[estilos.datoVacio, { color: t.textSecondary }]}>{tr('chatVacio.ayuda')}</Text>
+        </View>
+      </View>
+      <View style={estilos.ideas}>
+        {IDEAS.map((k) => {
+          const frase = tr(`chatVacio.${k}`);
+          return (
+            <Pressable
+              key={k}
+              onPress={() => onElegir(frase)}
+              accessibilityRole="button"
+              style={({ pressed }) => [estilos.idea, { backgroundColor: t.accentSoft }, pressed && { opacity: 0.7 }]}>
+              <Text style={[estilos.ideaTexto, { color: t.accentSoftText }]}>{frase}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </Animated.View>
   );
 }
 
@@ -85,7 +110,14 @@ function Burbuja({ m, anterior }: { m: MensajeVistaPrevia; anterior?: MensajeVis
     ? <Image source={{ uri: m.gif.preview }} style={{ width: 140, aspectRatio: Math.max(0.6, Math.min(2, m.gif.ancho / m.gif.alto)), borderRadius: 8 }} contentFit="cover" />
     : m.sticker && !m.texto
       ? <Text style={[estilos.texto, { color: t.textSecondary, fontStyle: 'italic' }]}>{tr('vistaPrevia.sticker')}</Text>
-      : <Text style={[estilos.texto, { color: t.text }]}>{m.encuesta ? `📊 ${m.texto}` : m.texto}</Text>;
+      : m.encuesta
+        ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <IconoBora nombre="encuesta" tamano={16} color={t.accentText} />
+            <Text style={[estilos.texto, { color: t.text, flexShrink: 1 }]}>{m.texto}</Text>
+          </View>
+        )
+        : <Text style={[estilos.texto, { color: t.text }]}>{m.texto}</Text>;
   return (
     <View style={{ marginTop: seguido ? 3 : 10 }}>
       {seguido ? null : (
@@ -109,7 +141,7 @@ function Burbuja({ m, anterior }: { m: MensajeVistaPrevia; anterior?: MensajeVis
   );
 }
 
-// Burbujas de relleno (sin texto real) para lo anterior: se ven como conversación, no se leen.
+// Burbujas de relleno (sin texto real) para lo anterior: se ven como conversación y se desvanecen hacia arriba.
 const RELLENO = [
   { izq: true, ancho: '62%', lineas: 2 }, { izq: true, ancho: '44%', lineas: 1 }, { izq: false, ancho: '52%', lineas: 1 },
   { izq: true, ancho: '70%', lineas: 3 }, { izq: false, ancho: '38%', lineas: 1 }, { izq: true, ancho: '56%', lineas: 2 },
@@ -120,7 +152,7 @@ function Anteriores() {
   const oscuro = useColorScheme() === 'dark';
   return (
     <View style={estilos.anteriores} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <View style={{ gap: 6, paddingHorizontal: 12, opacity: oscuro ? 0.5 : 0.65 }}>
+      <View style={{ gap: 6, paddingHorizontal: 12, opacity: oscuro ? 0.35 : 0.5 }}>
         {RELLENO.map((r, i) => (
           <View key={i} style={{ flexDirection: 'row', justifyContent: r.izq ? 'flex-start' : 'flex-end', gap: 6 }}>
             {r.izq ? <View style={[estilos.foto, { backgroundColor: t.backgroundSelected }]} /> : null}
@@ -128,7 +160,6 @@ function Anteriores() {
           </View>
         ))}
       </View>
-      <BlurView intensity={Platform.OS === 'android' ? 18 : 28} tint={oscuro ? 'dark' : 'light'} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />
       <LinearGradient colors={[t.chatWallpaper, conAlfa(t.chatWallpaper, 0)]} locations={[0, 0.7]} style={StyleSheet.absoluteFill} />
     </View>
   );
@@ -136,8 +167,10 @@ function Anteriores() {
 
 // ---------- Chat en modo lectura ----------
 // Arriba, lo anterior difuminado; al medio, los últimos mensajes legibles; abajo, fija, la invitación.
-export function VistaPreviaCanal({ eventoId, onUnirme, textoBoton }: { eventoId: string; onUnirme: () => void; textoBoton: string }) {
-  const vista = useVistaCanal(eventoId);
+export function VistaPreviaCanal({ eventoId, evento, sala = 'general', onUnirme, textoBoton }: {
+  eventoId: string; evento?: Evento | null; sala?: string; onUnirme: () => void; textoBoton: string;
+}) {
+  const vista = useVistaCanal(eventoId, true, sala);
   const { t: tr } = useTranslation();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -156,7 +189,10 @@ export function VistaPreviaCanal({ eventoId, onUnirme, textoBoton }: { eventoId:
             {mensajes.map((m, i) => <Burbuja key={m.id} m={m} anterior={mensajes[i - 1]} />)}
           </View>
         ) : (
-          <Texto v="detalle" secundario style={{ textAlign: 'center', marginTop: 12 }}>{tr('vistaPrevia.vacio')}</Texto>
+          // Sala sin mensajes: el evento y las ideas para empezar; tocar una lleva a unirse.
+          <View style={{ paddingHorizontal: 8 }}>
+            <ChatVacio evento={evento ?? null} titulo={tr('chatVacio.tituloPrevia')} onElegir={onUnirme} />
+          </View>
         )}
       </Animated.ScrollView>
       <LinearGradient pointerEvents="none" colors={[t.chatWallpaper, conAlfa(t.chatWallpaper, 0)]} style={estilos.desvanecido} />
@@ -229,6 +265,17 @@ const estilos = StyleSheet.create({
   anteriores: { paddingTop: 16, paddingBottom: 12, justifyContent: 'center', overflow: 'hidden' },
   relleno: { borderRadius: 14 },
   desvanecido: { position: 'absolute', top: 0, left: 0, right: 0, height: 56 },
+  vacio: { gap: 16, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 18 },
+  cabezaVacio: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  afiche: { width: 54, height: 72, borderRadius: 6, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  inicialAfiche: { color: '#FFFFFF', fontFamily: FuenteTitulo.cursiva, fontSize: 30, paddingRight: 2 },
+  tituloVacio: { fontSize: 17, lineHeight: 21, fontWeight: '700', fontFamily: fuente },
+  datoVacio: { fontSize: 13, fontFamily: fuente },
+  invitacionVacio: { fontFamily: FuenteTitulo.cursiva, fontSize: 24, lineHeight: 26, paddingRight: 2 },
+  lineaIdeas: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  idea: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 6 },
+  ideaTexto: { fontSize: 14, fontWeight: '600', fontFamily: fuente },
   invitacion: { paddingHorizontal: 16, paddingTop: 12, gap: 10, borderTopWidth: StyleSheet.hairlineWidth },
   invitacionTexto: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
   enVivo: { flexDirection: 'row', alignItems: 'center', gap: 7 },

@@ -6,6 +6,7 @@
     "cancelar": "Cancel",
     "sinConexion": "Couldn’t reach the server ({{url}}).",
     "reintentar": "Try Again",
+    "cargando": "Loading",
     "volver": "Back",
     "compartir": "Share",
     "guardar": "Save",
@@ -717,6 +718,7 @@
   },
   "cuentaEliminada": "Deleted account",
   "ajustes": {
+    "titulo": "Settings",
     "notificaciones": {
       "titulo": "Notifications",
       "bloqueadas": "Bora notifications are turned off on your phone. Turn them on in your system settings to get them.",
@@ -819,5 +821,13 @@
     "unirme": "Join and read everything",
     "vacio": "No messages yet. Start the conversation.",
     "sticker": "Sticker"
+  },
+  "chatVacio": {
+    "titulo": "Send the first message",
+    "ayuda": "Tap an idea to get started",
+    "previa": "Who’s up for a pre-party?",
+    "llegar": "How is everyone getting there?",
+    "solo": "Anyone else going solo?",
+    "tituloPrevia": "The conversation is just getting started"
   }
 }

@@ -6,6 +6,7 @@
     "cancelar": "Cancelar",
     "sinConexion": "No se pudo conectar con el servidor ({{url}}).",
     "reintentar": "Reintentar",
+    "cargando": "Cargando",
     "volver": "Volver",
     "compartir": "Compartir",
     "guardar": "Guardar",
@@ -717,6 +718,7 @@
   },
   "cuentaEliminada": "Cuenta eliminada",
   "ajustes": {
+    "titulo": "Ajustes",
     "notificaciones": {
       "titulo": "Notificaciones",
       "bloqueadas": "Las notificaciones de Bora están desactivadas en tu teléfono. Actívalas en los ajustes del sistema para recibirlas.",
@@ -819,5 +821,13 @@
     "unirme": "Unirme y leer todo",
     "vacio": "Aún no hay mensajes. Empieza la conversación.",
     "sticker": "Sticker"
+  },
+  "chatVacio": {
+    "titulo": "Escribe el primer mensaje",
+    "ayuda": "Toca una idea para empezar",
+    "previa": "¿Quién arma la previa?",
+    "llegar": "¿Cómo van a llegar?",
+    "solo": "¿Alguien más va por su cuenta?",
+    "tituloPrevia": "La conversación recién empieza"
   }
 }

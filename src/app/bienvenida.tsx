@@ -1,31 +1,66 @@
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+// Bienvenida: un afiche de la noche. La ciudad en grande (como el titular de un festival), el line-up
+// real de hoy con quién va, lo que se puede hacer en Bora y los botones. Siempre oscura, en açaí.
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, FadeIn, FadeInDown, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { ESCENAS, FOTOS_INTRO } from '@/components/intro/escenas';
+import { LineupNoche, useEstaNoche, type ColoresLineup } from '@/components/esta-noche';
+import { IconoBora, type NombreIconoBora } from '@/components/iconos-bora';
 import { Logo } from '@/components/logo';
 import { fuenteWeb } from '@/components/ui';
 import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
+import { useCiudad } from '@/lib/ciudades';
 import { cambiarIdioma, IDIOMAS_APP } from '@/lib/i18n';
 
-const DURACION = 5000; // ms por escena
-const FONDOS = [FOTOS_INTRO.samba, FOTOS_INTRO.grupo, FOTOS_INTRO.lapa, FOTOS_INTRO.noche, FOTOS_INTRO.techno];
+const C = {
+  fondo: '#120A17',
+  acai: '#64209A',
+  lila: '#C3A0FF',
+  boton: '#B98CFF',
+  onBoton: '#1A0B2B',
+  texto: '#F3EDF7',
+  secundario: '#A699B0',
+  maracuja: '#FFC83D',
+  linea: 'rgba(243,237,247,0.1)',
+};
+const LINEUP: ColoresLineup = {
+  texto: C.texto, secundario: C.secundario, acento: C.lila, vivo: C.maracuja, onVivo: '#2E1F00', separador: C.linea, miniatura: '#241830',
+};
+const PUNTOS: { icono: NombreIconoBora; clave: string }[] = [
+  { icono: 'entrada', clave: 'p1' },
+  { icono: 'canal', clave: 'p2' },
+  { icono: 'grupo', clave: 'p3' },
+];
 
-function Progreso({ total, actual, avance }: { total: number; actual: number; avance: ReturnType<typeof useSharedValue<number>> }) {
-  const estilo = useAnimatedStyle(() => ({ width: `${avance.value * 100}%` }));
+// Luz açaí arriba a la derecha, como un foco de escenario.
+function Foco() {
   return (
-    <View style={s.progreso}>
-      {Array.from({ length: total }, (_, i) => (
-        <View key={i} style={s.segmento}>
-          {i < actual && <View style={[s.relleno, { width: '100%' }]} />}
-          {i === actual && <Animated.View style={[s.relleno, estilo]} />}
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Defs>
+        <RadialGradient id="foco" cx="85%" cy="8%" r="75%">
+          <Stop offset="0" stopColor={C.acai} stopOpacity="0.85" />
+          <Stop offset="1" stopColor={C.acai} stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#foco)" />
+    </Svg>
+  );
+}
+
+// Filas grises mientras llega el line-up.
+function LineupCargando() {
+  return (
+    <View style={{ gap: 18, paddingVertical: 12 }} accessibilityElementsHidden>
+      {[0.8, 0.6, 0.7, 0.5].map((w, i) => (
+        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={[s.gris, { width: 44, height: 18 }]} />
+          <View style={[s.gris, { width: 40, height: 40, marginLeft: 10 }]} />
+          <View style={[s.gris, { width: `${w * 60}%`, height: 14 }]} />
         </View>
       ))}
     </View>
@@ -34,30 +69,11 @@ function Progreso({ total, actual, avance }: { total: number; actual: number; av
 
 export default function BienvenidaScreen() {
   const { t, i18n } = useTranslation('auth');
+  const { t: tc } = useTranslation();
   const insets = useSafeAreaInsets();
   const { marcarIntroVista } = useSesion();
-  const [i, setI] = useState(0);
-  const avance = useSharedValue(0);
-  const zoom = useSharedValue(1);
-  const Escena = ESCENAS[i];
-
-  // Barra de progreso y avance automático
-  useEffect(() => {
-    avance.value = 0;
-    avance.value = withTiming(1, { duration: DURACION, easing: Easing.linear });
-    const timer = setTimeout(() => setI((n) => (n + 1) % ESCENAS.length), DURACION);
-    return () => {
-      clearTimeout(timer);
-      cancelAnimation(avance);
-    };
-  }, [i, avance]);
-
-  // Acercamiento lento de la foto de fondo (efecto "Ken Burns")
-  useEffect(() => {
-    zoom.value = 1;
-    zoom.value = withRepeat(withTiming(1.12, { duration: DURACION + 1000, easing: Easing.out(Easing.quad) }), 1);
-  }, [i, zoom]);
-  const estiloFondo = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }] }));
+  const ciudad = useCiudad();
+  const { destacados, total, ahora } = useEstaNoche(ciudad.id, 4);
 
   const ir = async (ruta: '/auth' | '/auth/entrar' | '/') => {
     await marcarIntroVista();
@@ -67,46 +83,79 @@ export default function BienvenidaScreen() {
   return (
     <View style={s.pantalla}>
       <StatusBar style="light" />
-      <Animated.View key={`fondo-${i}`} entering={FadeIn.duration(700)} style={[StyleSheet.absoluteFill, estiloFondo]}>
-        <Image source={{ uri: FONDOS[i] }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={18} />
-      </Animated.View>
-      <LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.7)', '#000']} locations={[0, 0.45, 0.8]} style={StyleSheet.absoluteFill} />
-
-      <View style={[s.arriba, { paddingTop: insets.top + 8 }]}>
-        <Progreso total={ESCENAS.length} actual={i} avance={avance} />
+      <Foco />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[s.contenido, { paddingTop: insets.top + 12 }]}
+        showsVerticalScrollIndicator={false}>
         <View style={s.barra}>
-          <Logo alto={26} variante="sobreFoto" />
+          <Logo alto={28} variante="sobreFoto" />
           <View style={s.idiomas}>
-            {IDIOMAS_APP.map((l) => (
-              <Pressable key={l.codigo} onPress={() => cambiarIdioma(l.codigo)} hitSlop={6} accessibilityLabel={l.nombre}>
-                <Text style={[s.idioma, { fontFamily: fuenteWeb }, i18n.language === l.codigo && s.idiomaActivo]}>{l.codigo.toUpperCase()}</Text>
-              </Pressable>
-            ))}
+            {IDIOMAS_APP.map((l) => {
+              const activo = i18n.language === l.codigo;
+              return (
+                <Pressable
+                  key={l.codigo}
+                  onPress={() => cambiarIdioma(l.codigo)}
+                  hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: activo }}
+                  accessibilityLabel={l.nombre}
+                  style={[s.idioma, activo && s.idiomaActivo]}>
+                  <Text style={[s.idiomaTexto, activo && { color: C.texto }]}>{l.codigo.toUpperCase()}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
-      </View>
 
-      {/* Toque a la izquierda: atrás; a la derecha: adelante */}
-      <View style={s.escena}>
-        <Escena key={`escena-${i}`} />
-        <Pressable style={[s.zona, { left: 0 }]} onPress={() => setI((n) => Math.max(0, n - 1))} accessibilityLabel="‹" />
-        <Pressable style={[s.zona, { right: 0 }]} onPress={() => setI((n) => (n + 1) % ESCENAS.length)} accessibilityLabel="›" />
-      </View>
-
-      <View style={[s.abajo, { paddingBottom: insets.bottom + 16 }]}>
-        <Animated.View key={`texto-${i}`} entering={FadeInDown.duration(500)} style={{ gap: 8 }}>
-          <Text style={s.titulo}>{t(`intro.s${i + 1}.titulo`)}</Text>
-          <Text style={[s.texto, { fontFamily: fuenteWeb }]}>{t(`intro.s${i + 1}.texto`)}</Text>
+        <Animated.View entering={FadeIn.duration(500)} style={{ marginTop: 34 }}>
+          <Text style={s.antetitulo}>{t('bienvenida.estaNoche')}</Text>
+          <Pressable
+            onPress={() => router.push('/ciudad')}
+            accessibilityRole="button"
+            accessibilityLabel={tc('ciudad.cambiar')}
+            style={({ pressed }) => [s.ciudad, pressed && { opacity: 0.7 }]}>
+            <Text style={s.ciudadTexto} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>{ciudad.nombre}</Text>
+            <View style={s.cambiar}>
+              <IconoBora nombre="pin" tamano={15} color={C.lila} />
+              <Text style={s.cambiarTexto}>{tc('ciudad.cambiar')}</Text>
+            </View>
+          </Pressable>
         </Animated.View>
-        <View style={{ gap: 12, marginTop: 24 }}>
-          <Pressable onPress={() => ir('/auth')} style={({ pressed }) => [s.botonPrincipal, pressed && { opacity: 0.8 }]} accessibilityRole="button">
-            <Text style={[s.textoBotonPrincipal, { fontFamily: fuenteWeb }]}>{t('intro.crearCuenta')}</Text>
+
+        <View style={{ marginTop: 22 }}>
+          {destacados === null ? <LineupCargando /> : destacados.length ? (
+            <>
+              <LineupNoche eventos={destacados} ahora={ahora} colores={LINEUP} retraso={200} />
+              {total > destacados.length ? (
+                <Animated.Text entering={FadeIn.delay(600)} style={s.mas}>{t('bienvenida.destacados', { count: total })}</Animated.Text>
+              ) : null}
+            </>
+          ) : null}
+        </View>
+
+        <View style={s.puntos}>
+          {PUNTOS.map((p, i) => (
+            <Animated.View key={p.clave} entering={FadeInDown.delay(500 + i * 80).duration(400)} style={s.punto}>
+              <View style={s.iconoPunto}><IconoBora nombre={p.icono} tamano={20} color={C.lila} /></View>
+              <Text style={s.puntoTexto}>{t(`bienvenida.${p.clave}`)}</Text>
+            </Animated.View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={[s.abajo, { paddingBottom: insets.bottom + 14 }]}>
+        <Pressable onPress={() => ir('/auth')} style={({ pressed }) => [s.botonPrincipal, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+          <Text style={s.textoBotonPrincipal}>{t('intro.crearCuenta')}</Text>
+        </Pressable>
+        <View style={s.filaSecundaria}>
+          <Pressable onPress={() => ir('/auth/entrar')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.6 }}>
+            <Text style={s.secundario}>{t('intro.yaTengoCuenta')}</Text>
           </Pressable>
-          <Pressable onPress={() => ir('/auth/entrar')} style={({ pressed }) => [s.botonSecundario, pressed && { opacity: 0.7 }]} accessibilityRole="button">
-            <Text style={[s.textoBotonSecundario, { fontFamily: fuenteWeb }]}>{t('intro.yaTengoCuenta')}</Text>
-          </Pressable>
-          <Pressable onPress={() => ir('/')} hitSlop={8} accessibilityRole="button">
-            <Text style={[s.explorar, { fontFamily: fuenteWeb }]}>{t('intro.explorar')}</Text>
+          <View style={s.separador} />
+          <Pressable onPress={() => ir('/')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.6 }}>
+            <Text style={s.secundario}>{t('intro.explorar')}</Text>
           </Pressable>
         </View>
       </View>
@@ -115,23 +164,28 @@ export default function BienvenidaScreen() {
 }
 
 const s = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: '#000', overflow: 'hidden' },
-  arriba: { paddingHorizontal: 16, gap: 14 },
-  progreso: { flexDirection: 'row', gap: 4 },
-  segmento: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
-  relleno: { height: 3, backgroundColor: '#fff' },
+  pantalla: { flex: 1, backgroundColor: C.fondo, overflow: 'hidden' },
+  contenido: { paddingHorizontal: 22, paddingBottom: 24, width: '100%', maxWidth: 560, alignSelf: 'center' },
   barra: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  idiomas: { flexDirection: 'row', gap: 14 },
-  idioma: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '600' },
-  idiomaActivo: { color: '#fff' },
-  escena: { flex: 1, marginVertical: 12 },
-  zona: { position: 'absolute', top: 0, bottom: 0, width: '35%' },
-  abajo: { paddingHorizontal: 24, width: '100%', maxWidth: 520, alignSelf: 'center' },
-  titulo: { color: '#fff', fontSize: 40, lineHeight: 40, fontFamily: FuenteTitulo.cursiva, paddingRight: 3 },
-  texto: { color: 'rgba(255,255,255,0.75)', fontSize: 17, lineHeight: 23 },
-  botonPrincipal: { height: 52, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  textoBotonPrincipal: { color: '#000', fontSize: 17, fontWeight: '600' },
-  botonSecundario: { height: 52, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
-  textoBotonSecundario: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  explorar: { color: 'rgba(255,255,255,0.7)', fontSize: 15, textAlign: 'center', paddingVertical: 4 },
+  idiomas: { flexDirection: 'row', gap: 2 },
+  idioma: { paddingHorizontal: 6, paddingVertical: 4, borderRadius: 4 },
+  idiomaActivo: { backgroundColor: 'rgba(243,237,247,0.12)' },
+  idiomaTexto: { color: C.secundario, fontSize: 12, fontWeight: '700', fontFamily: fuenteWeb },
+  antetitulo: { color: C.lila, fontFamily: FuenteTitulo.cursiva, fontSize: 24, lineHeight: 26, paddingRight: 2 },
+  ciudad: { alignSelf: 'flex-start', maxWidth: '100%' },
+  ciudadTexto: { color: C.texto, fontFamily: FuenteTitulo.cursiva, fontSize: 64, lineHeight: 62, paddingRight: 4, paddingTop: 4 },
+  cambiar: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+  cambiarTexto: { color: C.lila, fontSize: 14, fontWeight: '600', fontFamily: fuenteWeb },
+  mas: { color: C.secundario, fontSize: 13, marginTop: 8, fontFamily: fuenteWeb },
+  gris: { backgroundColor: '#241830', borderRadius: 4 },
+  puntos: { gap: 14, marginTop: 28 },
+  punto: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconoPunto: { width: 36, height: 36, borderRadius: 6, backgroundColor: 'rgba(185,140,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  puntoTexto: { flex: 1, color: C.texto, fontSize: 15, lineHeight: 20, fontWeight: '500', fontFamily: fuenteWeb },
+  abajo: { paddingHorizontal: 22, paddingTop: 12, gap: 14, width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: C.fondo, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.linea },
+  botonPrincipal: { height: 54, borderRadius: 8, backgroundColor: C.boton, alignItems: 'center', justifyContent: 'center' },
+  textoBotonPrincipal: { color: C.onBoton, fontSize: 17, fontWeight: '700', fontFamily: fuenteWeb },
+  filaSecundaria: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 14 },
+  secundario: { color: C.texto, fontSize: 15, fontWeight: '600', fontFamily: fuenteWeb, paddingVertical: 4 },
+  separador: { width: 1, height: 14, backgroundColor: C.linea },
 });

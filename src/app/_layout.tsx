@@ -15,13 +15,14 @@ import { useNotificaciones } from '@/lib/notificaciones';
 
 SplashScreen.preventAutoHideAsync();
 
-// La primera vez que se abre la app (sin sesión) se muestra la intro animada.
+// La primera vez que se abre la app (sin sesión) se muestra la bienvenida.
 function Guardia() {
   const { cargando, usuario, introVista } = useSesion();
   const segmentos = useSegments();
   useEffect(() => {
     if (cargando || introVista === null) return;
-    if (!introVista && !usuario && segmentos[0] !== 'bienvenida') router.replace('/bienvenida');
+    // Desde la bienvenida se puede elegir la ciudad sin que vuelva a saltar a la bienvenida.
+    if (!introVista && !usuario && segmentos[0] !== 'bienvenida' && segmentos[0] !== 'ciudad') router.replace('/bienvenida');
   }, [cargando, introVista, usuario, segmentos]);
   return null;
 }
