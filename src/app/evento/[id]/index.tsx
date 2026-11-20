@@ -13,6 +13,7 @@ import { BotonPrincipal, Icono, Texto } from '@/components/ui';
 import { EnInternet } from '@/components/en-internet';
 import { AdelantoCanal } from '@/components/chat/vista-previa';
 import { LoQueHayQueSaber } from '@/components/lo-que-hay-que-saber';
+import { AvisoSinConexion } from '@/components/aviso-sin-conexion';
 import { HojaResponder, ListaHilos, LoQueDicen, pedirSesion, useOpiniones } from '@/components/opiniones';
 import { Caras, useYaAqui } from '@/components/ya-aqui';
 import { FuenteTitulo } from '@/constants/theme';
@@ -20,7 +21,9 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, quiereAviso, type Evento } from '@/lib/api';
 import { actualizarEnListas, eventoConocido, guardarDetalle } from '@/lib/eventos-cache';
-import { guardado, pedir } from '@/lib/precarga';
+import { cuandoVuelvaLaConexion } from '@/lib/conexion';
+import { cargarPlanes } from '@/lib/planes';
+import { fechaGuardado, guardado, pedir } from '@/lib/precarga';
 import { compartirEvento } from '@/lib/compartir-evento';
 import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
@@ -118,6 +121,12 @@ export default function EventoScreen() {
   }, [id, token, tr]);
 
   useEffect(() => { cargar(); }, [cargar]);
+  // Volvió la señal: la ficha (y sus opiniones) se actualizan solas.
+  const recargarOpiniones = opiniones.recargar;
+  useEffect(() => cuandoVuelvaLaConexion(() => {
+    cargar();
+    if (evento?.recurrente) recargarOpiniones();
+  }), [cargar, recargarOpiniones, evento?.recurrente]);
 
   const marcar = async (estado: Estado | null, solo = evento?.miAsistencia?.solo ?? false) => {
     if (!token) {
@@ -131,6 +140,7 @@ export default function EventoScreen() {
       });
       setEvento((e) => (e ? { ...e, ...r } : e));
       actualizarEnListas(id, r); // el inicio y Canales muestran el cambio al volver, sin recargar
+      cargarPlanes(true); // "Mis planes" en Perfil (y su copia sin señal)
       if (estado === 'voy') activarNotificaciones(token, { preguntar: true });
       if (evento && estado === 'voy' && quiereAviso(usuario, 'recordatorio')) programarRecordatorio(evento);
       else cancelarRecordatorio(id);
@@ -209,6 +219,7 @@ export default function EventoScreen() {
         </View>
 
         <View style={styles.contenido}>
+          <AvisoSinConexion desde={fechaGuardado(`/events/${id}`, token)} style={{ marginTop: 14 }} />
           {/* Datos en dos columnas. */}
           <View style={[styles.datos, { borderBottomColor: t.separator }]}>
             <Columna

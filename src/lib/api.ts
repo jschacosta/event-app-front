@@ -1,4 +1,5 @@
 import { API_URL } from '@/config/api';
+import { marcarConexion, marcarSinConexion } from '@/lib/conexion';
 import i18n from '@/lib/i18n';
 
 // Perfil propio, tal como lo devuelve GET /api/me
@@ -187,16 +188,33 @@ export class ApiError extends Error {
   }
 }
 
+// Una lectura que no responde en este tiempo cuenta como "sin señal" (en la fila de una disco el teléfono
+// puede quedarse esperando para siempre). Los envíos no se cortan: podrían haber llegado igual.
+const ESPERA_LECTURA = 15_000;
+
 export async function api<T>(ruta: string, opciones: { metodo?: string; body?: unknown; token?: string | null } = {}) {
-  const res = await fetch(`${API_URL}/api${ruta}`, {
-    method: opciones.metodo ?? 'GET',
-    headers: {
-      'Accept-Language': i18n.language,
-      ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(opciones.token ? { Authorization: `Bearer ${opciones.token}` } : {}),
-    },
-    body: opciones.body ? JSON.stringify(opciones.body) : undefined,
-  });
+  const metodo = opciones.metodo ?? 'GET';
+  const control = metodo === 'GET' ? new AbortController() : null;
+  const corte = control ? setTimeout(() => control.abort(), ESPERA_LECTURA) : null;
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api${ruta}`, {
+      method: metodo,
+      headers: {
+        'Accept-Language': i18n.language,
+        ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(opciones.token ? { Authorization: `Bearer ${opciones.token}` } : {}),
+      },
+      body: opciones.body ? JSON.stringify(opciones.body) : undefined,
+      signal: control?.signal,
+    });
+  } catch {
+    marcarSinConexion();
+    throw new ApiError(i18n.t('comun:conexion.sinSenal'), 0, 'SIN_CONEXION');
+  } finally {
+    if (corte) clearTimeout(corte);
+  }
+  marcarConexion();
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(data.error ?? i18n.t('comun:errores.conexion', { defaultValue: 'Error de conexión' }), res.status, data.codigo, data);
   return data as T;

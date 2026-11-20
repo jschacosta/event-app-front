@@ -27,6 +27,7 @@ import { FilaReacciones, PanelEmojis, Pop, useSalto } from '@/components/emojis'
 import { HojaNuevaEncuesta, TarjetaEncuesta } from '@/components/encuesta';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { MenuMensaje, type Ancla } from '@/components/chat/menu-mensaje';
+import { IconoBora } from '@/components/iconos-bora';
 import { Icono } from '@/components/ui';
 import { BotonAqui, CabezaAqui, useYaAqui } from '@/components/ya-aqui';
 import { PantallaMiembros } from '@/components/miembros';
@@ -36,6 +37,7 @@ import { useChat } from '@/hooks/use-chat';
 import { tieneTopicos, useTopicos } from '@/hooks/use-topicos';
 import { useTheme } from '@/hooks/use-theme';
 import { api, MOTIVOS_REPORTE, SALAS_IDIOMA, type Autor, type CanalPropio, type Evento, type Gif, type MensajeChat, type Topico, type TopicoResumen } from '@/lib/api';
+import { useSinConexion } from '@/lib/conexion';
 import { guardado, pedir } from '@/lib/precarga';
 import { eventoConocido } from '@/lib/eventos-cache';
 import { compartirCanal } from '@/lib/compartir-canal';
@@ -1092,7 +1094,8 @@ export default function ChatScreen() {
   const puedeEscribir = estado === 'listo' && !silenciado && !soloLectura;
   const haySeleccion = (enfocado || Platform.OS === 'web') && haySeleccionTexto && puedeEscribir;
   const hayTexto = texto.trim().length > 0;
-  const mostrarBarra = modo === 'chat' && (estado === 'listo' || estado === 'conectando');
+  const sinSenal = useSinConexion();
+  const mostrarBarra = modo === 'chat' && (estado === 'listo' || estado === 'conectando' || (estado === 'error' && sinSenal));
 
   const alVolver = () => {
     if (enTopico && conocidos) return volverALista();
@@ -1228,7 +1231,7 @@ export default function ChatScreen() {
           <PanelClave canal={canal} onDentro={() => { cargarCanales(); reintentar(); topicos.recargar(); }} />
         ) : estado === 'conectando' && !mensajes.length ? (
           <View style={styles.centro}><ActivityIndicator /></View>
-        ) : estado === 'cerrado' || estado === 'error' ? (
+        ) : estado === 'cerrado' || (estado === 'error' && !mensajes.length) ? (
           <View style={styles.centro}>
             <Text style={styles.aviso}>{estado === 'cerrado' ? error ?? tr('canales.yaNoExiste') : error ?? tr('chat.errorAbrir')}</Text>
             {estado === 'cerrado' && enTopico && conocidos ? (
@@ -1311,7 +1314,12 @@ export default function ChatScreen() {
       {mostrarBarra ? (
         <>
           <View style={styles.barraEntrada}>
-            {soloLectura ? (
+            {sinSenal && estado !== 'listo' ? (
+              <View style={styles.silenciado} accessibilityLiveRegion="polite">
+                <IconoBora nombre="sinSenal" tamano={16} color={t.textSecondary} />
+                <Text style={styles.textoSilenciado}>{tr('conexion.chat')}</Text>
+              </View>
+            ) : soloLectura ? (
               <View style={styles.silenciado}>
                 <Icono nombre={datosTopico?.cerrado ? 'lock.fill' : 'megaphone'} tamano={15} color={t.textSecondary} />
                 <Text style={styles.textoSilenciado}>{tr(datosTopico?.cerrado ? 'topicos.cerradoAviso' : 'chat.soloAvisos')}</Text>

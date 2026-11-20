@@ -9,6 +9,7 @@
 import { useSyncExternalStore } from 'react';
 
 import { api, type Evento } from '@/lib/api';
+import { guardarEnTelefono, leerDelTelefono, nombreSeguro } from '@/lib/disco';
 import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { claveDia, claveHoy, inicioDeClave, sumarDias } from '@/lib/fechas';
 
@@ -86,14 +87,23 @@ function unaVez<T>(clave: string, f: () => Promise<T>): Promise<T> {
   return p;
 }
 
-// Al abrir la app: lo guardado en el teléfono mientras llega lo nuevo.
+// Días y categorías con eventos: también quedan en el teléfono, para que la tira de días y los filtros
+// funcionen sin señal.
+type Indice = { dias: string[] | null; generos: string[] | null };
+const archivoIndice = (ciudad: string) => `agenda-indice-${nombreSeguro(ciudad)}`;
+
+// Al abrir la app (o sin señal): lo guardado en el teléfono mientras llega lo nuevo.
+// La lista del teléfono no dice qué fechas cubre (hasta = Infinity): se muestra todo lo que trae.
 export async function agendaDelTelefono(ciudad: string) {
   if (eventosGuardados(ciudad)) return;
-  const l = await eventosDelTelefono(ciudad);
-  if (l && !eventosGuardados(ciudad)) {
-    guardarEventos(ciudad, l);
-    avisar(ciudad);
+  const [l, indice] = await Promise.all([eventosDelTelefono(ciudad), leerDelTelefono<Indice>(archivoIndice(ciudad))]);
+  if (!l || eventosGuardados(ciudad)) return;
+  guardarEventos(ciudad, l, 'agenda', false);
+  if (indice && !metas.has(ciudad)) {
+    const desdeHoy = hoy();
+    metas.set(ciudad, { ...metaVacia(), dias: indice.dias?.filter((d) => d >= desdeHoy) ?? null, generos: indice.generos });
   }
+  avisar(ciudad);
 }
 
 export function agendaReciente(ciudad: string, token: string | null) {
@@ -106,6 +116,7 @@ export function cargarInicio(ciudad: string, token: string | null) {
     const hasta = inicioDeClave(sumarDias(hoy(), DIAS_PRIMERA));
     const r = await pedir(ciudad, `&dias=1&hasta=${iso(hasta)}`, token);
     metas.set(ciudad, { ...metaVacia(), hasta, dias: r.dias ?? null, generos: r.generos ?? null });
+    guardarEnTelefono(archivoIndice(ciudad), (): Indice => ({ dias: r.dias ?? null, generos: r.generos ?? null }));
     guardarEventos(ciudad, r.eventos);
     marcarDescarga(ciudad, 'agenda', token);
     avisar(ciudad);

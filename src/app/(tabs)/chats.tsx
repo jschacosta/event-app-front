@@ -14,6 +14,7 @@ import { Banderas } from '@/components/bandera';
 import { IconoTopico } from '@/components/chat/topicos';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
 import { EsqueletoCanales } from '@/components/esqueleto';
+import { AvisoSinConexion, VacioSinConexion } from '@/components/aviso-sin-conexion';
 import { BarraBusqueda, IconoVacio, TiraFechas } from '@/components/filtros';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { FilaMiCanal, HojaElegirEvento, type MiCanal } from '@/components/mis-canales';
@@ -23,12 +24,13 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
+import { cuandoVuelvaLaConexion, useSinConexion } from '@/lib/conexion';
 import { obtenerSocket } from '@/lib/socket';
-import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
+import { escucharCambios, eventosDelTelefono, horaDeLista, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, claveHoy, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
 import { refrescarNoLeidos, textoCuenta, useNoLeidos } from '@/lib/no-leidos';
-import { precargarChat, precargarEvento } from '@/lib/precarga';
+import { guardado, pedir, precargarChat, precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
 
 const DIAS_ABREN_PRONTO = 7;
@@ -151,10 +153,13 @@ export default function CanalesScreen() {
   const ciudad = useCiudad();
   // Parte con los últimos canales que se vieron (memoria o teléfono) y se actualiza por detrás.
   const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad.id, 'canales'));
+  const sinSenal = useSinConexion();
   const [consulta, setConsulta] = useState('');
   const [dia, setDia] = useState<string | null>(null);
-  const [misCanalesApi, setMisCanales] = useState<MiCanal[] | null>(null);
-  const [misTopicos, setMisTopicos] = useState<MiTopico[]>([]);
+  // Mis canales parten con lo último que llegó (también lo guardado en el teléfono: sin señal se ven igual).
+  type RespuestaMisCanales = { canales: MiCanal[]; misTopicos?: MiTopico[] };
+  const [misCanalesApi, setMisCanales] = useState<MiCanal[] | null>(() => guardado<RespuestaMisCanales>('/me/canales', token)?.canales ?? null);
+  const [misTopicos, setMisTopicos] = useState<MiTopico[]>(() => guardado<RespuestaMisCanales>('/me/canales', token)?.misTopicos ?? []);
   // Filtro dentro de "Mis canales": todos o solo los canales y tópicos que creé.
   const [soloCreados, setSoloCreados] = useState(false);
   const misCanales = useMemo(() => (token ? misCanalesApi : []), [token, misCanalesApi]); // sin sesión no hay
@@ -217,7 +222,11 @@ export default function CanalesScreen() {
   useFocusEffect(useCallback(() => {
     refrescarNoLeidos();
     if (leyendoSesion || listaReciente(ciudad.id, 'canales', token ?? null)) return; // recién descargada: no trabar al volver
-    descargar(prontoCargado.has(ciudad.id)).catch(() => setEventos((e) => e ?? []));
+    descargar(prontoCargado.has(ciudad.id)).catch(async () => {
+      // Sin señal: lo guardado en el teléfono (puede no haber terminado de leerse todavía).
+      const l = eventosGuardados(ciudad.id, 'canales') ?? await eventosDelTelefono(ciudad.id, 'canales');
+      setEventos((e) => e ?? l ?? []);
+    });
   }, [token, ciudad.id, descargar, leyendoSesion]));
   const [pidiendoPronto, setPidiendoPronto] = useState(false);
   const pedirPronto = useCallback(() => {
@@ -244,11 +253,20 @@ export default function CanalesScreen() {
   const cargarMisCanales = useCallback(() => {
     if (!token) return;
     obtenerSocket(token); // la conexión del chat queda abierta antes de tocar un canal
-    api<{ canales: MiCanal[]; misTopicos?: MiTopico[] }>('/me/canales', { token })
+    pedir<RespuestaMisCanales>('/me/canales', token, 0)
       .then((r) => { setMisCanales(r.canales); setMisTopicos(r.misTopicos ?? []); })
-      .catch(() => setMisCanales((m) => m ?? []));
+      .catch(() => {
+        const g = guardado<RespuestaMisCanales>('/me/canales', token);
+        setMisCanales((m) => m ?? g?.canales ?? []);
+        if (g?.misTopicos) setMisTopicos((t) => (t.length ? t : g.misTopicos ?? []));
+      });
   }, [token]);
   useFocusEffect(cargarMisCanales);
+  // Volvió la señal: se actualiza sola.
+  useEffect(() => cuandoVuelvaLaConexion(() => {
+    descargar(prontoCargado.has(ciudad.id)).catch(() => {});
+    cargarMisCanales();
+  }), [descargar, ciudad.id, cargarMisCanales]);
   useEffect(() => { if (totalNuevos) cargarMisCanales(); }, [totalNuevos, cargarMisCanales]);
 
   useEffect(() => {
@@ -415,6 +433,7 @@ export default function CanalesScreen() {
                 </Pressable>
               ) : null}
             </View>
+            <View style={{ paddingHorizontal: 20 }}><AvisoSinConexion desde={horaDeLista(ciudad.id, 'canales')} style={{ marginTop: 12 }} /></View>
             <View style={{ paddingHorizontal: 20, marginTop: 14 }} onLayout={medirBuscador}>
               <BarraBusqueda valor={consulta} onCambio={cambiarConsulta} placeholder={tr(vistaActual === 'mis' ? 'canales.buscarMios' : 'canales.buscar')} />
             </View>
@@ -451,7 +470,9 @@ export default function CanalesScreen() {
             ) : <View style={{ height: 6 }} />}
           </View>
         }
-        ListEmptyComponent={vistaActual === 'mis' ? (misCanales === null ? <EsqueletoCanales filas={4} /> : (
+        ListEmptyComponent={sinSenal && !consulta.trim() && (vistaActual === 'mis' ? !misCanales?.length : !eventos?.length) ? (
+          <View style={styles.vacio}><VacioSinConexion /></View>
+        ) : vistaActual === 'mis' ? (misCanales === null ? <EsqueletoCanales filas={4} /> : (
           <View style={styles.vacio}>
             <IconoVacio nombre={consulta.trim() ? 'magnifyingglass' : 'bubble.left.and.bubble.right'} />
             <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>

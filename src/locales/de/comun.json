@@ -829,5 +829,22 @@
     "llegar": "Wie kommt ihr hin?",
     "solo": "Geht noch jemand allein hin?",
     "tituloPrevia": "Das Gespräch fängt gerade erst an"
+  },
+  "conexion": {
+    "sinSenal": "Keine Verbindung",
+    "aviso": "Keine Verbindung · aktualisiert um {{hora}}",
+    "avisoSinHora": "Keine Verbindung · gespeicherte Inhalte",
+    "chat": "Keine Verbindung. Du kannst schreiben, sobald du wieder online bist.",
+    "vacioAyuda": "Es erscheint hier, sobald du wieder online bist."
+  },
+  "planes": {
+    "titulo": "Meine Pläne",
+    "vacioTitulo": "Noch keine Pläne",
+    "vacioAyuda": "Tippe bei einem Event auf „Dabei“ – dann findest du es hier, auch offline.",
+    "verAgenda": "Zum Programm",
+    "verTodos": "Alle ansehen ({{count}})",
+    "verMenos": "Weniger anzeigen",
+    "ahora": "Jetzt",
+    "enDias": "In {{count}} Tagen"
   }
 }

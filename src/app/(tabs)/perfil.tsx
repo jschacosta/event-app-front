@@ -13,6 +13,7 @@ import { Bandera, Banderas } from '@/components/bandera';
 import { LineupNoche, useEstaNoche, type ColoresLineup } from '@/components/esta-noche';
 import { IconoBora } from '@/components/iconos-bora';
 import { Logo } from '@/components/logo';
+import { MisPlanes } from '@/components/mis-planes';
 import { GrupoCuenta, GrupoLegal, GrupoNotificaciones, GrupoPrivacidad } from '@/components/ajustes';
 import { Grupo, Icono, Texto } from '@/components/ui';
 import { BottomTabInset } from '@/constants/theme';
@@ -391,6 +392,8 @@ function ConCuenta({ usuario }: { usuario: Usuario }) {
           </Tocable>
         ) : null}
       </Animated.View>
+
+      <Animated.View entering={entrada(2)}><MisPlanes /></Animated.View>
 
       <Animated.View entering={entrada(2)}><TarjetaCompletar usuario={usuario} /></Animated.View>
 

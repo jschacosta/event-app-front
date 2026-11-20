@@ -5,7 +5,9 @@ import { createContext, useCallback, useContext, useEffect, useState, type Dispa
 
 import { api, ApiError, type CambiosPerfil, type Usuario } from '@/lib/api';
 import { almacen } from '@/lib/almacen';
-import { fijarTokenPrecarga } from '@/lib/precarga';
+import { olvidarHistoriales } from '@/lib/historial-chat';
+import { fijarSesionPlanes, olvidarPlanes } from '@/lib/planes';
+import { fijarTokenPrecarga, olvidarRespuestasDeSesion } from '@/lib/precarga';
 import { useCiudad } from '@/lib/ciudades';
 import i18n from '@/lib/i18n';
 import { pedirTokenApple, pedirTokenGoogle } from '@/lib/login';
@@ -115,6 +117,8 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => { fijarTokenPrecarga(token); }, [token]);
+  // "Mis planes" se descarga apenas se sabe quién es (y queda en el teléfono para usarlo sin señal).
+  useEffect(() => { if (!cargando) fijarSesionPlanes(token); }, [cargando, token]);
 
   // El perfil queda guardado en el teléfono para el próximo arranque (y se borra al salir).
   useEffect(() => {
@@ -213,6 +217,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
 
   const olvidarSesion = useCallback(async () => {
     cerrarSocket();
+    olvidarRespuestasDeSesion();
+    olvidarHistoriales();
+    olvidarPlanes();
     await almacen.borrar(CLAVE_TOKEN);
     setToken(null);
     setUsuario(null);

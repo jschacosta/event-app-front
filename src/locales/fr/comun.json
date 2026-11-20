@@ -829,5 +829,22 @@
     "llegar": "Comment vous y allez ?",
     "solo": "Quelqu’un d’autre y va en solo ?",
     "tituloPrevia": "La conversation ne fait que commencer"
+  },
+  "conexion": {
+    "sinSenal": "Hors connexion",
+    "aviso": "Hors connexion · mis à jour à {{hora}}",
+    "avisoSinHora": "Hors connexion · contenu enregistré",
+    "chat": "Hors connexion. Vous pourrez écrire dès le retour du réseau.",
+    "vacioAyuda": "Le contenu s’affichera ici dès le retour du réseau."
+  },
+  "planes": {
+    "titulo": "Mes sorties",
+    "vacioTitulo": "Aucune sortie prévue pour l’instant",
+    "vacioAyuda": "Touchez « J’y vais » sur un événement : il restera ici, même hors connexion.",
+    "verAgenda": "Voir l’agenda",
+    "verTodos": "Tout voir ({{count}})",
+    "verMenos": "Voir moins",
+    "ahora": "En ce moment",
+    "enDias": "Dans {{count}} jours"
   }
 }

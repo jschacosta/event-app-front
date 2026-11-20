@@ -829,5 +829,22 @@
     "llegar": "¿Cómo van a llegar?",
     "solo": "¿Alguien más va por su cuenta?",
     "tituloPrevia": "La conversación recién empieza"
+  },
+  "conexion": {
+    "sinSenal": "Sin conexión",
+    "aviso": "Sin conexión · actualizado a las {{hora}}",
+    "avisoSinHora": "Sin conexión · mostrando lo guardado",
+    "chat": "Sin conexión. Podrás escribir cuando vuelva la señal.",
+    "vacioAyuda": "Lo verás aquí apenas vuelva la señal."
+  },
+  "planes": {
+    "titulo": "Mis planes",
+    "vacioTitulo": "Aún no tienes planes",
+    "vacioAyuda": "Marca “Voy” en un evento y lo tendrás aquí, incluso sin señal.",
+    "verAgenda": "Ver la agenda",
+    "verTodos": "Ver todos ({{count}})",
+    "verMenos": "Ver menos",
+    "ahora": "Ahora",
+    "enDias": "En {{count}} días"
   }
 }

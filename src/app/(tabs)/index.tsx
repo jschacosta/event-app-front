@@ -10,6 +10,7 @@ import { HojaCalendario } from '@/components/calendario';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
 import { EsqueletoAgenda } from '@/components/esqueleto';
 import { BarraBusqueda, BotonCiudad, FilaGeneros, IconoVacio, TiraFechas } from '@/components/filtros';
+import { AvisoSinConexion, VacioSinConexion } from '@/components/aviso-sin-conexion';
 import { AvisoComoEstuvo } from '@/components/opiniones';
 import { BotonTexto, Icono, Texto } from '@/components/ui';
 import { API_URL } from '@/config/api';
@@ -19,6 +20,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Evento } from '@/lib/api';
 import { agendaDelTelefono, agendaReciente, asegurarDia, asegurarGenero, buscarEnServidor, cargarInicio, cargarMas, cubierto, cubreDia, hayMas, useAgenda } from '@/lib/agenda';
 import { crearBuscador } from '@/lib/buscar-eventos';
+import { cuandoVuelvaLaConexion, useSinConexion } from '@/lib/conexion';
+import { horaDeLista } from '@/lib/eventos-cache';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, claveHoy, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
@@ -184,6 +187,7 @@ export default function AgendaScreen() {
   const lista = useRef<FlatList<Seccion>>(null);
   const subir = useCallback(() => lista.current?.scrollToOffset({ offset: 0, animated: true }), []);
   const desplazada = useRef(false);
+  const sinSenal = useSinConexion();
 
   const cargar = useCallback(async () => {
     try {
@@ -210,6 +214,8 @@ export default function AgendaScreen() {
   }, [cargar, ciudad.id, token, leyendoSesion]));
   // Al abrir la app: la agenda guardada en el teléfono se muestra mientras llega la nueva.
   useEffect(() => { agendaDelTelefono(ciudad.id); }, [ciudad.id]);
+  // Volvió la señal: se actualiza sola.
+  useEffect(() => cuandoVuelvaLaConexion(() => { cargar(); }), [cargar]);
 
   // Fecha o categoría elegida que todavía no está cargada: se baja solo esa parte.
   const [diaFallido, setDiaFallido] = useState<string | null>(null);
@@ -344,6 +350,7 @@ export default function AgendaScreen() {
           <View style={styles.encabezado}>
             <BotonCiudad grande />
           </View>
+          <View style={styles.margen}><AvisoSinConexion desde={horaDeLista(ciudad.id)} style={{ marginBottom: 10 }} /></View>
 
           {/* El buscador siempre a la vista; al bajar pasa al encabezado compacto */}
           <View style={styles.margen}>
@@ -361,7 +368,9 @@ export default function AgendaScreen() {
             </View>
           )}
 
-          {error ? (
+          {error && sinSenal ? (
+            <View style={styles.vacio}><VacioSinConexion /></View>
+          ) : error ? (
             <View style={styles.vacio}>
               <Texto secundario style={{ textAlign: 'center' }}>{error}</Texto>
               <BotonTexto texto={tr('comun.reintentar')} onPress={cargar} />

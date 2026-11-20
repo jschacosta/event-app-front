@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '@/context/sesion';
 import i18n from '@/lib/i18n';
 import { api, type Autor, type Encuesta, type Gif, type MensajeChat, type Reaccion, type Sala, type Topico } from '@/lib/api';
+import { guardarHistorial, historialDe } from '@/lib/historial-chat';
 import { marcarSalaLeida, refrescarNoLeidos } from '@/lib/no-leidos';
 import { emitir, obtenerSocket } from '@/lib/socket';
 
@@ -27,16 +28,6 @@ const ESTADO_POR_CODIGO: Record<string, Estado> = {
   CANAL_NO_ENCONTRADO: 'cerrado',
 };
 
-// Últimos mensajes de cada sala vista en esta sesión: al volver a entrar se ven al instante mientras
-// llega lo nuevo (como Instagram o WhatsApp). Solo las últimas salas, para no llenar la memoria.
-const historiales = new Map<string, MensajeChat[]>();
-const MAX_SALAS_GUARDADAS = 20;
-function guardarHistorial(clave: string, mensajes: MensajeChat[]) {
-  historiales.delete(clave);
-  historiales.set(clave, mensajes.filter((m) => !m.pendiente));
-  if (historiales.size > MAX_SALAS_GUARDADAS) historiales.delete(historiales.keys().next().value as string);
-}
-
 // Ids temporales de los mensajes que se ven antes de que el servidor los confirme.
 let contadorPendientes = 0;
 
@@ -47,7 +38,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
   const [estado, setEstado] = useState<Estado>(token ? 'conectando' : 'sin-sesion');
   const [error, setError] = useState<string | null>(null);
   const claveVista = `${eventoId}:${sala}:${topico ?? ''}`;
-  const [mensajes, setMensajes] = useState<MensajeChat[]>(() => historiales.get(claveVista) ?? []);
+  const [mensajes, setMensajes] = useState<MensajeChat[]>(() => historialDe(claveVista) ?? []);
   const [escribiendo, setEscribiendo] = useState<Autor | null>(null);
   // Mensaje fijado arriba del chat y qué puede hacer esta persona en la sala.
   const [fijado, setFijado] = useState<MensajeChat | null>(null);
@@ -70,7 +61,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
   if (vista !== claveVista) {
     setVista(claveVista);
     setInfoTopico(null);
-    setMensajes(historiales.get(claveVista) ?? []);
+    setMensajes(historialDe(claveVista) ?? []);
     setEscribiendo(null);
     setFijado(null);
     setPermisos({ fijar: false, encuesta: false });

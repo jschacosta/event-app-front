@@ -829,5 +829,22 @@
     "llegar": "How is everyone getting there?",
     "solo": "Anyone else going solo?",
     "tituloPrevia": "The conversation is just getting started"
+  },
+  "conexion": {
+    "sinSenal": "No connection",
+    "aviso": "No connection · updated at {{hora}}",
+    "avisoSinHora": "No connection · showing saved info",
+    "chat": "No connection. You can write again once you're back online.",
+    "vacioAyuda": "It'll show up here as soon as you're back online."
+  },
+  "planes": {
+    "titulo": "My plans",
+    "vacioTitulo": "No plans yet",
+    "vacioAyuda": "Tap “Going” on an event and it'll be here, even offline.",
+    "verAgenda": "See events",
+    "verTodos": "See all ({{count}})",
+    "verMenos": "See less",
+    "ahora": "Now",
+    "enDias": "In {{count}} days"
   }
 }

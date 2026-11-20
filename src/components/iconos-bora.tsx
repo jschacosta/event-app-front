@@ -3,7 +3,7 @@
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 export type NombreIconoBora =
-  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica';
+  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica' | 'sinSenal';
 
 // Cada ícono: trazos dentro de un cuadro de 24×24.
 const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
@@ -90,6 +90,16 @@ const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
       <Path d="M9 18V6l10-2v12" stroke={c} />
       <Circle cx="6.5" cy="18" r="2.5" stroke={c} />
       <Circle cx="16.5" cy="16" r="2.5" stroke={c} />
+    </>
+  ),
+  // Señal cortada: las ondas del wifi con una raya encima
+  sinSenal: (c) => (
+    <>
+      <Path d="M2.8 9.2a13.5 13.5 0 0 1 6.4-3.4M14.6 5.8a13.5 13.5 0 0 1 6.6 3.4" stroke={c} />
+      <Path d="M6.2 12.6a8.6 8.6 0 0 1 3.4-2M15.6 11a8.6 8.6 0 0 1 2.2 1.6" stroke={c} />
+      <Path d="M9.6 16a3.6 3.6 0 0 1 4.8 0" stroke={c} />
+      <Circle cx="12" cy="19.4" r="1.1" fill={c} />
+      <Path d="M4.5 3.5l15 17" stroke={c} />
     </>
   ),
 };
