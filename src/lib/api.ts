@@ -73,6 +73,14 @@ export type Autor = {
   eliminada?: boolean; // la persona eliminó su cuenta: se muestra "Cuenta eliminada"
 };
 
+// Vista previa del canal General para quien todavía no entra (GET /events/:id/canal).
+export type MensajeVistaPrevia = {
+  id: string; texto: string; fecha: string;
+  sticker: string | null; gif: { url: string; preview: string; ancho: number; alto: number } | null; encuesta: boolean;
+  autor: Pick<Autor, 'id' | 'nombreVisible' | 'pais' | 'foto'>;
+};
+export type VistaCanal = { abierto: boolean; mensajes: MensajeVistaPrevia[]; anteriores: number; personas: number };
+
 // "general", "es", "en", "pt" o el id de un canal propio
 export type Sala = string;
 export const SALAS_IDIOMA = ['general', 'es', 'en', 'pt'] as const;

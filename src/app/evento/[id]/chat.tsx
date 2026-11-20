@@ -20,8 +20,8 @@ import { HojaEditarCanal } from '@/components/chat/editar-canal';
 import { NOMBRES_IDIOMA, PanelClave, PanelNormas, SelectorSalas } from '@/components/canales';
 import { PanelExpresion, type ModoPanel } from '@/components/chat/panel-expresion';
 import { StickerAnimado } from '@/components/chat/sticker-animado';
+import { FondoEvento, VistaPreviaCanal } from '@/components/chat/vista-previa';
 import { AvisoTopicos, HojaTopico, IconoTopico, ListaTopicos } from '@/components/chat/topicos';
-import { Calcadao } from '@/components/calcadao';
 import { DeslizarParaResponder } from '@/components/deslizar-responder';
 import { FilaReacciones, PanelEmojis, Pop, useSalto } from '@/components/emojis';
 import { HojaNuevaEncuesta, TarjetaEncuesta } from '@/components/encuesta';
@@ -410,6 +410,9 @@ export default function ChatScreen() {
     : conocidos === undefined ? (topicos.error ? 'chat' : 'cargando')
     : conocidos ? 'lista' : 'chat';
   const enLista = modo === 'lista';
+  // Sin cuenta o sin aceptar las normas, la sala General se muestra en modo lectura (últimos mensajes).
+  const vistaPrevia = Boolean(id) && sala === 'general' && !topicoElegido;
+  const [verNormas, setVerNormas] = useState(false);
 
   const {
     estado, error, mensajes, escribiendo, enviar, avisarEscribiendo, reportarMensaje, reaccionar, reintentar,
@@ -1188,6 +1191,7 @@ export default function ChatScreen() {
         key={`${sala}:${topicoElegido ?? (enLista ? 'lista' : 'chat')}`}
         entering={direccion === 'adelante' ? SlideInRight.duration(240) : direccion === 'atras' ? SlideInLeft.duration(240) : undefined}
         style={{ flex: 1 }}>
+        {modo !== 'lista' ? <FondoEvento imagen={evento?.imagen} generos={evento?.generos} /> : null}
         {modo === 'cargando' ? (
           <View style={styles.centro}><ActivityIndicator /></View>
         ) : enLista && topicos.topicos ? (
@@ -1199,6 +1203,10 @@ export default function ChatScreen() {
             onNuevo={nuevoTopico}
             onRecargar={topicos.recargar}
           />
+        ) : estado === 'sin-sesion' && vistaPrevia ? (
+          <VistaPreviaCanal eventoId={id!} textoBoton={tr('vistaPrevia.crearCuenta')} onUnirme={() => router.push('/auth')} />
+        ) : estado === 'normas' && vistaPrevia && !verNormas ? (
+          <VistaPreviaCanal eventoId={id!} textoBoton={tr('vistaPrevia.unirme')} onUnirme={() => setVerNormas(true)} />
         ) : estado === 'sin-sesion' ? (
           <View style={styles.centro}>
             <Text style={styles.aviso}>{tr('chat.sinSesion')}</Text>
@@ -1220,7 +1228,6 @@ export default function ChatScreen() {
           </View>
         ) : (
           <View style={styles.papel}>
-            <Calcadao color={t.chatPattern} escala={1.4} />
             <FlatList
               ref={lista}
               data={items}
@@ -1561,7 +1568,7 @@ const fuente = Platform.select({ web: '-apple-system, "SF Pro Text", Inter, syst
 function crearEstilos(C: ReturnType<typeof colores>) {
   return StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: C.fondo },
-  papel: { flex: 1, backgroundColor: C.papel },
+  papel: { flex: 1 },
   encabezado: {
     backgroundColor: C.barra, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separador, zIndex: 2,
   },

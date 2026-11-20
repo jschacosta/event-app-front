@@ -808,5 +808,16 @@
   "notaBora": {
     "titulo": "Gut zu wissen",
     "firma": "Bora-Notiz, geprüft im {{fecha}}"
+  },
+  "vistaPrevia": {
+    "titulo": "Gerade im Kanal",
+    "conversando_one": "{{count}} Person im Kanal",
+    "conversando_other": "{{count}} Personen im Kanal",
+    "anteriores_one": "{{count}} frühere Nachricht",
+    "anteriores_other": "{{count}} frühere Nachrichten",
+    "crearCuenta": "Konto erstellen und mitmachen",
+    "unirme": "Beitreten und alles lesen",
+    "vacio": "Noch keine Nachrichten. Fang das Gespräch an.",
+    "sticker": "Sticker"
   }
 }

@@ -808,5 +808,16 @@
   "notaBora": {
     "titulo": "À savoir",
     "firma": "Note de Bora, revue en {{fecha}}"
+  },
+  "vistaPrevia": {
+    "titulo": "Dans le canal en ce moment",
+    "conversando_one": "{{count}} personne dans le canal",
+    "conversando_other": "{{count}} personnes dans le canal",
+    "anteriores_one": "{{count}} message précédent",
+    "anteriores_other": "{{count}} messages précédents",
+    "crearCuenta": "Créer un compte pour rejoindre",
+    "unirme": "Rejoindre et tout lire",
+    "vacio": "Pas encore de messages. Lancez la conversation.",
+    "sticker": "Autocollant"
   }
 }

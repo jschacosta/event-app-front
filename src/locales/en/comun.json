@@ -808,5 +808,16 @@
   "notaBora": {
     "titulo": "Good to know",
     "firma": "Bora's note, reviewed {{fecha}}"
+  },
+  "vistaPrevia": {
+    "titulo": "In the chat now",
+    "conversando_one": "{{count}} person in the chat",
+    "conversando_other": "{{count}} people in the chat",
+    "anteriores_one": "{{count}} earlier message",
+    "anteriores_other": "{{count}} earlier messages",
+    "crearCuenta": "Sign up to join",
+    "unirme": "Join and read everything",
+    "vacio": "No messages yet. Start the conversation.",
+    "sticker": "Sticker"
   }
 }

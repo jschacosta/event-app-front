@@ -12,6 +12,7 @@ import { HojaAsistentes, type EstadoAsistencia } from '@/components/asistentes';
 import { Banderas } from '@/components/bandera';
 import { BotonPrincipal, Icono, Texto } from '@/components/ui';
 import { EnInternet } from '@/components/en-internet';
+import { AdelantoCanal } from '@/components/chat/vista-previa';
 import { LoQueHayQueSaber } from '@/components/lo-que-hay-que-saber';
 import { HojaResponder, ListaHilos, LoQueDicen, pedirSesion, useOpiniones } from '@/components/opiniones';
 import { Caras, useYaAqui } from '@/components/ya-aqui';
@@ -270,6 +271,12 @@ export default function EventoScreen() {
             </View>
             {token && hayGente ? <Icono nombre="chevron.right" tamano={12} color={t.chevron} peso="bold" /> : null}
           </Pressable>
+
+          {evento.chatAbierto ? (
+            <View style={{ paddingTop: 14 }}>
+              <AdelantoCanal eventoId={evento.id} onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: evento.id } })} />
+            </View>
+          ) : null}
 
           {repite ? (
             <>

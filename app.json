@@ -75,6 +75,12 @@
         "projectId": "5d39085d-8fc8-4bf8-81e4-bd4a62244331"
       }
     },
-    "owner": "johann.schwarze"
+    "owner": "johann.schwarze",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5d39085d-8fc8-4bf8-81e4-bd4a62244331"
+    }
   }
 }

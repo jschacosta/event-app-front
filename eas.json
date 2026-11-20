@@ -9,7 +9,8 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -21,10 +22,16 @@
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "85474741679-0a1g2k2caj8d59iomohvo2ag6rqr9vlg.apps.googleusercontent.com",
         "EXPO_PUBLIC_APK_PRUEBA": "1"
       },
-      "credentialsSource": "local"
+      "credentialsSource": "local",
+      "channel": "preview"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://event-app-back-production.up.railway.app",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "85474741679-0a1g2k2caj8d59iomohvo2ag6rqr9vlg.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {
