@@ -3,7 +3,7 @@
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 export type NombreIconoBora =
-  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica' | 'sinSenal';
+  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica' | 'sinSenal' | 'descargar';
 
 // Cada ícono: trazos dentro de un cuadro de 24×24.
 const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
@@ -100,6 +100,13 @@ const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
       <Path d="M9.6 16a3.6 3.6 0 0 1 4.8 0" stroke={c} />
       <Circle cx="12" cy="19.4" r="1.1" fill={c} />
       <Path d="M4.5 3.5l15 17" stroke={c} />
+    </>
+  ),
+  // Flecha que baja a la bandeja: actualizar la app
+  descargar: (c) => (
+    <>
+      <Path d="M12 4v10.5M7.5 10.5 12 15l4.5-4.5" stroke={c} />
+      <Path d="M4.5 15.5v2.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-2.5" stroke={c} />
     </>
   ),
 };

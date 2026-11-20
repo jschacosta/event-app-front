@@ -848,5 +848,14 @@
     "verMenos": "Voir moins",
     "ahora": "En ce moment",
     "enDias": "Dans {{count}} jours"
+  },
+  "version": {
+    "actualizando": "Mise à jour de Bora",
+    "actualizandoTexto": "Téléchargement de la dernière version. Votre compte et vos sorties sont conservés.",
+    "nueva": "Une nouvelle version de Bora est disponible",
+    "nuevaTexto": "Mettez-la à jour depuis {{tienda}} pour profiter des nouveautés.",
+    "actualizar": "Mettre à jour",
+    "obligatoria": "Mettez Bora à jour",
+    "obligatoriaTexto": "Cette version de Bora n’est plus prise en charge. Téléchargez la dernière depuis {{tienda}} pour continuer. Votre compte et vos sorties sont conservés."
   }
 }

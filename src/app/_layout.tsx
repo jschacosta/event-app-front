@@ -13,6 +13,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SesionProvider, useSesion } from '@/context/sesion';
 import { useNotificaciones } from '@/lib/notificaciones';
 import { DialogoGlobal } from '@/components/dialogo';
+import { ControlVersion } from '@/components/version';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,6 +89,7 @@ export default function RootLayout() {
             <Stack.Screen name="perfil/correo" />
             <Stack.Screen name="ciudad" options={{ presentation: 'modal' }} />
           </Stack>
+          <ControlVersion />
           <DialogoGlobal />
         </SesionProvider>
       </ThemeProvider>

@@ -848,5 +848,14 @@
     "verMenos": "See less",
     "ahora": "Now",
     "enDias": "In {{count}} days"
+  },
+  "version": {
+    "actualizando": "Updating Bora",
+    "actualizandoTexto": "Getting the latest version. Your account and plans stay as they are.",
+    "nueva": "A new version of Bora is out",
+    "nuevaTexto": "Update it from {{tienda}} to get the latest.",
+    "actualizar": "Update",
+    "obligatoria": "Update Bora",
+    "obligatoriaTexto": "This version of Bora is no longer supported. Get the latest one from {{tienda}} to keep using it. Your account and plans stay as they are."
   }
 }

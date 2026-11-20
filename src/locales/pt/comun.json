@@ -848,5 +848,14 @@
     "verMenos": "Ver menos",
     "ahora": "Agora",
     "enDias": "Em {{count}} dias"
+  },
+  "version": {
+    "actualizando": "Atualizando o Bora",
+    "actualizandoTexto": "Baixando a versão mais recente. Sua conta e seus planos continuam iguais.",
+    "nueva": "Tem uma versão nova do Bora",
+    "nuevaTexto": "Atualize pela {{tienda}} para ter as novidades.",
+    "actualizar": "Atualizar",
+    "obligatoria": "Atualize o Bora",
+    "obligatoriaTexto": "Esta versão do Bora não é mais compatível. Baixe a mais recente na {{tienda}} para continuar usando. Sua conta e seus planos continuam iguais."
   }
 }
