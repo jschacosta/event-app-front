@@ -3,7 +3,7 @@
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 export type NombreIconoBora =
-  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar';
+  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica';
 
 // Cada ícono: trazos dentro de un cuadro de 24×24.
 const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
@@ -76,6 +76,22 @@ const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
     </>
   ),
   cerrar: (c) => <Path d="m6.5 6.5 11 11m0-11-11 11" stroke={c} />,
+  // Copa de cóctel con su rodaja: la previa
+  copa: (c) => (
+    <>
+      <Path d="M4.5 4.5h15L12 13z" stroke={c} />
+      <Path d="M12 13v6.5M8.5 19.5h7M15.5 4.5l2.2-2.5" stroke={c} />
+      <Circle cx="16.5" cy="8" r="1.4" stroke={c} />
+    </>
+  ),
+  // Nota musical doble: la fiesta o el evento
+  musica: (c) => (
+    <>
+      <Path d="M9 18V6l10-2v12" stroke={c} />
+      <Circle cx="6.5" cy="18" r="2.5" stroke={c} />
+      <Circle cx="16.5" cy="16" r="2.5" stroke={c} />
+    </>
+  ),
 };
 
 export function IconoBora({ nombre, tamano = 22, color, grosor = 2 }: {

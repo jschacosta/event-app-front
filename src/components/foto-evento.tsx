@@ -5,11 +5,12 @@
 import { Image, type ImageProps } from 'expo-image';
 import { useState } from 'react';
 
-type Tamano = 'mini' | 'grande';
+type Tamano = 'mini' | 'medio' | 'grande';
 
-// Solo dos tamaños, así la misma miniatura sirve (desde la caché) en el inicio, Canales y los chats.
+// Pocos tamaños, así la misma miniatura sirve (desde la caché) en el inicio, Canales y los chats.
 const PARAMS: Record<Tamano, string> = {
   mini: 'w=216&h=216&fit=cover&output=webp&q=72',
+  medio: 'w=600&we&output=webp&q=75', // tarjetas de ~200 px (intro)
   grande: 'w=1080&we&output=webp&q=78',
 };
 
@@ -27,8 +28,8 @@ export function FotoEvento({ url, tamano = 'mini', ...props }: { url: string; ta
       cachePolicy="memory-disk"
       {...props}
       source={{ uri: original ? url : urlFoto(url, tamano) }}
-      // El afiche grande muestra primero la miniatura que ya está en memoria (la de la lista).
-      placeholder={tamano === 'grande' && !original ? { uri: urlFoto(url, 'mini') } : undefined}
+      // Los tamaños grandes muestran primero la miniatura que ya está en memoria (la de la lista).
+      placeholder={tamano !== 'mini' && !original ? { uri: urlFoto(url, 'mini') } : undefined}
       placeholderContentFit="cover"
       onError={() => setFallida(url)}
     />
