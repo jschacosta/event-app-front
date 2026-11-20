@@ -2,6 +2,8 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform, TurboModuleRegistry } from 'react-native';
 
+import i18n from '@/lib/i18n';
+
 // Expo Go no incluye el módulo nativo de Google; para probar Google hace falta
 // una "development build" (se arma más adelante con EAS).
 export const enExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -42,12 +44,27 @@ export async function pedirTokenGoogle(): Promise<TokenGoogle | null> {
   // Se carga solo cuando se usa, para que la app no falle en Expo Go.
   const { GoogleSignin, isSuccessResponse } = require('@react-native-google-signin/google-signin');
   GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
-  await GoogleSignin.hasPlayServices();
-  const res = await GoogleSignin.signIn();
+  let res;
+  try {
+    await GoogleSignin.hasPlayServices();
+    res = await GoogleSignin.signIn();
+  } catch (e) {
+    throw errorGoogle(e);
+  }
   if (!isSuccessResponse(res)) return null; // el usuario canceló
   const idToken = res.data.idToken;
-  if (!idToken) throw new Error('Google no entregó el token');
+  if (!idToken) throw new Error(i18n.t('auth:metodo.googleFallo'));
   return { idToken };
+}
+
+// Los errores del SDK de Google traen textos técnicos en inglés (DEVELOPER_ERROR, enlaces de ayuda):
+// a la persona se le muestra un mensaje propio y el detalle queda en la consola para revisarlo.
+function errorGoogle(e: unknown) {
+  if (esCancelacion(e)) return e;
+  const code = String((e as { code?: string | number })?.code ?? '');
+  console.warn('[google]', code, e instanceof Error ? e.message : e);
+  const clave = code === 'PLAY_SERVICES_NOT_AVAILABLE' ? 'auth:metodo.googleSinServicios' : 'auth:metodo.googleFallo';
+  return Object.assign(new Error(i18n.t(clave)), { code: `GOOGLE_${code}` });
 }
 
 // --- Web: mismo flujo que Rio Diferente (popup que entrega un access token) ---
