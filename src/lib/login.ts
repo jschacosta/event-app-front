@@ -6,7 +6,10 @@ import { Platform, TurboModuleRegistry } from 'react-native';
 // una "development build" (se arma más adelante con EAS).
 export const enExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+// Valor por defecto: las OTA se arman en el Mac sin las variables de eas.json y sin él el botón
+// de Google quedaba desactivado en la app instalada (mismo caso que API_URL en config/api.ts).
+const GOOGLE_WEB_PRODUCCION = '85474741679-0a1g2k2caj8d59iomohvo2ag6rqr9vlg.apps.googleusercontent.com';
+const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_PRODUCCION;
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
 // Web: popup de Google (Google Identity Services). Nativo: SDK de Google (no funciona en Expo Go).
