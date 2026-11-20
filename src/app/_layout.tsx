@@ -74,8 +74,8 @@ export default function RootLayout() {
             <Stack.Screen name="auth" />
             <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: 'fade' }} />
             <Stack.Screen name="evento/[id]/index" />
-            {/* En Android, el chat entra deslizándose desde la derecha (como en iPhone y en Telegram). */}
-            <Stack.Screen name="evento/[id]/chat" options={{ animation: Platform.OS === 'android' ? 'slide_from_right' : 'default' }} />
+            {/* El chat entra con la misma animación rápida que las demás pantallas. */}
+            <Stack.Screen name="evento/[id]/chat" />
             <Stack.Screen name="evento/[id]/nuevo-canal" options={{ presentation: 'modal' }} />
             <Stack.Screen name="canal/[codigo]" options={{ animation: 'fade' }} />
             <Stack.Screen name="dia/[clave]" />

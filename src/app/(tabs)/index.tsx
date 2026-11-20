@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -173,7 +173,9 @@ export default function AgendaScreen() {
   const error = eventos ? null : errorCarga;
   const [refrescando, setRefrescando] = useState(false);
   const [consulta, setConsulta] = useState('');
-  const [genero, setGenero] = useState<string | null>(null);
+  const [generoElegido, setGenero] = useState<string | null>(null);
+  // La tarjeta de la categoría se marca al instante; la lista se redibuja después, sin trabar el toque.
+  const genero = useDeferredValue(generoElegido);
   const [calendario, setCalendario] = useState(false);
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
   const lista = useRef<FlatList<Seccion>>(null);
@@ -313,7 +315,7 @@ export default function AgendaScreen() {
           {buscando ? null : <AvisoComoEstuvo token={token} />}
 
           <View style={{ marginTop: 12 }}>
-            <FilaGeneros generos={generosDisponibles} elegido={genero} onCambio={setGenero} />
+            <FilaGeneros generos={generosDisponibles} elegido={generoElegido} onCambio={setGenero} />
           </View>
           {!buscando && (
             <View style={{ marginTop: 10 }} onLayout={medirBuscador}>

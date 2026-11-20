@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring, withTiming, ZoomIn, ZoomOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, useAnimatedStyle, useSharedValue, withTiming, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { fuenteWeb, Icono, Texto } from '@/components/ui';
@@ -153,9 +153,9 @@ function TarjetaGenero({ id, elegido, hayOtroElegido, onPress }: { id: string; e
   const escala = useSharedValue(1);
   useEffect(() => {
     opacidad.set(withTiming(hayOtroElegido ? 0.35 : 1, { duration: 220 }));
-    escala.set(withSpring(elegido ? 1.04 : hayOtroElegido ? 0.96 : 1, { damping: 14, stiffness: 260 }));
+    escala.set(withTiming(elegido ? 1.04 : hayOtroElegido ? 0.96 : 1, { duration: 200 }));
   }, [elegido, hayOtroElegido, opacidad, escala]);
-  const animado = useAnimatedStyle(() => ({ opacity: opacidad.value, transform: [{ scale: escala.value }] }));
+  const animado = useAnimatedStyle(() => ({ opacity: opacidad.get(), transform: [{ scale: escala.get() }] }));
   const colores = coloresGenero(id);
 
   return (
@@ -167,7 +167,7 @@ function TarjetaGenero({ id, elegido, hayOtroElegido, onPress }: { id: string; e
           <MaterialCommunityIcons name={iconoGenero(id)} size={36} color="rgba(255,255,255,0.9)" />
         </View>
         {elegido && (
-          <Animated.View entering={ZoomIn.springify().damping(14)} exiting={ZoomOut.duration(120)} style={styles.tarjetaQuitar}>
+          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)} style={styles.tarjetaQuitar}>
             <Icono nombre="xmark" tamano={10} color="#000000" peso="bold" />
           </Animated.View>
         )}
@@ -209,7 +209,7 @@ export function ChipGenero({ elegido, onPress, chico }: { elegido: string | null
       style={({ pressed }) => [pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] }]}>
       <Animated.View
         key={elegido ?? 'todas'}
-        entering={ZoomIn.springify().damping(16)}
+        entering={FadeIn.duration(180)}
         style={[styles.chip, chico && styles.chipChico, !elegido && { backgroundColor: t.backgroundElement }]}>
         {elegido ? (
           <LinearGradient colors={coloresGenero(elegido) as [string, string, ...string[]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
