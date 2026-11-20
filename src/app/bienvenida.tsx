@@ -150,11 +150,11 @@ export default function BienvenidaScreen() {
           <Text style={s.textoBotonPrincipal}>{t('intro.crearCuenta')}</Text>
         </Pressable>
         <View style={s.filaSecundaria}>
-          <Pressable onPress={() => ir('/auth/entrar')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <Pressable onPress={() => ir('/auth/entrar')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => [s.enlace, pressed && { opacity: 0.6 }]}>
             <Text style={s.secundario}>{t('intro.yaTengoCuenta')}</Text>
           </Pressable>
           <View style={s.separador} />
-          <Pressable onPress={() => ir('/')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          <Pressable onPress={() => ir('/')} hitSlop={8} accessibilityRole="button" style={({ pressed }) => [s.enlace, pressed && { opacity: 0.6 }]}>
             <Text style={s.secundario}>{t('intro.explorar')}</Text>
           </Pressable>
         </View>
@@ -185,7 +185,9 @@ const s = StyleSheet.create({
   abajo: { paddingHorizontal: 22, paddingTop: 12, gap: 14, width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: C.fondo, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.linea },
   botonPrincipal: { height: 54, borderRadius: 8, backgroundColor: C.boton, alignItems: 'center', justifyContent: 'center' },
   textoBotonPrincipal: { color: C.onBoton, fontSize: 17, fontWeight: '700', fontFamily: fuenteWeb },
-  filaSecundaria: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 14 },
-  secundario: { color: C.texto, fontSize: 15, fontWeight: '600', fontFamily: fuenteWeb, paddingVertical: 4 },
+  filaSecundaria: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 14, paddingHorizontal: 4 },
+  // Cada enlace se achica y pasa a 2 líneas si el idioma es largo (inglés, francés, alemán), sin salirse.
+  enlace: { flexShrink: 1 },
+  secundario: { color: C.texto, fontSize: 15, fontWeight: '600', fontFamily: fuenteWeb, paddingVertical: 4, textAlign: 'center' },
   separador: { width: 1, height: 14, backgroundColor: C.linea },
 });

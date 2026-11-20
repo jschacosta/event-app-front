@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -20,10 +19,12 @@ import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, quiereAviso, type Evento } from '@/lib/api';
+import { actualizarEnListas, eventoConocido, guardarDetalle } from '@/lib/eventos-cache';
 import { compartirEvento } from '@/lib/compartir-evento';
 import { activarNotificaciones, cancelarRecordatorio, programarAvisoLocal, programarRecordatorio } from '@/lib/notificaciones';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
+import { FotoEvento } from '@/components/foto-evento';
 
 // Ficha de un evento, como un afiche: el título va sobre la foto. Debajo, los datos en dos columnas
 // (cuándo / dónde), "¿Vas?" compacto y quién va. En fiestas que se repiten, además: "Lo que dicen"
@@ -79,7 +80,8 @@ export default function EventoScreen() {
   const insets = useSafeAreaInsets();
   const { token, usuario } = useSesion();
   const { t: tr } = useTranslation();
-  const [evento, setEvento] = useState<Evento | null>(null);
+  // Al instante con lo que ya trae la lista (o lo que se abrió antes); el detalle completo llega por detrás.
+  const [evento, setEvento] = useState<Evento | null>(() => eventoConocido(id));
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [asistentes, setAsistentes] = useState<EstadoAsistencia | null>(null);
@@ -99,6 +101,7 @@ export default function EventoScreen() {
     try {
       const r = await api<{ evento: Evento }>(`/events/${id}`, { token });
       setEvento(r.evento);
+      guardarDetalle(r.evento);
     } catch (e) {
       setError(e instanceof Error ? e.message : tr('evento.errorCarga'));
     }
@@ -117,6 +120,7 @@ export default function EventoScreen() {
         metodo: 'POST', token, body: { estado, solo: estado ? solo : false },
       });
       setEvento((e) => (e ? { ...e, ...r } : e));
+      actualizarEnListas(id, r); // el inicio y Canales muestran el cambio al volver, sin recargar
       if (estado === 'voy') activarNotificaciones(token, { preguntar: true });
       if (evento && estado === 'voy' && quiereAviso(usuario, 'recordatorio')) programarRecordatorio(evento);
       else cancelarRecordatorio(id);
@@ -132,6 +136,7 @@ export default function EventoScreen() {
     if (e) avisar(tr('evento.noSePudoGuardar'), e);
     else if (r) {
       setEvento((ev) => (ev ? { ...ev, ...r } : ev));
+      actualizarEnListas(id, r);
       if (!aqui.mio && evento?.recurrente) {
         // Al llegar: push si se puede; si no, el aviso queda programado en el teléfono.
         if (quiereAviso(usuario, 'opinion')) activarNotificaciones(token, { preguntar: true }).then((push) => { if (!push) programarAvisoLocal(evento); });
@@ -168,7 +173,7 @@ export default function EventoScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}>
         {/* Afiche: foto con el título encima. */}
         <View style={[styles.afiche, { backgroundColor: t.backgroundElement, paddingTop: insets.top + 56 }]}>
-          {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : null}
+          {evento.imagen ? <FotoEvento url={evento.imagen} tamano="grande" style={StyleSheet.absoluteFill} transition={120} /> : null}
           <LinearGradient colors={['rgba(18,10,23,0.35)', 'rgba(18,10,23,0)', 'rgba(18,10,23,0.92)']} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFill} />
           <View style={styles.aficheTexto}>
             <View style={styles.etiquetas}>

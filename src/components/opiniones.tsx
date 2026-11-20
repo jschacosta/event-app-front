@@ -8,7 +8,6 @@ import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 
 import Animated, { FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Image } from 'expo-image';
 
 import { Bandera } from '@/components/bandera';
 import { BotonPrincipal, BotonTexto, Icono, Texto } from '@/components/ui';
@@ -18,6 +17,7 @@ import { api, type Autor } from '@/lib/api';
 import { claveDia, diaMes, diasHastaClave, haceTiempo } from '@/lib/fechas';
 import { cancelarAvisoLocal } from '@/lib/notificaciones';
 import { pedirSesion } from '@/lib/pedir-sesion';
+import { FotoEvento } from '@/components/foto-evento';
 
 export type Respuesta = 'si' | 'mas' | 'no';
 type Conteo = { si: number; mas: number; no: number; total: number };
@@ -503,7 +503,7 @@ export function AvisoComoEstuvo({ token }: { token: string | null }) {
   return (
     <Animated.View entering={FadeIn.duration(220)} exiting={FadeOut.duration(150)} style={[styles.aviso, { backgroundColor: t.accentSoft }]}>
       <Pressable onPress={responder} accessibilityRole="button" style={styles.avisoCuerpo}>
-        {p.imagen ? <Image source={{ uri: p.imagen }} style={styles.avisoFoto} contentFit="cover" /> : null}
+        {p.imagen ? <FotoEvento url={p.imagen} style={styles.avisoFoto} /> : null}
         <View style={{ flex: 1, gap: 2 }}>
           <Texto style={[styles.avisoTitulo, { color: t.accentSoftText }]}>{tr('opiniones.comoEstuvo')}</Texto>
           <Texto v="detalle" style={{ color: t.text }}>

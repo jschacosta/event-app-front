@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,11 +18,12 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
-import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
+import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
 import { colorEtiquetaGenero, GENEROS, nombreGenero } from '@/lib/generos';
+import { FotoEvento } from '@/components/foto-evento';
 
 // Agenda de Bora, armada como un line-up: el número del día va grande en su propia columna,
 // con una línea que une los eventos de ese día, y cada fila dice qué, a qué hora, dónde, cuánto y quién va.
@@ -42,7 +42,7 @@ const TarjetaAhora = memo(function TarjetaAhora({ evento }: { evento: Evento }) 
   return (
     <Pressable onPress={() => abrir(evento)} style={({ pressed }) => [styles.ahora, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.8 }]}>
       <View style={[styles.fotoAhora, { backgroundColor: t.backgroundSelected }]}>
-        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+        {evento.imagen ? <FotoEvento url={evento.imagen} style={StyleSheet.absoluteFill} recyclingKey={evento.id} transition={150} /> : null}
       </View>
       <View style={{ flex: 1, gap: 3 }}>
         <View style={[styles.vivo, { backgroundColor: t.sun }]}>
@@ -71,7 +71,7 @@ const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { 
       {/* Sin afiche: el color del género con la inicial del evento */}
       <View style={[styles.miniatura, { backgroundColor: evento.imagen ? t.backgroundElement : colorEtiquetaGenero(genero ?? 'otro') }]}>
         {evento.imagen
-          ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+          ? <FotoEvento url={evento.imagen} style={StyleSheet.absoluteFill} recyclingKey={evento.id} transition={150} />
           : <Texto style={styles.inicial}>{evento.titulo.trim().charAt(0).toUpperCase()}</Texto>}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
@@ -185,6 +185,7 @@ export default function AgendaScreen() {
       setEventos(eventos);
       setAhora(Date.now());
       guardarEventos(ciudad.id, eventos);
+      marcarDescarga(ciudad.id, 'agenda', token ?? null);
       setError(null);
     } catch {
       setError(tr('comun.sinConexion', { url: API_URL }));
@@ -201,7 +202,15 @@ export default function AgendaScreen() {
     setDia(null);
   }
 
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  // Al volver a la pestaña (por ejemplo desde un evento) no se descarga todo de nuevo si es reciente:
+  // procesar ~1 MB y redibujar la lista trababa el siguiente toque. Lo que cambia uno mismo llega por escucharCambios.
+  useFocusEffect(useCallback(() => {
+    if (!listaReciente(ciudad.id, 'agenda', token ?? null)) cargar();
+  }, [cargar, ciudad.id, token]));
+  useEffect(() => escucharCambios(() => {
+    const l = eventosGuardados(ciudad.id);
+    if (l) setEventos(l);
+  }), [ciudad.id]);
   // Al abrir la app: la agenda guardada en el teléfono se muestra mientras llega la nueva.
   useEffect(() => {
     let vigente = true;

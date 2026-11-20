@@ -12,6 +12,7 @@ import { fuenteWeb, Icono, Texto } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Autor, type Evento } from '@/lib/api';
+import { FotoEvento } from '@/components/foto-evento';
 
 export type Miembro = Autor & { creador: boolean; enLinea: boolean; aqui: boolean };
 type Respuesta = { personas: Miembro[]; total: number; enLinea: number };
@@ -112,7 +113,7 @@ function ContenidoMiembros({ eventoId, sala, titulo, evento, onCerrar, onPersona
               onPress={onVerEvento}
               accessibilityRole="button"
               style={({ pressed }) => [styles.evento, { backgroundColor: t.card }, pressed && { opacity: 0.7 }]}>
-              {evento.imagen ? <Image source={{ uri: evento.imagen }} style={styles.fotoEvento} /> : null}
+              {evento.imagen ? <FotoEvento url={evento.imagen} style={styles.fotoEvento} /> : null}
               <View style={{ flex: 1 }}>
                 <Texto v="mini" secundario style={{ textTransform: 'uppercase', fontWeight: '600' }}>{tr('miembros.verEvento')}</Texto>
                 <Texto v="cuerpoFuerte" numberOfLines={1}>{evento.titulo}</Texto>

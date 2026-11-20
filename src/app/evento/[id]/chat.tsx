@@ -43,6 +43,7 @@ import i18n from '@/lib/i18n';
 import { obtenerSocket } from '@/lib/socket';
 import { textoAviso } from '@/lib/sistema';
 import { emojisSolos } from '@/lib/stickers';
+import { FotoEvento } from '@/components/foto-evento';
 
 // Mensajes seguidos de la misma persona (con menos de 5 minutos entre sí) se agrupan:
 // sin repetir nombre ni foto, y con las esquinas de las burbujas unidas, como en Telegram.
@@ -1139,7 +1140,7 @@ export default function ChatScreen() {
             accessibilityHint={tr('miembros.verPersonas')}>
             {enTopico && topicoElegido
               ? <IconoTopico topico={{ id: topicoElegido, icono: datosTopico?.icono ?? null, color: datosTopico?.color ?? 0, nombre: tituloTopico }} tamano={34} />
-              : evento?.imagen ? <Image source={{ uri: evento.imagen }} style={styles.fotoEvento} cachePolicy="memory-disk" /> : null}
+              : evento?.imagen ? <FotoEvento url={evento.imagen} style={styles.fotoEvento} /> : null}
             <View style={{ flex: 1 }}>
               <Text style={styles.titulo} numberOfLines={1}>{tituloTopico ?? canal?.nombre ?? evento?.titulo ?? tr('chat.chatDelEvento')}</Text>
               {subtitulo ? <Text style={styles.tituloSecundario} numberOfLines={1}>{subtitulo}</Text> : null}

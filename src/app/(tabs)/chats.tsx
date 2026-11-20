@@ -1,7 +1,6 @@
 // Canales: un canal por evento. Abre 3 días antes y desaparece cuando el evento termina.
 // Dos vistas: "Mis canales" (las salas donde ya entré, como la lista de chats de WhatsApp,
 // para volver rápido y ver lo no leído) y "Explorar" (tarjetas con la foto del evento, filtro por fecha y buscador).
-import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,10 +23,11 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
-import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
+import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
 import { refrescarNoLeidos, textoCuenta, useNoLeidos } from '@/lib/no-leidos';
+import { FotoEvento } from '@/components/foto-evento';
 
 const DIAS_ABREN_PRONTO = 7;
 // Solo las primeras tarjetas entran animadas; con cientos de canales, el retraso escalonado
@@ -70,7 +70,7 @@ const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice, ultima }: {
       <Pressable onPress={abrir} style={({ pressed }) => [styles.filaCanal, pressed && { backgroundColor: t.backgroundElement }]}>
         <View style={[styles.aroCanal, { borderColor: abierto ? t.sun : 'transparent' }]}>
           <View style={[styles.fotoCanal, { backgroundColor: t.backgroundElement }]}>
-            {e.imagen ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+            {e.imagen ? <FotoEvento url={e.imagen} style={StyleSheet.absoluteFill} recyclingKey={e.id} transition={150} /> : null}
           </View>
         </View>
         <View style={[styles.cuerpoCanal, !ultima && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
@@ -174,16 +174,22 @@ export default function CanalesScreen() {
 
   // Canales abiertos y los que abren en los próximos días.
   useFocusEffect(useCallback(() => {
+    refrescarNoLeidos();
+    if (listaReciente(ciudad.id, 'canales', token ?? null)) return; // recién descargada: no trabar al volver
     // Solo los eventos con canal (abierto o que abre pronto): mucho menos que la agenda completa.
     api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token })
       .then((r) => {
         const lista = r.eventos.filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO);
         setEventos(lista);
         guardarEventos(ciudad.id, lista, 'canales');
+        marcarDescarga(ciudad.id, 'canales', token ?? null);
       })
       .catch(() => setEventos((e) => e ?? []));
-    refrescarNoLeidos();
   }, [token, ciudad.id]));
+  useEffect(() => escucharCambios(() => {
+    const l = eventosGuardados(ciudad.id, 'canales');
+    if (l) setEventos(l);
+  }), [ciudad.id]);
 
   useEffect(() => {
     let vigente = true;

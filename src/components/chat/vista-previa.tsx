@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
 import { diaCorto, hora, horaDispositivo } from '@/lib/fechas';
 import { colorEtiquetaGenero } from '@/lib/generos';
+import { FotoEvento } from '@/components/foto-evento';
 
 const fuente = fuenteWeb;
 
@@ -65,7 +66,7 @@ export function ChatVacio({ evento, onElegir, titulo }: { evento: Evento | null;
         <View style={estilos.cabezaVacio}>
           <View style={[estilos.afiche, { backgroundColor: evento.imagen ? t.backgroundSelected : colorEtiquetaGenero(evento.generos[0] ?? 'otro') }]}>
             {evento.imagen
-              ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
+              ? <FotoEvento url={evento.imagen} style={StyleSheet.absoluteFill} />
               : <Text style={estilos.inicialAfiche}>{evento.titulo.trim().charAt(0).toUpperCase()}</Text>}
           </View>
           <View style={{ flex: 1, gap: 3 }}>

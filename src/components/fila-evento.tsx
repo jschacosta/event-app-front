@@ -1,6 +1,5 @@
 // Fila de un evento en listas verticales (resultados de búsqueda, todos los eventos de un día).
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -11,6 +10,7 @@ import type { Evento } from '@/lib/api';
 import { diaCorto, hora, precioTexto } from '@/lib/fechas';
 import { iconoGenero, nombreGenero } from '@/lib/generos';
 import type { Grupo } from '@/lib/series';
+import { FotoEvento } from '@/components/foto-evento';
 
 export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Evento; repeticiones?: number; soloHora?: boolean }) {
   const t = useTheme();
@@ -26,7 +26,7 @@ export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Eve
       onPress={() => router.push({ pathname: '/evento/[id]', params: { id: evento.id } })}
       style={({ pressed }) => [styles.fila, pressed && { backgroundColor: t.backgroundSelected }]}>
       <View style={[styles.foto, { backgroundColor: t.backgroundElement }]}>
-        {evento.imagen ? <Image source={{ uri: evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : null}
+        {evento.imagen ? <FotoEvento url={evento.imagen} style={StyleSheet.absoluteFill} transition={150} /> : null}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Texto v="cuerpoFuerte" numberOfLines={1}>{evento.titulo}</Texto>

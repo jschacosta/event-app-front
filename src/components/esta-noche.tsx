@@ -1,6 +1,5 @@
 // "Esta noche en <ciudad>": el line-up real de las próximas horas (no fotos de stock ni datos inventados).
 // Lo usan la bienvenida y el perfil sin cuenta para mostrar Bora tal como es antes de pedir la cuenta.
-import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
@@ -13,6 +12,7 @@ import { api, type Evento } from '@/lib/api';
 import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
 import { hora } from '@/lib/fechas';
 import { colorEtiquetaGenero } from '@/lib/generos';
+import { FotoEvento } from '@/components/foto-evento';
 
 const HORAS = 30; // "esta noche" = lo que está en vivo o empieza en las próximas 30 horas
 
@@ -73,7 +73,7 @@ export function LineupNoche({ eventos, ahora, colores, retraso = 0 }: { eventos:
             {/* Sin afiche: el color del género con la inicial, como una etiqueta de festival */}
             <View style={[s.miniatura, { backgroundColor: e.imagen ? colores.miniatura : colorEtiquetaGenero(e.generos[0] ?? 'otro') }]}>
               {e.imagen
-                ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+                ? <FotoEvento url={e.imagen} style={StyleSheet.absoluteFill} transition={200} />
                 : <Text style={s.inicial}>{e.titulo.trim().charAt(0).toUpperCase()}</Text>}
             </View>
             <View style={{ flex: 1, gap: 2 }}>

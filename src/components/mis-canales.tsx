@@ -1,6 +1,5 @@
 // "Mis canales": las salas donde ya entré, como la lista de chats de WhatsApp
 // (foto del evento, último mensaje, hora y no leídos). Y la hoja para elegir el evento al crear un canal.
-import { Image } from 'expo-image';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -16,6 +15,7 @@ import { diaCorto, etiquetaDiaChat, hora, horaDispositivo } from '@/lib/fechas';
 import type { AvisoSistema } from '@/lib/api';
 import { vistaPrevia } from '@/lib/sistema';
 import { textoCuenta } from '@/lib/no-leidos';
+import { FotoEvento } from '@/components/foto-evento';
 
 export type MiCanal = {
   clave: string;
@@ -83,7 +83,7 @@ export const FilaMiCanal = memo(function FilaMiCanal({ c, nuevos, ultima, onAbri
         ) : (
           <View style={[styles.foto, { backgroundColor: t.backgroundSelected }]}>
             {c.evento.imagen
-              ? <Image source={{ uri: c.evento.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+              ? <FotoEvento url={c.evento.imagen} style={StyleSheet.absoluteFill} transition={150} />
               : <Icono nombre="bubble.left.and.bubble.right" tamano={20} color={t.textSecondary} />}
           </View>
         )}
@@ -185,7 +185,7 @@ function ContenidoElegir({ eventos, ciudad, onElegir, onCerrar }: {
               pressed && { opacity: 0.7 },
             ]}>
             <View style={[styles.fotoEvento, { backgroundColor: t.backgroundSelected }]}>
-              {e.imagen ? <Image source={{ uri: e.imagen }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+              {e.imagen ? <FotoEvento url={e.imagen} style={StyleSheet.absoluteFill} /> : null}
             </View>
             <View style={[styles.datosEvento, index < lista.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.separator }]}>
               <View style={{ flex: 1, gap: 2 }}>
