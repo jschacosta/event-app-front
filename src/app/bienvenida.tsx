@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  Easing, cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, type SharedValue,
+  Easing, ReduceMotion, cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,7 +32,7 @@ const FRENA = Easing.bezier(0.2, 0.7, 0.2, 1);
 const TEXTOS = ['s1', 's2', 's3', 's5'];
 
 function Progreso({ total, actual, avance }: { total: number; actual: number; avance: SharedValue<number> }) {
-  const estilo = useAnimatedStyle(() => ({ width: `${avance.value * 100}%` }));
+  const estilo = useAnimatedStyle(() => ({ width: `${avance.get() * 100}%` }));
   return (
     <View style={s.progreso} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {Array.from({ length: total }, (_, i) => (
@@ -52,13 +52,13 @@ function Fondo({ url, activo, difuso }: { url: string; activo: boolean; difuso?:
   const opacidad = useSharedValue(activo ? 1 : 0);
   const zoom = useSharedValue(1.04);
   useEffect(() => {
-    opacidad.value = withTiming(activo ? 1 : 0, { duration: 700, easing: Easing.inOut(Easing.quad) });
+    opacidad.set(withTiming(activo ? 1 : 0, { duration: 700, easing: Easing.inOut(Easing.quad), reduceMotion: ReduceMotion.Never }));
     if (activo && !quieto) {
-      zoom.value = 1.04;
-      zoom.value = withTiming(1.14, { duration: DURACION + 700, easing: Easing.inOut(Easing.quad) });
+      zoom.set(1.04);
+      zoom.set(withTiming(1.14, { duration: DURACION + 700, easing: Easing.inOut(Easing.quad) }));
     }
   }, [activo, quieto, opacidad, zoom]);
-  const estilo = useAnimatedStyle(() => ({ opacity: opacidad.value, transform: [{ scale: zoom.value }] }));
+  const estilo = useAnimatedStyle(() => ({ opacity: opacidad.get(), transform: [{ scale: zoom.get() }] }));
   return (
     <Animated.View style={[StyleSheet.absoluteFill, estilo]} pointerEvents="none">
       <FotoEvento
@@ -73,12 +73,12 @@ function Fondo({ url, activo, difuso }: { url: string; activo: boolean; difuso?:
 }
 
 function TextoEscena({ titulo, texto }: { titulo: string; texto: string }) {
-  const quieto = useReducedMotion();
-  const v = useSharedValue(quieto ? 1 : 0);
+  const mueve = useReducedMotion() ? 0 : 10;
+  const v = useSharedValue(0);
   useEffect(() => {
-    if (!quieto) v.value = withTiming(1, { duration: 600, easing: FRENA });
-  }, [quieto, v]);
-  const estilo = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ translateY: (1 - v.value) * 10 }] }));
+    v.set(withTiming(1, { duration: 600, easing: FRENA, reduceMotion: ReduceMotion.Never }));
+  }, [v]);
+  const estilo = useAnimatedStyle(() => ({ opacity: v.get(), transform: [{ translateY: (1 - v.get()) * mueve }] }));
   return (
     <Animated.View style={[{ gap: 12 }, estilo]} accessibilityLiveRegion="polite">
       <Text style={s.titulo} accessibilityRole="header">{titulo}</Text>
@@ -124,8 +124,9 @@ export default function BienvenidaScreen() {
 
   // Barra de progreso y avance automático
   useEffect(() => {
-    avance.value = 0;
-    avance.value = withTiming(1, { duration: DURACION, easing: Easing.linear });
+    // La barra muestra el tiempo de cada escena: avanza siempre, aunque el teléfono reduzca animaciones.
+    avance.set(0);
+    avance.set(withTiming(1, { duration: DURACION, easing: Easing.linear, reduceMotion: ReduceMotion.Never }));
     const timer = setTimeout(() => setI((n) => (n + 1) % TEXTOS.length), DURACION);
     return () => {
       clearTimeout(timer);

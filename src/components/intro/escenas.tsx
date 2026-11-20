@@ -1,14 +1,16 @@
 // Escenas de la intro de Bora (una por idea), con la interfaz real de la app: afiches de esta noche en la
 // ciudad, el canal del evento, la previa y los perfiles de viajeros. Sin emojis: banderas e íconos
 // vectoriales propios. Movimiento suave: todo aparece por opacidad y un desplazamiento corto con una
-// curva que frena al final, sin rebotes. Con "reducir movimiento" del teléfono, todo aparece quieto.
+// curva que frena al final, sin rebotes. Con "reducir movimiento" del teléfono no hay desplazamientos,
+// pero sí fundidos. Los valores animados se leen y escriben con get()/set(): con el React Compiler
+// activado, "valor.value = …" puede no llegar a la animación en el teléfono.
 // Cada escena se vuelve a montar al mostrarse, así su animación empieza de cero.
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
-  Easing, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withTiming,
+  Easing, ReduceMotion, useAnimatedProps, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -81,11 +83,10 @@ const FRENA = Easing.bezier(0.2, 0.7, 0.2, 1);
 
 // 0 → 1 una sola vez, después de `retraso` ms. Con "reducir movimiento", queda en 1 desde el inicio.
 function useEntrada(retraso: number, duracion = 650) {
-  const quieto = useReducedMotion();
-  const v = useSharedValue(quieto ? 1 : 0);
+  const v = useSharedValue(0);
   useEffect(() => {
-    if (!quieto) v.value = withDelay(retraso, withTiming(1, { duration: duracion, easing: FRENA }));
-  }, [quieto, retraso, duracion, v]);
+    v.set(withDelay(retraso, withTiming(1, { duration: duracion, easing: FRENA, reduceMotion: ReduceMotion.Never })));
+  }, [retraso, duracion, v]);
   return v;
 }
 
@@ -94,7 +95,7 @@ function useVaiven(duracion: number, retraso = 0) {
   const quieto = useReducedMotion();
   const v = useSharedValue(0);
   useEffect(() => {
-    if (!quieto) v.value = withDelay(retraso, withRepeat(withTiming(1, { duration: duracion, easing: Easing.inOut(Easing.sin) }), -1, true));
+    if (!quieto) v.set(withDelay(retraso, withRepeat(withTiming(1, { duration: duracion, easing: Easing.inOut(Easing.sin) }), -1, true)));
   }, [quieto, duracion, retraso, v]);
   return v;
 }
@@ -103,7 +104,8 @@ function Aparece({ retraso = 0, desde = 12, duracion, style, children }: {
   retraso?: number; desde?: number; duracion?: number; style?: StyleProp<ViewStyle>; children: ReactNode;
 }) {
   const v = useEntrada(retraso, duracion);
-  const estilo = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ translateY: (1 - v.value) * desde }] }));
+  const mueve = useReducedMotion() ? 0 : desde;
+  const estilo = useAnimatedStyle(() => ({ opacity: v.get(), transform: [{ translateY: (1 - v.get()) * mueve }] }));
   return <Animated.View style={[style, estilo]}>{children}</Animated.View>;
 }
 
@@ -112,11 +114,13 @@ function CartaAbanico({ lado, retraso, abre = 84, giro = 9, achica = 0.86, style
   lado: -1 | 0 | 1; retraso: number; abre?: number; giro?: number; achica?: number; style?: StyleProp<ViewStyle>; children: ReactNode;
 }) {
   const v = useEntrada(retraso, 900);
+  const quieto = useReducedMotion(); // sin movimiento: cada carta ya está en su lugar y solo aparece
   const estilo = useAnimatedStyle(() => {
-    const p = v.value;
-    if (lado === 0) return { opacity: p, transform: [{ translateY: (1 - p) * 14 }] };
+    const o = v.get();
+    const p = quieto ? 1 : o;
+    if (lado === 0) return { opacity: o, transform: [{ translateY: (1 - p) * 14 }] };
     return {
-      opacity: p,
+      opacity: o,
       transform: [
         { translateX: lado * abre * p },
         { translateY: 10 + (abre / 6 - 10) * p },
@@ -203,7 +207,7 @@ const MENSAJES = [
 
 function Punto({ retraso }: { retraso: number }) {
   const v = useVaiven(600, retraso);
-  const estilo = useAnimatedStyle(() => ({ opacity: 0.25 + 0.75 * v.value }));
+  const estilo = useAnimatedStyle(() => ({ opacity: 0.25 + 0.75 * v.get() }));
   return <Animated.View style={[s.puntito, estilo]} />;
 }
 
@@ -260,7 +264,7 @@ const PathAnimado = Animated.createAnimatedComponent(Path);
 
 function RutaPrevia() {
   const v = useEntrada(600, 2200);
-  const props = useAnimatedProps(() => ({ strokeDashoffset: LARGO_RUTA * (1 - v.value) }));
+  const props = useAnimatedProps(() => ({ strokeDashoffset: LARGO_RUTA * (1 - v.get()) }));
   return (
     <Svg width="100%" height={84} viewBox="0 0 298 84" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
       <Path d="M0 18h298M0 44h298M0 70h298M30 0v84M88 0v84M150 0v84M214 0v84M266 0v84" stroke="rgba(243,237,247,0.08)" strokeWidth={1} />
@@ -272,7 +276,7 @@ function RutaPrevia() {
 
 function CaraQueSeUne({ url, retraso, primera }: { url: string; retraso: number; primera: boolean }) {
   const v = useEntrada(retraso, 600);
-  const estilo = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.8 + 0.2 * v.value }] }));
+  const estilo = useAnimatedStyle(() => ({ opacity: v.get(), transform: [{ scale: 0.8 + 0.2 * v.get() }] }));
   return (
     <Animated.View style={[s.caraBorde, s.caraPrevia, !primera && { marginLeft: -12 }, estilo]}>
       <FotoEvento url={url} style={StyleSheet.absoluteFill} />
@@ -283,7 +287,7 @@ function CaraQueSeUne({ url, retraso, primera }: { url: string; retraso: number;
 // Halo que respira detrás del botón (sin agrandar el botón: nada de rebotes).
 function BotonConHalo({ texto }: { texto: string }) {
   const v = useVaiven(1400, 3500);
-  const halo = useAnimatedStyle(() => ({ opacity: v.value * 0.35 }));
+  const halo = useAnimatedStyle(() => ({ opacity: v.get() * 0.35 }));
   return (
     <View>
       <Animated.View style={[s.halo, halo]} />
@@ -345,7 +349,7 @@ const VUELTA = 2 * Math.PI * 8;
 // Anillo que se va vaciando: el canal tiene fecha de cierre.
 function Anillo() {
   const v = useEntrada(3800, 3000);
-  const props = useAnimatedProps(() => ({ strokeDashoffset: VUELTA * 0.32 * v.value }));
+  const props = useAnimatedProps(() => ({ strokeDashoffset: VUELTA * 0.32 * v.get() }));
   return (
     <Svg width={20} height={20} viewBox="0 0 20 20">
       <Circle cx={10} cy={10} r={8} fill="none" stroke="rgba(243,237,247,0.16)" strokeWidth={2.2} />
