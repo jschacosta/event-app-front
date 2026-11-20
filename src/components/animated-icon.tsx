@@ -7,37 +7,26 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
 const DURATION = 600;
+const FUNDIDO = 280;
+// Solo opacidad, sin escala ni rebote.
+const fundido = new Keyframe({
+  0: { opacity: 1 },
+  100: { opacity: 0, easing: Easing.out(Easing.quad) },
+});
 
+// Continuación de la pantalla de carga nativa (morada, con el logo de Bora): al cerrarse la nativa, esta
+// copia exacta se desvanece suave sobre la app. Antes era la de la plantilla de Expo (celeste con su logo).
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
   if (!visible) return null;
 
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: 1 }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  });
-
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const image = <Image style={styles.logoSplash} source={require('@/assets/images/splash-icon.png')} contentFit="contain" />;
 
   return animate ? (
     <Animated.View
-      entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
+      entering={fundido.duration(FUNDIDO).withCallback((finished) => {
         'worklet';
         if (finished) {
           scheduleOnRN(setVisible, false);
@@ -138,9 +127,11 @@ const styles = StyleSheet.create({
     height: 128,
     position: 'absolute',
   },
+  // Igual que expo-splash-screen en app.json: fondo #64209A y logo de 220 de ancho.
+  logoSplash: { width: 220, height: 220 },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: '#64209A',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
