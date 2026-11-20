@@ -8,8 +8,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Banderas } from '@/components/bandera';
 import { fuenteWeb } from '@/components/ui';
 import { FuenteTitulo } from '@/constants/theme';
-import { api, type Evento } from '@/lib/api';
-import { eventosDelTelefono, eventosGuardados, guardarEventos } from '@/lib/eventos-cache';
+import { useSesion } from '@/context/sesion';
+import { agendaDelTelefono, agendaReciente, cargarInicio, useAgenda } from '@/lib/agenda';
+import type { Evento } from '@/lib/api';
 import { hora } from '@/lib/fechas';
 import { colorEtiquetaGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
@@ -20,21 +21,16 @@ const HORAS = 30; // "esta noche" = lo que está en vivo o empieza en las próxi
 const puntaje = (e: Evento) => (e.destaque ?? 0) + Math.min((e.asistencia?.van ?? 0) * 12, 60) + (e.imagen ? 5 : 0);
 
 export function useEstaNoche(ciudad: string, cuantos = 5) {
-  const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad));
+  // Usa la misma agenda por partes que el inicio: la primera semana alcanza para "esta noche"
+  // y así, al entrar al inicio, ya está cargada.
+  const { token } = useSesion();
+  const { eventos } = useAgenda(ciudad);
   const [ahora, setAhora] = useState(() => Date.now()); // se renueva con cada carga
   useEffect(() => {
-    let vigente = true;
-    if (!eventosGuardados(ciudad)) eventosDelTelefono(ciudad).then((l) => { if (vigente && l) setEventos((e) => e ?? l); });
-    api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad}`)
-      .then((r) => {
-        if (!vigente) return;
-        setEventos(r.eventos);
-        setAhora(Date.now());
-        guardarEventos(ciudad, r.eventos); // así el inicio ya los tiene al entrar
-      })
-      .catch(() => {});
-    return () => { vigente = false; };
-  }, [ciudad]);
+    agendaDelTelefono(ciudad);
+    if (agendaReciente(ciudad, token ?? null)) return;
+    cargarInicio(ciudad, token ?? null).then(() => setAhora(Date.now())).catch(() => {});
+  }, [ciudad, token]);
 
   return useMemo(() => {
     if (!eventos) return { destacados: null, total: 0, ahora };

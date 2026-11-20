@@ -241,3 +241,16 @@ export function haceTiempo(iso: string) {
   if (seg < 86400 * 30) return i18n.t('fechas.hace.d', { n: Math.round(seg / 86400) });
   return i18n.t('fechas.hace.mes', { n: Math.round(seg / (86400 * 30)) });
 }
+
+// "2026-11-21" + 3 → "2026-11-24" (sin zonas: es aritmética sobre la clave).
+export function sumarDias(clave: string, dias: number) {
+  return new Date(Date.parse(`${clave}T12:00:00Z`) + dias * 864e5).toISOString().slice(0, 10);
+}
+
+// Instante (ms) en que empieza el día `clave` en la zona de la ciudad: para pedir la agenda por partes.
+export function inicioDeClave(clave: string) {
+  const base = Date.parse(`${clave}T12:00:00Z`);
+  const p = enZona(new Date(base).toISOString());
+  const desfase = Date.UTC(p.anio, p.mes, p.dia, p.hh, p.mm) - base; // hora de la ciudad − UTC
+  return Date.parse(`${clave}T00:00:00Z`) - desfase;
+}

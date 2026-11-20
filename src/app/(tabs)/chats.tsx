@@ -4,7 +4,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, ZoomIn,
 } from 'react-native-reanimated';
@@ -31,6 +31,10 @@ import { refrescarNoLeidos, textoCuenta, useNoLeidos } from '@/lib/no-leidos';
 import { FotoEvento } from '@/components/foto-evento';
 
 const DIAS_ABREN_PRONTO = 7;
+const DIAS_CHAT = 3; // el canal abre 3 días antes del evento (DIAS_ANTES_CHAT en el servidor)
+// Lo que ya se bajó de cada ciudad (sobrevive al cambiar de pestaña).
+const prontoCargado = new Set<string>();
+const diasCanales = new Map<string, string[]>();
 // Solo las primeras tarjetas entran animadas; con cientos de canales, el retraso escalonado
 // hacía que las de más abajo tardaran segundos en aparecer.
 const ANIMADAS = 6;
@@ -163,30 +167,52 @@ export default function CanalesScreen() {
   // Lista virtualizada: solo se dibujan las tarjetas cerca de la pantalla (puede haber cientos).
   const lista = useRef<FlatList<Fila>>(null);
   const subir = useCallback(() => lista.current?.scrollToOffset({ offset: 0, animated: true }), []);
+  const desplazada = useRef(false);
 
+  const [conPronto, setConPronto] = useState(() => prontoCargado.has(ciudad.id));
+  const [diasServidor, setDiasServidor] = useState<string[] | null>(() => diasCanales.get(ciudad.id) ?? null);
   // Al cambiar de ciudad se limpia la pantalla y los filtros.
   const [ciudadVista, setCiudadVista] = useState(ciudad.id);
   if (ciudadVista !== ciudad.id) {
     setCiudadVista(ciudad.id);
     setEventos(eventosGuardados(ciudad.id, 'canales'));
+    setConPronto(prontoCargado.has(ciudad.id));
+    setDiasServidor(diasCanales.get(ciudad.id) ?? null);
     setConsulta('');
     setDia(null);
   }
 
-  // Canales abiertos y los que abren en los próximos días.
+  // Canales por partes: primero los abiertos (lo que se ve arriba) y "Abren pronto" recién al bajar hasta el
+  // final, elegir una fecha o buscar. Antes se bajaban los ~580 de una vez y la pestaña tardaba en aparecer.
+  const descargar = useCallback(async (incluirPronto: boolean) => {
+    const base = `/events?ciudad=${ciudad.id}&ligero=1`;
+    const enTresDias = new Date(Date.now() + DIAS_CHAT * 864e5).toISOString();
+    const [abiertos, pronto] = await Promise.all([
+      api<{ eventos: Evento[]; dias?: string[] }>(`${base}&dias=1&canalesEnDias=0`, { token }),
+      incluirPronto ? api<{ eventos: Evento[] }>(`${base}&desde=${enTresDias}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token }) : null,
+    ]);
+    // Si "Abren pronto" no se pidió esta vez, se dejan los que ya estaban.
+    const antes = incluirPronto ? [] : (eventosGuardados(ciudad.id, 'canales') ?? []).filter((e) => !e.chatAbierto);
+    const ids = new Set(abiertos.eventos.map((e) => e.id));
+    const lista = [...abiertos.eventos, ...(pronto?.eventos ?? antes).filter((e) => !ids.has(e.id))]
+      .filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO);
+    setEventos(lista);
+    guardarEventos(ciudad.id, lista, 'canales');
+    marcarDescarga(ciudad.id, 'canales', token ?? null);
+    if (abiertos.dias) { diasCanales.set(ciudad.id, abiertos.dias); setDiasServidor(abiertos.dias); }
+    if (incluirPronto) { prontoCargado.add(ciudad.id); setConPronto(true); }
+  }, [ciudad.id, token]);
   useFocusEffect(useCallback(() => {
     refrescarNoLeidos();
     if (listaReciente(ciudad.id, 'canales', token ?? null)) return; // recién descargada: no trabar al volver
-    // Solo los eventos con canal (abierto o que abre pronto): mucho menos que la agenda completa.
-    api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}&canalesEnDias=${DIAS_ABREN_PRONTO + 1}`, { token })
-      .then((r) => {
-        const lista = r.eventos.filter((e) => e.chatAbierto || diasDesdeHoy(e.chatAbreEn) <= DIAS_ABREN_PRONTO);
-        setEventos(lista);
-        guardarEventos(ciudad.id, lista, 'canales');
-        marcarDescarga(ciudad.id, 'canales', token ?? null);
-      })
-      .catch(() => setEventos((e) => e ?? []));
-  }, [token, ciudad.id]));
+    descargar(prontoCargado.has(ciudad.id)).catch(() => setEventos((e) => e ?? []));
+  }, [token, ciudad.id, descargar]));
+  const [pidiendoPronto, setPidiendoPronto] = useState(false);
+  const pedirPronto = useCallback(() => {
+    if (conPronto || pidiendoPronto) return;
+    setPidiendoPronto(true);
+    descargar(true).catch(() => {}).finally(() => setPidiendoPronto(false));
+  }, [conPronto, pidiendoPronto, descargar]);
   useEffect(() => escucharCambios(() => {
     const l = eventosGuardados(ciudad.id, 'canales');
     if (l) setEventos(l);
@@ -251,21 +277,26 @@ export default function CanalesScreen() {
     setTimeout(() => router.push({ pathname: '/evento/[id]/nuevo-canal', params: { id: e.id } }), Platform.OS === 'ios' ? 450 : 50);
   };
 
-  const buscar = useMemo(() => crearBuscador(eventos ?? []), [eventos]);
   const buscando = consulta.trim().length >= 2;
+  // El índice del buscador se arma recién al escribir (con cientos de canales tardaba aunque nadie buscara).
+  const buscar = useMemo(() => (buscando ? crearBuscador(eventos ?? []) : null), [buscando, eventos]);
+  // Al buscar o elegir una fecha también cuentan los que abren pronto.
+  const cambiarConsulta = (v: string) => { setConsulta(v); if (v.trim().length >= 2) pedirPronto(); };
+  const cambiarDia = (d: string | null) => { setDia(d); if (d) pedirPronto(); };
   const diaDe = (e: Evento) => (diasDesdeHoy(e.inicio) < 0 ? claveDia(new Date().toISOString()) : claveDia(e.inicio));
+  // Los días los manda el servidor: así la tira marca también los que abren pronto antes de bajarlos.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const diasConEventos = useMemo(() => new Set((eventos ?? []).map(diaDe)), [eventos, ciudad.zona]);
+  const diasConEventos = useMemo(() => new Set(diasServidor ?? (eventos ?? []).map(diaDe)), [diasServidor, eventos, ciudad.zona]);
 
   const { abiertos, pronto } = useMemo(() => {
-    let lista = buscando ? buscar(consulta) : [...(eventos ?? [])];
+    let lista = buscar ? buscar(consulta) : [...(eventos ?? [])];
     if (dia) lista = lista.filter((e) => diaDe(e) === dia);
     // Primero los que tienen mensajes nuevos; después los de eventos donde marqué que voy.
     const abiertos = lista.filter((e) => e.chatAbierto)
       .sort((a, b) => Number(Boolean(noLeidos[b.id])) - Number(Boolean(noLeidos[a.id]))
         || Number(Boolean(b.miAsistencia)) - Number(Boolean(a.miAsistencia)));
     return { abiertos, pronto: lista.filter((e) => !e.chatAbierto) };
-  }, [buscando, buscar, consulta, eventos, dia, noLeidos]);
+  }, [buscar, consulta, eventos, dia, noLeidos]);
 
   const vacio = abiertos.length === 0 && pronto.length === 0;
 
@@ -313,7 +344,7 @@ export default function CanalesScreen() {
       <EncabezadoCompacto
         visible={compacto}
         titulo={tr('canales.titulo')}
-        busqueda={{ valor: consulta, onCambio: setConsulta, placeholder: tr('canales.buscar') }}
+        busqueda={{ valor: consulta, onCambio: cambiarConsulta, placeholder: tr('canales.buscar') }}
       />
       <Animated.FlatList
         ref={lista}
@@ -344,6 +375,13 @@ export default function CanalesScreen() {
         keyboardShouldPersistTaps="handled"
         initialNumToRender={5}
         maxToRenderPerBatch={5}
+        onScrollBeginDrag={() => { desplazada.current = true; }}
+        // Solo cuando la persona baja: con pocas filas dibujadas la lista "llega al final" sin que nadie la mueva.
+        onEndReached={vistaActual === 'explorar' ? () => { if (desplazada.current || abiertos.length < 12) pedirPronto(); } : undefined}
+        onEndReachedThreshold={1.5}
+        ListFooterComponent={vistaActual === 'explorar' && eventos?.length && !conPronto ? (
+          <View style={styles.cargandoMas}><ActivityIndicator color={t.textSecondary} /></View>
+        ) : undefined}
         windowSize={7}
         removeClippedSubviews={Platform.OS === 'android'}
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 24 }}
@@ -364,7 +402,7 @@ export default function CanalesScreen() {
               ) : null}
             </View>
             <View style={{ paddingHorizontal: 20, marginTop: 14 }} onLayout={medirBuscador}>
-              <BarraBusqueda valor={consulta} onCambio={setConsulta} placeholder={tr(vistaActual === 'mis' ? 'canales.buscarMios' : 'canales.buscar')} />
+              <BarraBusqueda valor={consulta} onCambio={cambiarConsulta} placeholder={tr(vistaActual === 'mis' ? 'canales.buscarMios' : 'canales.buscar')} />
             </View>
             {/* Pestañas como las carpetas de Telegram: reemplazan al selector y a los chips de antes. */}
             <View style={[styles.pestanas, { borderBottomColor: t.separator }]}>
@@ -394,7 +432,7 @@ export default function CanalesScreen() {
             {vistaActual === 'explorar' ? (
               <View style={{ marginTop: 14 }}>
                 <Texto v="pie" secundario style={{ paddingHorizontal: 20, marginBottom: 10 }}>{tr('canales.explicacion')}</Texto>
-                <TiraFechas valor={dia} onCambio={setDia} diasConEventos={diasConEventos} dias={10} />
+                <TiraFechas valor={dia} onCambio={cambiarDia} diasConEventos={diasConEventos} dias={10} />
               </View>
             ) : <View style={{ height: 6 }} />}
           </View>
@@ -480,5 +518,6 @@ const styles = StyleSheet.create({
   botonCrear: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 30, paddingHorizontal: 12, borderRadius: 15 },
   pieMios: { textAlign: 'center', marginTop: 16, paddingHorizontal: 32 },
   aviso: { position: 'absolute', left: 24, right: 24, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 14 },
+  cargandoMas: { paddingVertical: 28, alignItems: 'center' },
   vacio: { marginTop: 48, alignItems: 'center', gap: 10, paddingHorizontal: 32 },
 });

@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View, type FlatList } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,9 +16,9 @@ import { API_URL } from '@/config/api';
 import { BottomTabInset, FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
-import { api, type Evento } from '@/lib/api';
+import type { Evento } from '@/lib/api';
+import { agendaDelTelefono, agendaReciente, asegurarDia, asegurarGenero, buscarEnServidor, cargarInicio, cargarMas, cubierto, cubreDia, hayMas, useAgenda } from '@/lib/agenda';
 import { crearBuscador } from '@/lib/buscar-eventos';
-import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { agruparSeries } from '@/lib/series';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoDia, fechaDeClave, hora, precioTexto } from '@/lib/fechas';
@@ -165,8 +165,9 @@ export default function AgendaScreen() {
   const { t: tr, i18n } = useTranslation();
   const ciudad = useCiudad();
   const [dia, setDia] = useState<string | null>(null); // null = todas las fechas
-  // Parte con la última agenda que se vio (memoria o teléfono) y se actualiza por detrás.
-  const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad.id));
+  // La agenda llega por partes (ver lib/agenda.ts): primero la semana, el resto a medida que se pide.
+  const agenda = useAgenda(ciudad.id);
+  const eventos = agenda.eventos;
   const [ahora, setAhora] = useState(() => Date.now()); // se renueva en cada carga
   const [errorCarga, setError] = useState<string | null>(null);
   // Si ya hay una agenda en pantalla (la guardada), se deja: mejor eso que un error.
@@ -180,14 +181,12 @@ export default function AgendaScreen() {
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
   const lista = useRef<FlatList<Seccion>>(null);
   const subir = useCallback(() => lista.current?.scrollToOffset({ offset: 0, animated: true }), []);
+  const desplazada = useRef(false);
 
   const cargar = useCallback(async () => {
     try {
-      const { eventos } = await api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}`, { token });
-      setEventos(eventos);
+      await cargarInicio(ciudad.id, token ?? null);
       setAhora(Date.now());
-      guardarEventos(ciudad.id, eventos);
-      marcarDescarga(ciudad.id, 'agenda', token ?? null);
       setError(null);
     } catch {
       setError(tr('comun.sinConexion', { url: API_URL }));
@@ -198,43 +197,70 @@ export default function AgendaScreen() {
   const [ciudadVista, setCiudadVista] = useState(ciudad.id);
   if (ciudadVista !== ciudad.id) {
     setCiudadVista(ciudad.id);
-    setEventos(eventosGuardados(ciudad.id));
     setGenero(null);
     setConsulta('');
     setDia(null);
   }
 
-  // Al volver a la pestaña (por ejemplo desde un evento) no se descarga todo de nuevo si es reciente:
-  // procesar ~1 MB y redibujar la lista trababa el siguiente toque. Lo que cambia uno mismo llega por escucharCambios.
+  // Al volver a la pestaña (por ejemplo desde un evento) no se descarga de nuevo si es reciente.
   useFocusEffect(useCallback(() => {
-    if (!listaReciente(ciudad.id, 'agenda', token ?? null)) cargar();
+    if (!agendaReciente(ciudad.id, token ?? null)) cargar();
   }, [cargar, ciudad.id, token]));
-  useEffect(() => escucharCambios(() => {
-    const l = eventosGuardados(ciudad.id);
-    if (l) setEventos(l);
-  }), [ciudad.id]);
   // Al abrir la app: la agenda guardada en el teléfono se muestra mientras llega la nueva.
+  useEffect(() => { agendaDelTelefono(ciudad.id); }, [ciudad.id]);
+
+  // Fecha o categoría elegida que todavía no está cargada: se baja solo esa parte.
+  const [diaFallido, setDiaFallido] = useState<string | null>(null);
   useEffect(() => {
-    let vigente = true;
-    eventosDelTelefono(ciudad.id).then((l) => { if (vigente && l) setEventos((e) => e ?? l); });
-    return () => { vigente = false; };
-  }, [ciudad.id]);
+    if (dia) asegurarDia(ciudad.id, dia, token ?? null).catch(() => setDiaFallido(dia));
+  }, [dia, ciudad.id, token]);
+  useEffect(() => {
+    if (genero) asegurarGenero(ciudad.id, genero, token ?? null).catch(() => {});
+  }, [genero, ciudad.id, token]);
+  const diaPendiente = Boolean(dia && eventos && !cubreDia(agenda, dia) && diaFallido !== dia);
+  const generoPendiente = Boolean(genero && !agenda.generosCompletos.has(genero));
+
+  // Al llegar al final de la lista se suman los días siguientes.
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const masDias = useCallback(() => {
+    if (dia || consulta.trim().length >= 2 || cargandoMas || !hayMas(agenda)) return;
+    setCargandoMas(true);
+    cargarMas(ciudad.id, token ?? null).catch(() => {}).finally(() => setCargandoMas(false));
+  }, [agenda, dia, consulta, cargandoMas, ciudad.id, token]);
 
   const generosDisponibles = useMemo(
-    () => GENEROS.filter((g) => (eventos ?? []).some((e) => e.generos.includes(g))),
-    [eventos],
+    () => GENEROS.filter((g) => (agenda.generos ?? (eventos ?? []).flatMap((e) => e.generos)).includes(g)),
+    [agenda.generos, eventos],
   );
-  const buscar = useMemo(() => crearBuscador(eventos ?? []), [eventos]);
+
+  // Buscador: al instante sobre lo cargado (tolera errores de tipeo) y, al dejar de escribir, en toda la agenda.
   const buscando = consulta.trim().length >= 2;
+  const consultaDiferida = useDeferredValue(consulta.trim());
+  const buscar = useMemo(() => (buscando ? crearBuscador(eventos ?? []) : null), [buscando, eventos]);
+  const [delServidor, setDelServidor] = useState<{ q: string; eventos: Evento[] } | null>(null);
+  useEffect(() => {
+    if (consultaDiferida.length < 2) return;
+    let vigente = true;
+    const id = setTimeout(() => {
+      buscarEnServidor(ciudad.id, consultaDiferida, token ?? null)
+        .then((r) => { if (vigente) setDelServidor({ q: consultaDiferida, eventos: r }); })
+        .catch(() => { if (vigente) setDelServidor({ q: consultaDiferida, eventos: [] }); });
+    }, 300);
+    return () => { vigente = false; clearTimeout(id); };
+  }, [consultaDiferida, ciudad.id, token]);
+  const esperandoServidor = buscando && delServidor?.q !== consultaDiferida;
   const resultados = useMemo(() => {
-    if (!buscando) return [];
-    const r = buscar(consulta);
+    if (!buscando || !buscar) return [];
+    const locales = buscar(consultaDiferida);
+    const ids = new Set(locales.map((e) => e.id));
+    const remotos = delServidor?.q === consultaDiferida ? delServidor.eventos.filter((e) => !ids.has(e.id)) : [];
+    const r = [...locales, ...remotos];
     return agruparSeries(genero ? r.filter((e) => e.generos.includes(genero)) : r);
-  }, [buscando, buscar, consulta, genero]);
+  }, [buscando, buscar, consultaDiferida, delServidor, genero]);
 
   const { enVivo, secciones } = useMemo(() => {
     const hoy = claveDia(new Date(ahora).toISOString());
-    const deGenero = (eventos ?? []).filter((e) => !genero || e.generos.includes(genero));
+    const deGenero = (eventos ?? []).filter((e) => (!genero || e.generos.includes(genero)) && cubierto(agenda, e, genero));
     const vivo = (e: Evento) => new Date(e.inicio).getTime() <= ahora && ahora < new Date(e.fin).getTime();
     // En vivo también va primero lo que vale la pena (si no, gana el almuerzo que empezó a mediodía).
     const enVivo = dia && dia !== hoy ? [] : deGenero.filter(vivo)
@@ -257,19 +283,22 @@ export default function AgendaScreen() {
     return { enVivo, secciones };
     // i18n.language y ciudad.zona: los títulos de los días cambian con el idioma y la zona horaria
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, dia, genero, ahora, i18n.language, ciudad.zona]);
+  }, [eventos, agenda, dia, genero, ahora, i18n.language, ciudad.zona]);
 
+  // Días con eventos: los manda el servidor (de toda la agenda), así la tira y el calendario no necesitan bajar todo.
   const diasConEventos = useMemo(() => {
+    const delServidorDias = genero ? agenda.diasPorGenero[genero] : agenda.dias;
+    if (delServidorDias) return new Set(delServidorDias);
     const hoy = claveDia(new Date(ahora).toISOString());
     return new Set((eventos ?? [])
       .filter((e) => !genero || e.generos.includes(genero))
       .map((e) => (diasDesdeHoy(e.inicio) < 0 ? hoy : claveDia(e.inicio))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, genero, ahora, ciudad.zona]);
+  }, [eventos, agenda.dias, agenda.diasPorGenero, genero, ahora, ciudad.zona]);
 
-  const mostrarSecciones = !error && Boolean(eventos?.length) && !buscando;
+  const mostrarSecciones = !error && Boolean(eventos?.length) && !buscando && !diaPendiente;
   const verDia = useCallback((clave: string) => router.push({ pathname: '/dia/[clave]', params: genero ? { clave, genero } : { clave } }), [genero]);
-  const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0;
+  const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0 && !generoPendiente;
 
   const refrescar = async () => {
     setRefrescando(true);
@@ -302,6 +331,13 @@ export default function AgendaScreen() {
         windowSize={7}
         removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
+        onScrollBeginDrag={() => { desplazada.current = true; }}
+        // Solo cuando la persona baja: con pocas filas dibujadas la lista "llega al final" sin que nadie la mueva.
+        onEndReached={() => { if (desplazada.current || secciones.length < 3) masDias(); }}
+        onEndReachedThreshold={1.5}
+        ListFooterComponent={mostrarSecciones && !dia && (cargandoMas || hayMas(agenda)) ? (
+          <View style={styles.cargandoMas}><ActivityIndicator color={t.textSecondary} /></View>
+        ) : undefined}
         ListHeaderComponent={<View style={{ paddingTop: insets.top + 10 }}>
           <View style={styles.encabezado}>
             <BotonCiudad grande />
@@ -328,12 +364,14 @@ export default function AgendaScreen() {
               <Texto secundario style={{ textAlign: 'center' }}>{error}</Texto>
               <BotonTexto texto={tr('comun.reintentar')} onPress={cargar} />
             </View>
-          ) : eventos === null ? (
+          ) : eventos === null || diaPendiente ? (
             <EsqueletoAgenda />
           ) : buscando ? (
             <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)} style={styles.margen}>
               <Texto v="pie" secundario style={styles.cuenta}>{tr('agenda.resultados', { count: resultados.length })}</Texto>
-              {resultados.length === 0 ? (
+              {resultados.length === 0 && esperandoServidor ? (
+                <View style={styles.cargandoMas}><ActivityIndicator color={t.textSecondary} /></View>
+              ) : resultados.length === 0 ? (
                 <View style={styles.vacio}>
                   <IconoVacio nombre="magnifyingglass" />
                   <Texto v="cuerpoFuerte" style={{ textAlign: 'center' }}>{tr('agenda.sinResultados', { q: consulta.trim() })}</Texto>
@@ -410,5 +448,6 @@ const styles = StyleSheet.create({
   genero: { height: 17, paddingHorizontal: 5, borderRadius: 3, justifyContent: 'center' },
   verMas: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 6, paddingVertical: 10 },
   vacio: { marginTop: 48, alignItems: 'center', gap: 12, paddingHorizontal: 32 },
+  cargandoMas: { paddingVertical: 28, alignItems: 'center' },
   cuenta: { marginBottom: 8, paddingHorizontal: 4, fontWeight: '600' },
 });

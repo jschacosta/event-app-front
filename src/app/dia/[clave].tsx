@@ -13,10 +13,9 @@ import { BarraBusqueda, FilaGeneros, IconoVacio } from '@/components/filtros';
 import { BotonTexto, Texto } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
-import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
 import { useCiudad } from '@/lib/ciudades';
-import { eventosGuardados } from '@/lib/eventos-cache';
+import { asegurarDia, cargarInicio, cubreDia, useAgenda } from '@/lib/agenda';
 import { claveDia, diasDesdeHoy, tituloDeClave } from '@/lib/fechas';
 import { GENEROS } from '@/lib/generos';
 
@@ -28,18 +27,21 @@ export default function DiaScreen() {
   const { token } = useSesion();
   const { t: tr, i18n } = useTranslation();
   const ciudad = useCiudad();
-  const [eventos, setEventos] = useState<Evento[] | null>(() => eventosGuardados(ciudad.id));
+  // La agenda se carga por partes: si el día todavía no está entero (por ejemplo, solo sus eventos de una categoría), se baja.
+  const agenda = useAgenda(ciudad.id);
+  const [fallo, setFallo] = useState(false);
+  const eventos = agenda.eventos && (cubreDia(agenda, clave) || fallo) ? agenda.eventos : null;
   const [genero, setGenero] = useState<string | null>(params.genero ?? null);
   const [consulta, setConsulta] = useState('');
   const { ref: refScroll, onScroll, medirBuscador, compacto, arriba, subir } = useDesplazamiento();
   const volver = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   useEffect(() => {
-    if (eventos) return;
-    api<{ eventos: Evento[] }>(`/events?ciudad=${ciudad.id}`, { token })
-      .then((r) => setEventos(r.eventos))
-      .catch(() => setEventos([]));
-  }, [eventos, ciudad.id, token]);
+    (agenda.eventos ? Promise.resolve() : cargarInicio(ciudad.id, token ?? null))
+      .then(() => asegurarDia(ciudad.id, clave, token ?? null))
+      .catch(() => setFallo(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave, ciudad.id, token]);
 
   // Los eventos de ese día (uno que ya empezó cuenta como de hoy), en orden de hora.
   const delDia = useMemo(() => {
