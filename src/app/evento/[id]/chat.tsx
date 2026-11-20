@@ -407,10 +407,9 @@ export default function ChatScreen() {
   const topicos = useTopicos(id, sala, !topicoElegido);
   const conocidos = topicos.topicos ? topicos.topicos.length > 1 : id ? tieneTopicos(id, sala) : undefined;
   // Sin sesión (o sin evento) no hay lista que pedir: el chat muestra "Inicia sesión".
-  const modo: 'lista' | 'chat' | 'cargando' = topicoElegido || !token || !id ? 'chat'
+  const modoTopicos: 'lista' | 'chat' | 'cargando' = topicoElegido || !token || !id ? 'chat'
     : conocidos === undefined ? (topicos.error ? 'chat' : 'cargando')
     : conocidos ? 'lista' : 'chat';
-  const enLista = modo === 'lista';
   // Sin cuenta o sin aceptar las normas, las salas abiertas (General y de idioma) se muestran en modo
   // lectura con sus últimos mensajes. Los canales propios no se adelantan.
   const vistaPrevia = Boolean(id) && (SALAS_IDIOMA as readonly string[]).includes(sala) && !topicoElegido;
@@ -421,7 +420,14 @@ export default function ChatScreen() {
     leidoHasta, fijado, puedeFijar, puedeEncuesta, fijar, crearEncuesta, votar,
     modoLento, esperaHasta, cambiarModoLento, miembro, unirme, salir, eliminar, editar, borrar, soloLectura,
     infoTopico, silenciada, silenciar,
-  } = useChat(id, sala, topicoElegido ?? (conocidos ? 'general' : undefined), modo === 'chat');
+    conTopicos: chatConTopicos,
+  } = useChat(id, sala, topicoElegido ?? (conocidos ? 'general' : undefined), modoTopicos !== 'lista');
+  // El chat no espera a la lista de tópicos: entra a la sala al mismo tiempo (casi ninguna tiene
+  // tópicos) y se muestra apenas hay mensajes (los guardados de la visita anterior o los que llegan).
+  // Si al entrar resulta que la sala tiene tópicos, se espera esa lista.
+  const modo: 'lista' | 'chat' | 'cargando' = modoTopicos !== 'cargando' ? modoTopicos
+    : (estado === 'listo' ? !chatConTopicos : mensajes.length > 0) ? 'chat' : 'cargando';
+  const enLista = modo === 'lista';
   const { ids: bloqueados } = useBloqueos();
   const [bloquear, setBloquear] = useState<Autor | null>(null);
   const [ajusteLento, setAjusteLento] = useState(false);

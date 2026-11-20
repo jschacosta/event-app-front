@@ -27,6 +27,16 @@ const ESTADO_POR_CODIGO: Record<string, Estado> = {
   CANAL_NO_ENCONTRADO: 'cerrado',
 };
 
+// Últimos mensajes de cada sala vista en esta sesión: al volver a entrar se ven al instante mientras
+// llega lo nuevo (como Instagram o WhatsApp). Solo las últimas salas, para no llenar la memoria.
+const historiales = new Map<string, MensajeChat[]>();
+const MAX_SALAS_GUARDADAS = 20;
+function guardarHistorial(clave: string, mensajes: MensajeChat[]) {
+  historiales.delete(clave);
+  historiales.set(clave, mensajes.filter((m) => !m.pendiente));
+  if (historiales.size > MAX_SALAS_GUARDADAS) historiales.delete(historiales.keys().next().value as string);
+}
+
 // Ids temporales de los mensajes que se ven antes de que el servidor los confirme.
 let contadorPendientes = 0;
 
@@ -36,7 +46,8 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
   const { token } = useSesion();
   const [estado, setEstado] = useState<Estado>(token ? 'conectando' : 'sin-sesion');
   const [error, setError] = useState<string | null>(null);
-  const [mensajes, setMensajes] = useState<MensajeChat[]>([]);
+  const claveVista = `${eventoId}:${sala}:${topico ?? ''}`;
+  const [mensajes, setMensajes] = useState<MensajeChat[]>(() => historiales.get(claveVista) ?? []);
   const [escribiendo, setEscribiendo] = useState<Autor | null>(null);
   // Mensaje fijado arriba del chat y qué puede hacer esta persona en la sala.
   const [fijado, setFijado] = useState<MensajeChat | null>(null);
@@ -54,13 +65,12 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
   const [intento, setIntento] = useState(0); // sube para volver a entrar (tras aceptar normas o la contraseña)
   const ultimoAviso = useRef(0);
 
-  // Al cambiar de sala se limpia la pantalla.
-  const claveVista = `${eventoId}:${sala}:${topico ?? ''}`;
+  // Al cambiar de sala se limpia la pantalla (quedan los mensajes guardados de esa sala, si hay).
   const [vista, setVista] = useState(claveVista);
   if (vista !== claveVista) {
     setVista(claveVista);
     setInfoTopico(null);
-    setMensajes([]);
+    setMensajes(historiales.get(claveVista) ?? []);
     setEscribiendo(null);
     setFijado(null);
     setPermisos({ fijar: false, encuesta: false });
@@ -372,6 +382,11 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
       return { error: e instanceof Error ? e.message : String(e) };
     }
   }, [token, eventoId, sala]);
+
+  // Lo que se ve queda guardado para la próxima visita a esta sala.
+  useEffect(() => {
+    if (estado === 'listo' && vista === claveVista) guardarHistorial(claveVista, mensajes);
+  }, [estado, mensajes, vista, claveVista]);
 
   return {
     estado: token ? estado : 'sin-sesion',

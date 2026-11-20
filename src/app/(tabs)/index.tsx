@@ -280,6 +280,8 @@ export default function AgendaScreen() {
       <EncabezadoCompacto
         visible={compacto}
         titulo={ciudad.nombre}
+        alTocarTitulo={() => router.push('/ciudad')}
+        etiquetaTitulo={tr('ciudad.cambiar')}
         busqueda={{ valor: consulta, onCambio: setConsulta, placeholder: tr('agenda.buscar') }}
       />
       <Animated.FlatList

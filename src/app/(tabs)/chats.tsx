@@ -23,6 +23,7 @@ import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import { api, type Evento } from '@/lib/api';
 import { crearBuscador } from '@/lib/buscar-eventos';
+import { obtenerSocket } from '@/lib/socket';
 import { escucharCambios, eventosDelTelefono, eventosGuardados, guardarEventos, listaReciente, marcarDescarga } from '@/lib/eventos-cache';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, diaCorto, diasDesdeHoy, hora } from '@/lib/fechas';
@@ -202,6 +203,7 @@ export default function CanalesScreen() {
   const totalNuevos = useMemo(() => Object.values(noLeidos).reduce((n, e) => n + e.total, 0), [noLeidos]);
   const cargarMisCanales = useCallback(() => {
     if (!token) return;
+    obtenerSocket(token); // la conexión del chat queda abierta antes de tocar un canal
     api<{ canales: MiCanal[]; misTopicos?: MiTopico[] }>('/me/canales', { token })
       .then((r) => { setMisCanales(r.canales); setMisTopicos(r.misTopicos ?? []); })
       .catch(() => setMisCanales((m) => m ?? []));
@@ -344,9 +346,11 @@ export default function CanalesScreen() {
         maxToRenderPerBatch={5}
         windowSize={7}
         removeClippedSubviews={Platform.OS === 'android'}
-        contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + BottomTabInset + 24 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 24 }}
+        // El margen de arriba va dentro del encabezado: así la posición del buscador se mide desde el
+        // borde de la lista y la barra compacta aparece y se esconde en el punto justo (como en el inicio).
         ListHeaderComponent={
-          <>
+          <View style={{ paddingTop: insets.top + 12 }}>
             <View style={styles.cabeza}>
               <Texto v="tituloGrande">{tr('canales.titulo')}</Texto>
               {puedeCrear ? (
@@ -393,7 +397,7 @@ export default function CanalesScreen() {
                 <TiraFechas valor={dia} onCambio={setDia} diasConEventos={diasConEventos} dias={10} />
               </View>
             ) : <View style={{ height: 6 }} />}
-          </>
+          </View>
         }
         ListEmptyComponent={vistaActual === 'mis' ? (misCanales === null ? <EsqueletoCanales filas={4} /> : (
           <View style={styles.vacio}>

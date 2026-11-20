@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, type ComponentRef, type React
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import Animated, {
-  Easing, useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming, ZoomIn, ZoomOut,
+  Easing, useAnimatedReaction, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming, FadeIn, FadeOut,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -44,9 +44,12 @@ export function useDesplazamiento() {
 }
 
 // Encabezado translúcido que aparece arriba al bajar: título chico + buscador.
-export function EncabezadoCompacto({ visible, titulo, izquierda, derecha, busqueda }: {
+export function EncabezadoCompacto({ visible, titulo, alTocarTitulo, etiquetaTitulo, izquierda, derecha, busqueda }: {
   visible: boolean;
   titulo: string;
+  // Si se pasa, el título se puede tocar (con su flecha), por ejemplo para cambiar de ciudad.
+  alTocarTitulo?: () => void;
+  etiquetaTitulo?: string;
   izquierda?: ReactNode;
   derecha?: ReactNode;
   busqueda?: { valor: string; onCambio: (v: string) => void; placeholder: string };
@@ -73,7 +76,19 @@ export function EncabezadoCompacto({ visible, titulo, izquierda, derecha, busque
         <View style={styles.filaTitulo}>
           <View style={styles.lado}>{izquierda}</View>
           <Animated.View style={[estiloTitulo, { flexShrink: 1 }]}>
-            <Texto v="cuerpoFuerte" numberOfLines={1}>{titulo}</Texto>
+            {alTocarTitulo ? (
+              <Pressable
+                onPress={alTocarTitulo}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={etiquetaTitulo ?? titulo}
+                style={({ pressed }) => [styles.tituloTocable, pressed && { opacity: 0.6 }]}>
+                <Texto v="cuerpoFuerte" numberOfLines={1} style={{ flexShrink: 1 }}>{titulo}</Texto>
+                <Icono nombre="chevron.down" tamano={12} color={t.textSecondary} peso="bold" />
+              </Pressable>
+            ) : (
+              <Texto v="cuerpoFuerte" numberOfLines={1}>{titulo}</Texto>
+            )}
           </Animated.View>
           <View style={[styles.lado, { alignItems: 'flex-end' }]}>{derecha}</View>
         </View>
@@ -102,8 +117,8 @@ export function BotonArriba({ visible, onPress, sinPestanas }: { visible: boolea
   if (!visible) return null;
   return (
     <Animated.View
-      entering={ZoomIn.springify().damping(15).stiffness(220)}
-      exiting={ZoomOut.duration(150)}
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
       style={[styles.arriba, { bottom: insets.bottom + (sinPestanas ? 0 : BottomTabInset) + 16 }]}>
       <Pressable
         onPress={onPress}
@@ -134,6 +149,7 @@ export function BotonVolver({ onPress }: { onPress: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  tituloTocable: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   cabecera: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, overflow: 'hidden' },
   contenido: { width: '100%', alignSelf: 'center' },
   filaTitulo: { height: ALTO_TITULO, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
