@@ -97,19 +97,16 @@
   },
   "experiencias": {
     "titulo": "Sorties",
-    "subtitulo": "Avec Rio Diferente, agence de voyage locale.",
-    "traslado": {
-      "titulo": "Transfert sûr vers votre soirée",
-      "detalle": "Aller-retour depuis votre hôtel"
+    "subtitulo": "Pour le lendemain de la soirée.",
+    "todas": "Toutes",
+    "desde": "dès {{precio}}",
+    "soloRio": {
+      "titulo": "Pour l’instant, seulement à Rio",
+      "texto": "Bientôt à {{ciudad}}. En attendant, voici ce qu’il y a à Rio."
     },
-    "tours": {
-      "titulo": "Visites de Rio",
-      "detalle": "Christ Rédempteur, Pain de Sucre, favelas et plus"
-    },
-    "barco": {
-      "titulo": "Sorties en bateau",
-      "detalle": "Îles et plages aux eaux turquoise"
-    }
+    "error": "Impossible de charger les sorties. Vérifiez votre connexion.",
+    "firma": "Réservations avec Rio Diferente, opérateur local à Rio.",
+    "verTodo": "Tout voir sur riodiferente.com"
   },
   "evento": {
     "errorCarga": "Impossible de charger l’événement",
@@ -256,11 +253,13 @@
   },
   "ciudad": {
     "titulo": "Où êtes-vous ?",
-    "texto": "Nous vous montrons les événements et canaux de cette ville.",
+    "texto": "Nous vous montrons l’agenda de cette ville.",
     "cambiar": "Changer de ville",
     "pronto": "Bientôt",
     "eventos_one": "{{count}} événement",
-    "eventos_other": "{{count}} événements"
+    "eventos_other": "{{count}} événements",
+    "unidad_one": "événement",
+    "unidad_other": "événements"
   },
   "canales": {
     "titulo": "Canaux",

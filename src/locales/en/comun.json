@@ -97,19 +97,16 @@
   },
   "experiencias": {
     "titulo": "Experiences",
-    "subtitulo": "With Rio Diferente, a local tour operator.",
-    "traslado": {
-      "titulo": "Safe ride to your event",
-      "detalle": "Round trip from your hotel"
+    "subtitulo": "For the day after the party.",
+    "todas": "All",
+    "desde": "from {{precio}}",
+    "soloRio": {
+      "titulo": "Only in Rio for now",
+      "texto": "Coming soon to {{ciudad}}. In the meantime, here's what's on in Rio."
     },
-    "tours": {
-      "titulo": "Rio tours",
-      "detalle": "Christ the Redeemer, Sugarloaf, favelas and more"
-    },
-    "barco": {
-      "titulo": "Boat trips",
-      "detalle": "Islands and turquoise-water beaches"
-    }
+    "error": "Experiences couldn't load. Check your connection.",
+    "firma": "Booked with Rio Diferente, a local operator in Rio.",
+    "verTodo": "See everything on riodiferente.com"
   },
   "evento": {
     "errorCarga": "Couldn’t load this event",
@@ -256,11 +253,13 @@
   },
   "ciudad": {
     "titulo": "Where are you?",
-    "texto": "We'll show you events and channels in that city.",
+    "texto": "We'll show you what's on in that city.",
     "cambiar": "Change city",
     "pronto": "Coming soon",
     "eventos_one": "{{count}} event",
-    "eventos_other": "{{count}} events"
+    "eventos_other": "{{count}} events",
+    "unidad_one": "event",
+    "unidad_other": "events"
   },
   "canales": {
     "titulo": "Channels",

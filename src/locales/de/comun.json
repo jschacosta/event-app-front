@@ -97,19 +97,16 @@
   },
   "experiencias": {
     "titulo": "Erlebnisse",
-    "subtitulo": "Mit Rio Diferente, einem lokalen Reiseveranstalter.",
-    "traslado": {
-      "titulo": "Sichere Fahrt zu deinem Event",
-      "detalle": "Hin und zurück ab deinem Hotel"
+    "subtitulo": "Für den Tag nach der Party.",
+    "todas": "Alle",
+    "desde": "ab {{precio}}",
+    "soloRio": {
+      "titulo": "Vorerst nur in Rio",
+      "texto": "Bald auch in {{ciudad}}. Bis dahin: das gibt es in Rio."
     },
-    "tours": {
-      "titulo": "Touren in Rio",
-      "detalle": "Christus-Statue, Zuckerhut, Favelas und mehr"
-    },
-    "barco": {
-      "titulo": "Bootsausflüge",
-      "detalle": "Inseln und Strände mit türkisem Wasser"
-    }
+    "error": "Die Erlebnisse konnten nicht geladen werden. Prüfe deine Verbindung.",
+    "firma": "Buchung über Rio Diferente, einen lokalen Anbieter in Rio.",
+    "verTodo": "Alles auf riodiferente.com ansehen"
   },
   "evento": {
     "errorCarga": "Event konnte nicht geladen werden",
@@ -256,11 +253,13 @@
   },
   "ciudad": {
     "titulo": "Wo bist du?",
-    "texto": "Wir zeigen dir die Events und Kanäle in dieser Stadt.",
+    "texto": "Wir zeigen dir, was in dieser Stadt los ist.",
     "cambiar": "Stadt ändern",
     "pronto": "Bald verfügbar",
     "eventos_one": "{{count}} Event",
-    "eventos_other": "{{count}} Events"
+    "eventos_other": "{{count}} Events",
+    "unidad_one": "Event",
+    "unidad_other": "Events"
   },
   "canales": {
     "titulo": "Kanäle",

@@ -97,19 +97,16 @@
   },
   "experiencias": {
     "titulo": "Experiencias",
-    "subtitulo": "Con Rio Diferente, operador local de turismo.",
-    "traslado": {
-      "titulo": "Traslado seguro a tu evento",
-      "detalle": "Ida y vuelta desde tu hotel"
+    "subtitulo": "Para el día después de la fiesta.",
+    "todas": "Todas",
+    "desde": "desde {{precio}}",
+    "soloRio": {
+      "titulo": "Por ahora, solo en Rio",
+      "texto": "Pronto en {{ciudad}}. Mientras tanto, esto es lo que hay en Rio."
     },
-    "tours": {
-      "titulo": "Tours por Rio",
-      "detalle": "Cristo, Pan de Azúcar, favelas y más"
-    },
-    "barco": {
-      "titulo": "Paseos en barco",
-      "detalle": "Islas y playas de aguas turquesa"
-    }
+    "error": "No se pudieron cargar las experiencias. Revisa tu conexión.",
+    "firma": "Reservas con Rio Diferente, operador local en Rio.",
+    "verTodo": "Ver todo en riodiferente.com"
   },
   "evento": {
     "errorCarga": "No se pudo cargar el evento",
@@ -256,11 +253,13 @@
   },
   "ciudad": {
     "titulo": "¿Dónde estás?",
-    "texto": "Te mostramos los eventos y canales de esa ciudad.",
+    "texto": "Te mostramos la agenda de esa ciudad.",
     "cambiar": "Cambiar ciudad",
     "pronto": "Muy pronto",
     "eventos_one": "{{count}} evento",
-    "eventos_other": "{{count}} eventos"
+    "eventos_other": "{{count}} eventos",
+    "unidad_one": "evento",
+    "unidad_other": "eventos"
   },
   "canales": {
     "titulo": "Canales",
