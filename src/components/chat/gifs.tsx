@@ -96,14 +96,15 @@ export const GrillaGifs = memo(function GrillaGifs({ gifs, ancho, onElegir, onFi
   gifs: (Gif & { id: string })[]; ancho: number; onElegir: (g: Gif) => void; onFinal: () => void; cargando: boolean; abajo?: number;
 }) {
   const t = useTheme();
-  const col = (ancho - 18) / 2;
-  const columnas: { g: Gif & { id: string }; alto: number }[][] = [[], []];
-  const altos = [0, 0];
+  const n = ancho >= 340 ? 3 : 2;
+  const col = (ancho - 12 - 4 * (n - 1)) / n;
+  const columnas: { g: Gif & { id: string }; alto: number }[][] = Array.from({ length: n }, () => []);
+  const altos = Array(n).fill(0) as number[];
   for (const g of gifs) {
-    const alto = Math.max(70, Math.min(260, (col * g.alto) / g.ancho));
-    const i = altos[0] <= altos[1] ? 0 : 1;
+    const alto = Math.max(60, Math.min(col * 1.6, (col * g.alto) / g.ancho));
+    const i = altos.indexOf(Math.min(...altos));
     columnas[i].push({ g, alto });
-    altos[i] += alto + 6;
+    altos[i] += alto + 4;
   }
   const alDesplazar = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
@@ -113,7 +114,7 @@ export const GrillaGifs = memo(function GrillaGifs({ gifs, ancho, onElegir, onFi
     <ScrollView onScroll={alDesplazar} scrollEventThrottle={100} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag"
       contentContainerStyle={[styles.muro, { paddingBottom: abajo + 8 }]}>
       {columnas.map((c, i) => (
-        <View key={i} style={{ width: col, gap: 6 }}>
+        <View key={i} style={{ width: col, gap: 4 }}>
           {c.map(({ g, alto }) => (
             <Pressable
               key={g.id}
@@ -121,7 +122,7 @@ export const GrillaGifs = memo(function GrillaGifs({ gifs, ancho, onElegir, onFi
                 if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                 onElegir(g);
               }}
-              style={({ pressed }) => [{ width: col, height: alto, borderRadius: 10, overflow: 'hidden', backgroundColor: t.backgroundElement }, pressed && { opacity: 0.7 }]}>
+              style={({ pressed }) => [{ width: col, height: alto, borderRadius: 6, overflow: 'hidden', backgroundColor: t.backgroundElement }, pressed && { opacity: 0.7 }]}>
               <Image source={{ uri: g.preview }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} cachePolicy="memory-disk" recyclingKey={g.id} />
             </Pressable>
           ))}
@@ -142,13 +143,11 @@ export function PestanaGifs({ ancho, onElegir }: { ancho: number; onElegir: (g: 
   const { gifs, cargando, error, mas } = useGifs(categoria);
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.cabeza}>
-        <Pressable onPress={() => setBuscando(true)} style={[styles.buscar, { backgroundColor: t.backgroundElement }]} accessibilityRole="search">
-          <Icono nombre="magnifyingglass" tamano={15} color={t.textSecondary} />
-          <Text style={[styles.buscarTexto, { color: t.textSecondary }]}>{tr('expresion.buscarGif')}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filaChips} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="always">
+        <Pressable onPress={() => setBuscando(true)} style={[styles.chip, styles.buscar, { backgroundColor: t.backgroundElement }]} accessibilityRole="search" accessibilityLabel={tr('expresion.buscarGif')}>
+          <Icono nombre="magnifyingglass" tamano={14} color={t.text} />
+          <Text style={[styles.chipTexto, { color: t.text }]}>{tr('comun.buscar')}</Text>
         </Pressable>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="always">
         {['', ...categorias].map((c) => (
           <Pressable
             key={c || 'tendencias'}
@@ -211,11 +210,10 @@ function BuscadorGifs({ visible, onCerrar, onElegir }: { visible: boolean; onCer
 const styles = StyleSheet.create({
   muro: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 6, paddingTop: 4 },
   cargando: { position: 'absolute', bottom: 8, alignSelf: 'center', left: 0, right: 0 },
-  cabeza: { paddingHorizontal: 8, paddingTop: 6 },
-  buscar: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, borderRadius: 10, paddingHorizontal: 10 },
-  buscarTexto: { fontSize: 15, fontFamily: fuenteWeb },
-  chips: { gap: 6, paddingHorizontal: 8, paddingVertical: 8 },
-  chip: { height: 28, paddingHorizontal: 12, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  filaChips: { flexGrow: 0, flexShrink: 0 },
+  buscar: { flexDirection: 'row', gap: 5, paddingLeft: 10 },
+  chips: { gap: 6, paddingHorizontal: 8, paddingVertical: 8, alignItems: 'center' },
+  chip: { height: 30, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   chipTexto: { fontSize: 13, fontWeight: '600', fontFamily: fuenteWeb },
   vacio: { padding: 24, fontSize: 14, textAlign: 'center' },
   pantalla: { flex: 1 },

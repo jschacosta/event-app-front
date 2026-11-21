@@ -92,7 +92,8 @@ export function CapaVuelos({ vuelos, onFin }: { vuelos: Vuelo[]; onFin: (n: numb
     <View
       ref={ref}
       pointerEvents="none"
-      style={StyleSheet.absoluteFill}
+      // En Android lo que tiene sombra (elevation) se dibuja encima aunque vaya antes: la capa va al frente.
+      style={[StyleSheet.absoluteFill, { zIndex: 1000, elevation: 1000 }]}
       onLayout={() => ref.current?.measureInWindow((x, y) => setOrigen({ x, y }))}>
       {vuelos.map((v) => <UnVuelo key={v.n} vuelo={v} origen={origen} onFin={onFin} />)}
     </View>

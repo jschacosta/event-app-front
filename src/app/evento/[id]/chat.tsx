@@ -5,7 +5,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator, BackHandler, FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, BackHandler, FlatList, Keyboard, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions,
   type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 import { useKeyboardHandler, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -60,9 +60,9 @@ const sePuedeEditar = (m: MensajeChat) => Date.now() - new Date(m.fecha).getTime
 const MAX_TEXTO = 500;
 // Alto del panel de emojis y stickers antes de conocer el del teclado (después se usa el del teclado).
 const ALTO_PANEL_INICIAL = Platform.OS === 'ios' ? 336 : 300;
-// Sticker sobre una "calcomanía" blanca; un emoji solo va más chico y sin fondo, para que no se confundan.
-const TAMANO_STICKER = 96;
-const TAMANO_EMOJI_SOLO = 56;
+// Sticker sin fondo, del tamaño de una foto chica; un emoji solo, apenas más grande que el texto.
+const TAMANO_STICKER = 80;
+const TAMANO_EMOJI_SOLO = 40;
 
 // Botones de formato que aparecen al seleccionar texto en el campo (como en Telegram).
 const BOTONES_FORMATO: { formato: Formato; letra: string; estilo: object }[] = [
@@ -245,11 +245,12 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
       {m.gif
         ? <Image source={{ uri: m.gif.url }} placeholder={{ uri: m.gif.preview }} style={[styles.gif, { aspectRatio: Math.max(0.5, Math.min(2, m.gif.ancho / m.gif.alto)) }]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         : m.sticker
-        ? <View style={styles.calcomania}><StickerAnimado emoji={m.texto} codigo={m.sticker} tamano={TAMANO_STICKER} /></View>
+        ? <StickerAnimado emoji={m.texto} codigo={m.sticker} tamano={TAMANO_STICKER} />
         : emojis!.length === 1
           ? <StickerAnimado emoji={emojis![0]} tamano={TAMANO_EMOJI_SOLO} />
           : <Text style={styles.emojisGrandes} allowFontScaling={false}>{emojis!.join('')}</Text>}
-      <HoraFlotante texto={horaTexto} pendiente={m.pendiente} />
+      {/* Sobre un emoji chico la hora lo taparía: va debajo. */}
+      {emojis ? <Text style={styles.horaSuelta}>{horaTexto}</Text> : <HoraFlotante texto={horaTexto} pendiente={m.pendiente} />}
     </Pressable>
   ) : (
     <Pressable
@@ -500,6 +501,10 @@ export default function ChatScreen() {
   const altoPanel = useSharedValue(ALTO_PANEL_INICIAL);
   const [altoPanelJs, setAltoPanelJs] = useState(ALTO_PANEL_INICIAL);
   const panelAbierto = useSharedValue(0);
+  // GIFs y stickers necesitan más espacio que los emojis: el panel crece hasta media pantalla.
+  const { height: altoVentana } = useWindowDimensions();
+  const extraPanel = useSharedValue(0);
+  const [extraPanelJs, setExtraPanelJs] = useState(0);
   const [panel, setPanel] = useState<ModoPanel | null>(null);
   const [modoPanel, setModoPanel] = useState<ModoPanel>('emojis');
   const panelRef = useRef<ModoPanel | null>(null);
@@ -529,12 +534,18 @@ export default function ChatScreen() {
   }, [panelAbierto]);
 
   const espacioInferior = useAnimatedStyle(() => ({
-    height: Math.max(-alturaTeclado.value, panelAbierto.value * altoPanel.value, insets.bottom),
+    height: Math.max(-alturaTeclado.value, panelAbierto.value * (altoPanel.value + extraPanel.value), insets.bottom),
   }));
 
+  const fijarModo = (m: ModoPanel) => {
+    setModoPanel(m);
+    const extra = m === 'emojis' ? 0 : Math.max(0, Math.round(altoVentana * 0.52) - altoPanelJs);
+    setExtraPanelJs(extra);
+    extraPanel.set(withTiming(extra, { duration: 220, easing: Easing.out(Easing.cubic) }));
+  };
   const abrirPanel = (m: ModoPanel) => {
     clearTimeout(cierrePanel.current);
-    setModoPanel(m);
+    fijarModo(m);
     setPanel(m);
     panelRef.current = m;
     const tecladoAbierto = -alturaTeclado.get() > 40;
@@ -1459,11 +1470,11 @@ export default function ChatScreen() {
           {/* Espacio del teclado y del panel: mide lo mismo que el teclado mientras entra y sale. */}
           <Animated.View style={[styles.espacioTeclado, espacioInferior]}>
             {panel && !silenciado && !soloLectura ? (
-              <View style={{ height: altoPanelJs, paddingBottom: insets.bottom, backgroundColor: t.bar }}>
+              <View style={{ height: altoPanelJs + extraPanelJs, paddingBottom: insets.bottom, backgroundColor: t.bar }}>
                 <PanelExpresion
-                  alto={altoPanelJs - insets.bottom}
+                  alto={altoPanelJs + extraPanelJs - insets.bottom}
                   modo={modoPanel}
-                  onModo={setModoPanel}
+                  onModo={fijarModo}
                   onEmoji={ponerEmoji}
                   onSticker={mandarSticker}
                   onGif={mandarGif}
@@ -1629,11 +1640,7 @@ function crearEstilos(C: ReturnType<typeof colores>) {
   burbujaOtro: { backgroundColor: C.burbujaOtro, borderRadius: 18, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, alignSelf: 'flex-start' },
   grandeMio: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   grandeOtro: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  emojisGrandes: { fontSize: 38, lineHeight: 46 },
-  calcomania: {
-    padding: 8, borderRadius: 26, backgroundColor: '#FFFFFF',
-    shadowColor: '#1B0A2B', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3,
-  },
+  emojisGrandes: { fontSize: 30, lineHeight: 38 },
   gif: { width: 230, maxHeight: 300, borderRadius: 16, backgroundColor: C.avatarVacio },
   avisoFila: { alignItems: 'center', marginVertical: 6 },
   aviso2: {
@@ -1645,6 +1652,7 @@ function crearEstilos(C: ReturnType<typeof colores>) {
     position: 'absolute', right: 2, bottom: 2, flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 6, height: 18, borderRadius: 9, backgroundColor: 'rgba(0,0,0,0.42)',
   },
+  horaSuelta: { fontSize: 11, color: C.secundario, fontFamily: fuente, marginTop: 1 },
   horaFlotanteTexto: { fontSize: 11, color: '#FFFFFF', fontFamily: fuente },
   resaltado: { transform: [{ scale: 1.03 }], opacity: 0.75 },
   textoMio: { color: C.sobreBurbujaMia, fontSize: 17, lineHeight: 22, fontFamily: fuente },
