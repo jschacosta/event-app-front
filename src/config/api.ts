@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 // Servidor de producción. Es el valor por defecto en las versiones instaladas (APK, Play):
 // las actualizaciones OTA se arman en el Mac con el .env local, que no trae EXPO_PUBLIC_API_URL,
 // y sin este valor la app quedaría apuntando a localhost.
-const PRODUCCION = 'https://event-app-back-production.up.railway.app';
+const PRODUCCION = 'https://bora-app.up.railway.app';
 
 // En desarrollo, el celular no entiende "localhost": se usa la IP del Mac
 // que Expo ya conoce (la misma desde donde se descarga la app).
