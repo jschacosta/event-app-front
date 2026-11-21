@@ -18,11 +18,12 @@ import { ControlVersion } from '@/components/version';
 SplashScreen.preventAutoHideAsync();
 
 // La primera vez que se abre la app (sin sesión) se muestra la bienvenida.
+// En la web no: quien llega por un link o un buscador va directo a la agenda (o a lo que abrió).
 function Guardia() {
   const { cargando, usuario, introVista } = useSesion();
   const segmentos = useSegments();
   useEffect(() => {
-    if (cargando || introVista === null) return;
+    if (Platform.OS === 'web' || cargando || introVista === null) return;
     // Desde la bienvenida se puede elegir la ciudad sin que vuelva a saltar a la bienvenida.
     if (!introVista && !usuario && segmentos[0] !== 'bienvenida' && segmentos[0] !== 'ciudad') router.replace('/bienvenida');
   }, [cargando, introVista, usuario, segmentos]);
