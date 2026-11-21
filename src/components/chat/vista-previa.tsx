@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { Bandera } from '@/components/bandera';
-import { Calcadao } from '@/components/calcadao';
+import { FondoDibujos } from '@/components/chat/fondo-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconoBora } from '@/components/iconos-bora';
@@ -54,7 +54,7 @@ export function useVistaCanal(eventoId: string | undefined, activo = true, sala 
 // Se conservan los parámetros para no tocar a quien lo usa.
 // Fondo del chat según la categoría del evento (como los fondos con dibujo de Telegram): un degradado
 // con los colores del género, fuerte arriba y que se apaga hacia abajo para que las burbujas se lean,
-// y encima las ondas del calçadão muy suaves.
+// y encima los dibujitos del género (pandeiros en Samba, parlantes en Funk…).
 export function FondoEvento({ generos }: { imagen?: string | null; generos?: string[] }) {
   const t = useTheme();
   const oscuro = useColorScheme() === 'dark';
@@ -71,7 +71,7 @@ export function FondoEvento({ generos }: { imagen?: string | null; generos?: str
         end={{ x: 0.6, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <Calcadao color={oscuro ? 'rgba(255,255,255,0.045)' : conAlfa(c2, 0.07)} escala={0.9} />
+      <FondoDibujos genero={generos?.[0]} color={oscuro ? conAlfa(c1, 0.2) : conAlfa(c2, 0.18)} />
     </View>
   );
 }

@@ -1448,21 +1448,20 @@ export default function ChatScreen() {
                       </Pressable>
                     ) : null}
                   </View>
-                  {hayTexto || editando ? (
-                    <Animated.View entering={ZoomIn.duration(140)} exiting={ZoomOut.duration(120)}>
+                  {/* Como Telegram: el botón redondo queda siempre a la derecha (sin texto, apagado). */}
+                  <View>
                       <Pressable
                         accessibilityLabel={tr('chat.enviar')}
                         onPress={mandar}
                         disabled={!hayTexto || enviandoEdicion || (esperando && !editando)}
-                        style={({ pressed }) => [styles.botonEnviar, (!hayTexto || (esperando && !editando)) && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.92 }] }]}>
+                        style={({ pressed }) => [styles.botonEnviar, (!hayTexto || (esperando && !editando)) && { opacity: 0.45 }, pressed && { transform: [{ scale: 0.92 }] }]}>
                         {editando
                           ? <Icono nombre="checkmark" tamano={17} color={t.onAccent} peso="bold" />
                           : esperando
                             ? <Text style={styles.cuentaLento}>{faltan}</Text>
                             : <Icono nombre="arrow.up" tamano={17} color={t.onAccent} peso="bold" />}
                       </Pressable>
-                    </Animated.View>
-                  ) : null}
+                  </View>
                 </View>
               </>
             )}
@@ -1735,7 +1734,7 @@ function crearEstilos(C: ReturnType<typeof colores>) {
     ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : {}),
   },
   botonPanel: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  botonEnviar: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.acento, alignItems: 'center', justifyContent: 'center' },
+  botonEnviar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.acento, alignItems: 'center', justifyContent: 'center' },
 });
 }
 
