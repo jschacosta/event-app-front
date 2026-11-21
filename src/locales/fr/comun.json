@@ -932,6 +932,7 @@
     "distancia": "à {{d}}",
     "sinPermisoTitulo": "Bora n’a pas accès à votre position",
     "sinPermisoTexto": "Pour voir ce qui se passe près de vous, autorisez la localisation dans les réglages du téléphone. Elle n’est utilisée que lorsque Bora est ouvert.",
+    "sinPermisoTextoWeb": "Pour voir ce qui se passe près de vous, autorisez la localisation dans votre navigateur : touchez le cadenas à côté de l’adresse de la page et activez Position.",
     "abrirAjustes": "Ouvrir les réglages",
     "sinGpsTitulo": "Impossible de trouver votre position",
     "sinGpsTexto": "Vérifiez que la localisation est activée, puis réessayez."

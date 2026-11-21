@@ -932,6 +932,7 @@
     "distancia": "a {{d}}",
     "sinPermisoTitulo": "O Bora não tem acesso à sua localização",
     "sinPermisoTexto": "Para ver o que está perto, permita a localização nos ajustes do celular. Ela só é usada enquanto o Bora está aberto.",
+    "sinPermisoTextoWeb": "Para ver o que está perto de você, permita a localização no navegador: toque no cadeado ao lado do endereço da página e ative Localização.",
     "abrirAjustes": "Abrir ajustes",
     "sinGpsTitulo": "Não conseguimos ver onde você está",
     "sinGpsTexto": "Confira se a localização do celular está ligada e tente de novo."

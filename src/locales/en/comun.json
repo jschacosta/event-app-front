@@ -932,6 +932,7 @@
     "distancia": "{{d}} away",
     "sinPermisoTitulo": "Bora can't access your location",
     "sinPermisoTexto": "To see what's near you, allow location in your phone settings. It's only used while Bora is open.",
+    "sinPermisoTextoWeb": "To see what's near you, allow location in your browser: tap the padlock next to the page address and turn on Location.",
     "abrirAjustes": "Open settings",
     "sinGpsTitulo": "We couldn't find where you are",
     "sinGpsTexto": "Check that location is turned on and try again."

@@ -932,6 +932,7 @@
     "distancia": "a {{d}}",
     "sinPermisoTitulo": "Bora no tiene acceso a tu ubicación",
     "sinPermisoTexto": "Para ver lo que tienes cerca, permite la ubicación en los ajustes del teléfono. Solo se usa mientras tienes Bora abierta.",
+    "sinPermisoTextoWeb": "Para ver lo que tienes cerca, permite la ubicación en el navegador: toca el candado junto a la dirección de la página y activa Ubicación.",
     "abrirAjustes": "Abrir ajustes",
     "sinGpsTitulo": "No pudimos ver dónde estás",
     "sinGpsTexto": "Revisa que la ubicación del teléfono esté encendida y vuelve a intentarlo."

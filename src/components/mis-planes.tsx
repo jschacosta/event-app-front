@@ -17,6 +17,7 @@ import type { Evento } from '@/lib/api';
 import { claveDia, diasHastaClave, fechaDeClave, hora } from '@/lib/fechas';
 import { precargarEvento } from '@/lib/precarga';
 import { usePlanes } from '@/lib/planes';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 const VISIBLES = 5; // la entrada + 4 filas
 const TALON = 88;
@@ -89,7 +90,7 @@ function Entrada({ evento, ahora }: { evento: Evento; ahora: number }) {
         <Corte fondo={t.background} punto={tinta} />
       </Pressable>
       <Texto v="pie" secundario style={{ fontWeight: '600' }}>
-        {evento.chatAbierto ? `${et.cuando(evento, ahora)} · ${tr('agenda.canalAbierto')}` : et.cuando(evento, ahora)}
+        {evento.chatAbierto && CHAT_ACTIVO ? `${et.cuando(evento, ahora)} · ${tr('agenda.canalAbierto')}` : et.cuando(evento, ahora)}
       </Texto>
     </View>
   );

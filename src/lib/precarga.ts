@@ -6,6 +6,7 @@
 // Las fichas de eventos quedan además en el teléfono: sin señal se abren igual (las de "Mis planes" siempre).
 import { api, type Evento } from '@/lib/api';
 import { guardarEnTelefono, leerDelTelefono } from '@/lib/disco';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 type Guardada = { fecha: number; datos: unknown };
 const respuestas = new Map<string, Guardada>();
@@ -127,7 +128,7 @@ export function precargarEvento(e: Pick<Evento, 'id' | 'chatAbierto' | 'serie'>)
       }
     })
     .catch(ignorar);
-  if (e.chatAbierto) pedir(`/events/${e.id}/canal`).catch(ignorar);
+  if (e.chatAbierto && CHAT_ACTIVO) pedir(`/events/${e.id}/canal`).catch(ignorar);
 }
 
 // Al cerrar sesión: se borra lo que era de la cuenta (queda lo que se ve sin sesión).

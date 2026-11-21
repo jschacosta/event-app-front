@@ -35,6 +35,7 @@ import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fech
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
 import { avisar } from '@/lib/avisos';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 // Ficha de un evento, como un afiche: el título va sobre la foto. Debajo, los datos en dos columnas
 // (cuándo / dónde), "¿Vas?" compacto y quién va. En fiestas que se repiten, además: "Lo que dicen"
@@ -319,7 +320,7 @@ export default function EventoScreen() {
           {/* Lo de más abajo se monta al terminar la animación de entrada: la pantalla abre sin esperar a dibujarlo. */}
           {montarResto ? (
             <>
-          {evento.chatAbierto ? (
+          {evento.chatAbierto && CHAT_ACTIVO ? (
             <View style={{ paddingTop: 14 }}>
               <AdelantoCanal eventoId={evento.id} onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: evento.id } })} />
             </View>
@@ -388,13 +389,19 @@ export default function EventoScreen() {
         <BotonFoto icono="square.and.arrow.up" etiqueta={tr('comun.compartir')} onPress={() => compartirEvento(evento.id, `${evento.titulo} · ${cuando} ${hora(evento.inicio)} · ${lugar}`)} />
       </View>
 
+      {CHAT_ACTIVO || evento.linkEntradas || (aqui.abierto && token) ? (
       <View style={[styles.barraInferior, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: t.background, borderTopColor: t.separator }]}>
         <View style={{ flex: 1 }}>
-          <BotonPrincipal
-            texto={evento.chatAbierto ? tr('evento.entrarChat') : tr('evento.chatAbre', { dia: diaCorto(evento.chatAbreEn) })}
-            deshabilitado={!evento.chatAbierto}
-            onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: evento.id } })}
-          />
+          {CHAT_ACTIVO ? (
+            <BotonPrincipal
+              texto={evento.chatAbierto ? tr('evento.entrarChat') : tr('evento.chatAbre', { dia: diaCorto(evento.chatAbreEn) })}
+              deshabilitado={!evento.chatAbierto}
+              onPress={() => router.push({ pathname: '/evento/[id]/chat', params: { id: evento.id } })}
+            />
+          ) : evento.linkEntradas ? (
+            // En la web, sin chat, lo principal es llegar a las entradas.
+            <BotonPrincipal texto={tr('evento.comprarEntradas')} onPress={() => WebBrowser.openBrowserAsync(evento.linkEntradas!)} />
+          ) : null}
         </View>
         {aqui.abierto && token ? (
           <Pressable
@@ -410,6 +417,7 @@ export default function EventoScreen() {
           </Pressable>
         ) : null}
       </View>
+      ) : null}
       <HojaResponder
         visible={respondiendo}
         datos={opiniones.datos}

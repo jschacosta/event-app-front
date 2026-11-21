@@ -10,17 +10,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Texto } from '@/components/ui';
 import { BottomTabInset, FuenteTitulo } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 import { textoCuenta, useSincronizarNoLeidos } from '@/lib/no-leidos';
 
 // Barra de Bora: solo palabras, en la misma letra condensada del line-up de la agenda.
 // La pestaña activa va en tinta con una barra morada arriba que crece al elegirla;
 // los no leídos van como un número chico pegado a la palabra.
-const PESTANAS = [
+const PESTANAS = ([
   { name: 'index', href: '/', clave: 'tabs.agenda' },
   { name: 'chats', href: '/chats', clave: 'tabs.chats' },
   { name: 'experiencias', href: '/experiencias', clave: 'tabs.experiencias' },
   { name: 'perfil', href: '/perfil', clave: 'tabs.perfil' },
-] as const;
+] as const).filter((p) => CHAT_ACTIVO || p.name !== 'chats');
 
 // En React 19 la ref llega como prop normal, así que no hace falta forwardRef.
 function Boton({ isFocused, texto, cuenta, onPress, ...props }: TabTriggerSlotProps & { texto: string; cuenta?: number }) {

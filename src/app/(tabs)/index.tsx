@@ -31,13 +31,14 @@ import { colorEtiquetaGenero, GENEROS, nombreGenero } from '@/lib/generos';
 import { precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
 import { distancia, pedirPosicion, textoDistancia, usePosicion, type Posicion } from '@/lib/ubicacion';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 // Agenda de Bora, armada como un line-up: el número del día va grande en su propia columna,
 // con una línea que une los eventos de ese día, y cada fila dice qué, a qué hora, dónde, cuánto y quién va.
 // Arriba: ciudad, tus tarjetas de géneros, las fechas y una tira con TODO lo que está en vivo ahora.
 const POR_DIA = 6;
-// Mapa y "Cerca de mí": solo en el teléfono (la web no tiene mapa nativo ni GPS confiable).
-const CON_MAPA = Platform.OS !== 'web';
+// Mapa y "Cerca de mí": en el teléfono y en la web (ahí con maplibre-gl y la ubicación del navegador).
+const CON_MAPA = true;
 
 function abrir(e: Evento) {
   router.push({ pathname: '/evento/[id]', params: { id: e.id } });
@@ -111,7 +112,7 @@ const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia, metr
               <Texto v="mini" style={{ fontWeight: '700' }}>{tr('agenda.van', { count: a.van })}</Texto>
             </View>
           ) : null}
-          {evento.chatAbierto ? (
+          {evento.chatAbierto && CHAT_ACTIVO ? (
             <Texto v="mini" style={{ fontWeight: '700', color: t.accentText }}>{tr('agenda.canalAbierto')}</Texto>
           ) : null}
         </View>

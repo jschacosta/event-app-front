@@ -23,6 +23,7 @@ import { cambiarIdioma, IDIOMAS_APP } from '@/lib/i18n';
 import { nombreInteres } from '@/lib/intereses';
 import { nombrePais } from '@/lib/paises';
 import { useCiudad } from '@/lib/ciudades';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).easing(Easing.out(Easing.cubic));
 
@@ -151,9 +152,10 @@ function PieApp() {
 // ---------- Sin cuenta ----------
 // Lo mismo que la bienvenida, en los colores del tema: qué pasa esta noche en tu ciudad (eventos reales,
 // con quién va), lo que se desbloquea con la cuenta y, abajo, los ajustes que no la necesitan.
+// En la web no hay chat: en vez del canal se cuenta lo del mapa.
 const PUNTOS_SIN_CUENTA = [
   { icono: 'entrada', clave: 'p1' },
-  { icono: 'canal', clave: 'p2' },
+  CHAT_ACTIVO ? { icono: 'canal' as const, clave: 'p2' as const } : { icono: 'mapa' as const, clave: 'p2Web' as const },
   { icono: 'grupo', clave: 'p3' },
 ] as const;
 

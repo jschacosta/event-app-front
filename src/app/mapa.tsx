@@ -16,7 +16,7 @@ import { FuenteTitulo } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
 import type { Evento } from '@/lib/api';
-import { asegurarBarrio, asegurarDia, asegurarGenero, useAgenda } from '@/lib/agenda';
+import { agendaDelTelefono, agendaReciente, asegurarBarrio, asegurarDia, asegurarGenero, cargarInicio, useAgenda } from '@/lib/agenda';
 import { useCiudad } from '@/lib/ciudades';
 import { claveDia, claveHoy, claveManana, diaCorto, fechaDeClave, hora, sumarDias } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
@@ -106,6 +106,13 @@ export default function MapaScreen() {
   const [rangoElegido, setRango] = useState<Rango | null>(params.dia === claveHoy() ? 'hoy' : params.dia === claveManana() ? 'manana' : diaPuntual);
   const [elegidos, setElegidos] = useState<string[]>([]);
   const [buscando, setBuscando] = useState(false);
+
+  // Si se entra directo al mapa (un link en la web), la agenda todavía no está: se baja aquí.
+  useEffect(() => {
+    if (agendaReciente(ciudad.id, token ?? null)) return;
+    agendaDelTelefono(ciudad.id).catch(() => {});
+    cargarInicio(ciudad.id, token ?? null).catch(() => {});
+  }, [ciudad.id, token]);
 
   // Lo que falte de lo elegido se baja (la Agenda solo trae la primera semana de entrada).
   useEffect(() => {

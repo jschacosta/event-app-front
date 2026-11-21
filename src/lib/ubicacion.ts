@@ -3,7 +3,7 @@
 // el teléfono. La comparten la Agenda y el mapa, así no se pregunta dos veces.
 import * as Location from 'expo-location';
 import { useSyncExternalStore } from 'react';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 import { abrirDialogo } from '@/lib/dialogo';
 import i18n from '@/lib/i18n';
@@ -35,8 +35,9 @@ export async function pedirPosicion(): Promise<Posicion | null> {
       abrirDialogo({
         icono: 'pin',
         titulo: tr('cerca.sinPermisoTitulo'),
-        texto: tr('cerca.sinPermisoTexto'),
-        botones: [
+        // En la web no hay ajustes que abrir: el permiso se cambia en el candado del navegador.
+        texto: tr(Platform.OS === 'web' ? 'cerca.sinPermisoTextoWeb' : 'cerca.sinPermisoTexto'),
+        botones: Platform.OS === 'web' ? [{ texto: tr('comun.entendido'), tipo: 'principal' }] : [
           { texto: tr('cerca.abrirAjustes'), tipo: 'principal', onPress: () => { Linking.openSettings().catch(() => {}); } },
           { texto: tr('comun.ahoraNo') },
         ],

@@ -12,6 +12,7 @@ import { iconoGenero, nombreGenero } from '@/lib/generos';
 import type { Grupo } from '@/lib/series';
 import { precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
+import { CHAT_ACTIVO } from '@/lib/funciones';
 
 export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Evento; repeticiones?: number; soloHora?: boolean }) {
   const t = useTheme();
@@ -34,7 +35,7 @@ export function FilaEvento({ evento, repeticiones = 1, soloHora }: { evento: Eve
         <Texto v="cuerpoFuerte" numberOfLines={1}>{evento.titulo}</Texto>
         <Texto v="pie" secundario numberOfLines={1}>{detalle}</Texto>
         <View style={styles.generos}>
-          {evento.chatAbierto && (
+          {evento.chatAbierto && CHAT_ACTIVO && (
             <View style={styles.etiqueta}>
               <View style={[styles.puntoVivo, { backgroundColor: t.live }]} />
               <Texto v="mini" secundario style={{ fontWeight: '600' }}>{tr('agenda.chatAbierto')}</Texto>

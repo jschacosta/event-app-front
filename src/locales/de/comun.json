@@ -932,6 +932,7 @@
     "distancia": "{{d}} entfernt",
     "sinPermisoTitulo": "Bora hat keinen Zugriff auf deinen Standort",
     "sinPermisoTexto": "Um zu sehen, was in deiner Nähe ist, erlaube den Standort in den Einstellungen deines Handys. Er wird nur genutzt, während Bora offen ist.",
+    "sinPermisoTextoWeb": "Damit du siehst, was in deiner Nähe los ist, erlaube den Standort im Browser: Tippe auf das Schloss neben der Seitenadresse und aktiviere Standort.",
     "abrirAjustes": "Einstellungen öffnen",
     "sinGpsTitulo": "Wir konnten deinen Standort nicht finden",
     "sinGpsTexto": "Prüfe, ob der Standort eingeschaltet ist, und versuch es noch mal."
