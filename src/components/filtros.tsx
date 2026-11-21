@@ -86,7 +86,7 @@ export function BarraBusqueda({ valor, onCambio, placeholder, autoFocus, onFocus
 // ---------- Fechas: píldoras "Todo · Hoy · Mañana · Vie 20…" ----------
 // Una sola fila de texto (antes eran 14 cuadros con número grande que competían con los géneros).
 // Los días sin eventos no se muestran; el ícono de calendario permite elegir cualquier fecha.
-function Pildora({ texto, elegida, onPress, icono }: { texto?: string; elegida: boolean; onPress: () => void; icono?: 'calendar' }) {
+export function Pildora({ texto, elegida, onPress, icono }: { texto?: string; elegida: boolean; onPress: () => void; icono?: 'calendar' }) {
   const t = useTheme();
   return (
     <Pressable

@@ -37,6 +37,7 @@
   "tabs": {
     "agenda": "Agenda",
     "chats": "Canaux",
+    "hilos": "Discussions",
     "experiencias": "Sorties",
     "perfil": "Profil"
   },
@@ -943,5 +944,31 @@
     "bloqueada": "Vous avez bloqué cette personne : vous ne voyez plus vos messages respectifs.",
     "error": "Impossible de charger ce profil. Vérifiez votre connexion.",
     "sinInfo": "{{nombre}} n’a pas encore ajouté de centres d’intérêt ni de voyages."
+  },
+  "hilos": {
+    "titulo": "Discussions de {{ciudad}}",
+    "subtitulo": "Ce qu’il faut savoir avant de sortir, écrit par Bora et complété par la communauté.",
+    "todo": "Tout",
+    "guiaBora": "Guide Bora",
+    "actualizada": "Mis à jour le {{fecha}}",
+    "fuentes": "Sources",
+    "fiestas": "Prochaines soirées liées",
+    "verAgenda": "Voir l’agenda",
+    "conversacion": "Ce qu’en disent les gens",
+    "leerEn": "Lire en",
+    "vacio": "Il n’y a pas encore de guides pour cette ville. En attendant, consultez l’agenda.",
+    "otras": "Autres guides",
+    "noEncontrada": "Ce guide n’est plus disponible.",
+    "temas": {
+      "seguridad": "Sécurité",
+      "transporte": "Transports",
+      "entradas": "Billets",
+      "ropa": "Que porter",
+      "plata": "Argent",
+      "samba": "Samba",
+      "funk": "Funk",
+      "barrios": "Quartiers",
+      "fiestas": "Soirées"
+    }
   }
 }

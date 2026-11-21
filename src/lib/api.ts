@@ -72,6 +72,7 @@ export type Autor = {
   id: string; nombreVisible: string; pais: string | null; edad?: number | null; foto: string | null; admin?: boolean; moderador?: boolean;
   edadVerificada?: boolean; instagram?: string | null;
   eliminada?: boolean; // la persona eliminó su cuenta: se muestra "Cuenta eliminada"
+  oficial?: boolean; // cuenta oficial de Bora (guías de la ciudad)
 };
 
 // Vista previa del canal General para quien todavía no entra (GET /events/:id/canal).

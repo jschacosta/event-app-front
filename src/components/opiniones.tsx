@@ -394,6 +394,18 @@ export function nuevoPuntaje(puntaje: number, antes: number, despues: number) {
 export function Autoria({ autor, fue, creado }: { autor: Autor | null; fue: boolean; creado: string }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
+  // La cuenta oficial no es una persona: va con el sello de Bora, nunca con bandera ni "fue".
+  if (autor?.oficial) {
+    return (
+      <View style={styles.autoria}>
+        <View style={[styles.selloBora, { backgroundColor: t.accent }]}>
+          <Texto style={[styles.selloTexto, { color: t.onAccent }]}>b!</Texto>
+        </View>
+        <Texto v="pie" style={{ fontWeight: '700' }} numberOfLines={1}>{tr('hilos.guiaBora')}</Texto>
+        <Texto v="pie" secundario>{haceTiempo(creado)}</Texto>
+      </View>
+    );
+  }
   return (
     <View style={styles.autoria}>
       {autor?.pais ? <Bandera codigo={autor.pais} alto={10} /> : null}
@@ -569,6 +581,8 @@ const styles = StyleSheet.create({
   votosFila: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   puntaje: { fontFamily: FuenteTitulo.extra, fontSize: 16, lineHeight: 18, minWidth: 14, textAlign: 'center' },
   autoria: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 },
+  selloBora: { width: 18, height: 18, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  selloTexto: { fontFamily: FuenteTitulo.cursiva, fontSize: 12, lineHeight: 14, paddingRight: 1 },
   fue: { height: 15, paddingHorizontal: 4, borderRadius: 3, justifyContent: 'center' },
   filaHilo: { flexDirection: 'row', gap: 8, paddingVertical: 12, paddingRight: 4, marginHorizontal: -8, paddingLeft: 4, borderRadius: 6 },
   pieHilo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 3 },

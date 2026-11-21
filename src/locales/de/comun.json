@@ -37,6 +37,7 @@
   "tabs": {
     "agenda": "Events",
     "chats": "Kanäle",
+    "hilos": "Threads",
     "experiencias": "Erlebnisse",
     "perfil": "Profil"
   },
@@ -943,5 +944,31 @@
     "bloqueada": "Du hast diese Person blockiert: Ihr seht eure Nachrichten nicht mehr.",
     "error": "Das Profil konnte nicht geladen werden. Prüf deine Verbindung.",
     "sinInfo": "{{nombre}} hat noch keine Interessen oder Reisen hinzugefügt."
+  },
+  "hilos": {
+    "titulo": "Threads aus {{ciudad}}",
+    "subtitulo": "Was du vor dem Ausgehen wissen solltest, geschrieben von Bora und beantwortet von der Community.",
+    "todo": "Alle",
+    "guiaBora": "Bora-Guide",
+    "actualizada": "Aktualisiert am {{fecha}}",
+    "fuentes": "Quellen",
+    "fiestas": "Kommende passende Partys",
+    "verAgenda": "Zur Agenda",
+    "conversacion": "Was die Leute sagen",
+    "leerEn": "Lesen auf",
+    "vacio": "Für diese Stadt gibt es noch keine Guides. Schau solange in die Agenda.",
+    "otras": "Weitere Guides",
+    "noEncontrada": "Dieser Guide ist nicht mehr verfügbar.",
+    "temas": {
+      "seguridad": "Sicherheit",
+      "transporte": "Unterwegs",
+      "entradas": "Tickets",
+      "ropa": "Was anziehen",
+      "plata": "Geld",
+      "samba": "Samba",
+      "funk": "Funk",
+      "barrios": "Viertel",
+      "fiestas": "Partys"
+    }
   }
 }

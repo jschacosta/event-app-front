@@ -1,0 +1,18 @@
+# Vuelve a publicar la web de Bora una vez al día, para que las guías y hilos nuevos
+# tengan su página para Google (scripts/paginas-seo.mjs corre en cada publicación de Vercel).
+# Necesita el secreto VERCEL_DEPLOY_HOOK: Vercel → proyecto → Settings → Git → Deploy Hooks.
+name: Web diaria
+on:
+  schedule:
+    - cron: "0 9 * * *" # 06:00 en Rio
+  workflow_dispatch:
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pedir una publicación nueva a Vercel
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "Falta el secreto VERCEL_DEPLOY_HOOK"; exit 0; fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Publicación pedida"

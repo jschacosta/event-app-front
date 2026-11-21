@@ -37,6 +37,7 @@
   "tabs": {
     "agenda": "Agenda",
     "chats": "Canais",
+    "hilos": "Tópicos",
     "experiencias": "Experiências",
     "perfil": "Perfil"
   },
@@ -943,5 +944,31 @@
     "bloqueada": "Você bloqueou esta pessoa: vocês não veem as mensagens um do outro.",
     "error": "Não deu para carregar o perfil. Confira sua conexão.",
     "sinInfo": "{{nombre}} ainda não adicionou interesses nem viagens."
+  },
+  "hilos": {
+    "titulo": "Tópicos do {{ciudad}}",
+    "subtitulo": "O que vale saber antes de sair, escrito pelo Bora e respondido pela galera.",
+    "todo": "Tudo",
+    "guiaBora": "Guia do Bora",
+    "actualizada": "Atualizado em {{fecha}}",
+    "fuentes": "Fontes",
+    "fiestas": "Próximas festas relacionadas",
+    "verAgenda": "Ver a agenda",
+    "conversacion": "O que a galera diz",
+    "leerEn": "Ler em",
+    "vacio": "Ainda não há guias para esta cidade. Enquanto isso, veja a agenda.",
+    "otras": "Mais guias",
+    "noEncontrada": "Este guia não está mais disponível.",
+    "temas": {
+      "seguridad": "Segurança",
+      "transporte": "Transporte",
+      "entradas": "Ingressos",
+      "ropa": "O que vestir",
+      "plata": "Dinheiro",
+      "samba": "Samba",
+      "funk": "Funk",
+      "barrios": "Bairros",
+      "fiestas": "Festas"
+    }
   }
 }

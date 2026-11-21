@@ -16,12 +16,14 @@ import { textoCuenta, useSincronizarNoLeidos } from '@/lib/no-leidos';
 // Barra de Bora: solo palabras, en la misma letra condensada del line-up de la agenda.
 // La pestaña activa va en tinta con una barra morada arriba que crece al elegirla;
 // los no leídos van como un número chico pegado a la palabra.
+// Con chat (la app): Canales. Sin chat (la web): Hilos, las guías de la ciudad.
 const PESTANAS = ([
   { name: 'index', href: '/', clave: 'tabs.agenda' },
   { name: 'chats', href: '/chats', clave: 'tabs.chats' },
+  { name: 'hilos', href: '/hilos', clave: 'tabs.hilos' },
   { name: 'experiencias', href: '/experiencias', clave: 'tabs.experiencias' },
   { name: 'perfil', href: '/perfil', clave: 'tabs.perfil' },
-] as const).filter((p) => CHAT_ACTIVO || p.name !== 'chats');
+] as const).filter((p) => (CHAT_ACTIVO ? p.name !== 'hilos' : p.name !== 'chats'));
 
 // En React 19 la ref llega como prop normal, así que no hace falta forwardRef.
 function Boton({ isFocused, texto, cuenta, onPress, ...props }: TabTriggerSlotProps & { texto: string; cuenta?: number }) {

@@ -37,6 +37,7 @@
   "tabs": {
     "agenda": "Agenda",
     "chats": "Canales",
+    "hilos": "Hilos",
     "experiencias": "Experiencias",
     "perfil": "Perfil"
   },
@@ -943,5 +944,31 @@
     "bloqueada": "Bloqueaste a esta persona: no ves sus mensajes ni ella los tuyos.",
     "error": "No pudimos cargar el perfil. Revisa tu conexión.",
     "sinInfo": "{{nombre}} todavía no agregó intereses ni viajes a su perfil."
+  },
+  "hilos": {
+    "titulo": "Hilos de {{ciudad}}",
+    "subtitulo": "Lo que conviene saber antes de salir, escrito por Bora y respondido por la gente.",
+    "todo": "Todo",
+    "guiaBora": "Guía de Bora",
+    "actualizada": "Actualizada el {{fecha}}",
+    "fuentes": "Fuentes",
+    "fiestas": "Próximas fiestas relacionadas",
+    "verAgenda": "Ver la agenda",
+    "conversacion": "Lo que dice la gente",
+    "leerEn": "Leer en",
+    "vacio": "Todavía no hay guías para esta ciudad. Mientras tanto, mira la agenda.",
+    "otras": "Más guías",
+    "noEncontrada": "Esta guía ya no está disponible.",
+    "temas": {
+      "seguridad": "Seguridad",
+      "transporte": "Transporte",
+      "entradas": "Entradas",
+      "ropa": "Qué ponerse",
+      "plata": "Plata",
+      "samba": "Samba",
+      "funk": "Funk",
+      "barrios": "Barrios",
+      "fiestas": "Fiestas"
+    }
   }
 }
