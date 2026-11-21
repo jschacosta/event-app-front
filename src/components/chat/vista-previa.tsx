@@ -9,6 +9,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { Bandera } from '@/components/bandera';
+import { Calcadao } from '@/components/calcadao';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconoBora } from '@/components/iconos-bora';
@@ -20,7 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { type Evento, type MensajeVistaPrevia, type VistaCanal } from '@/lib/api';
 import { guardado, pedir } from '@/lib/precarga';
 import { diaCorto, hora, horaDispositivo } from '@/lib/fechas';
-import { colorEtiquetaGenero } from '@/lib/generos';
+import { colorEtiquetaGenero, coloresGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
 
 const fuente = fuenteWeb;
@@ -51,9 +52,28 @@ export function useVistaCanal(eventoId: string | undefined, activo = true, sala 
 // ---------- Fondo del chat ----------
 // Liso, del color del tema: el afiche difuminado de antes ensuciaba la pantalla, sobre todo sin mensajes.
 // Se conservan los parámetros para no tocar a quien lo usa.
-export function FondoEvento(_: { imagen?: string | null; generos?: string[] }) {
+// Fondo del chat según la categoría del evento (como los fondos con dibujo de Telegram): un degradado
+// con los colores del género, fuerte arriba y que se apaga hacia abajo para que las burbujas se lean,
+// y encima las ondas del calçadão muy suaves.
+export function FondoEvento({ generos }: { imagen?: string | null; generos?: string[] }) {
   const t = useTheme();
-  return <View style={[StyleSheet.absoluteFill, { backgroundColor: t.chatWallpaper }]} pointerEvents="none" />;
+  const oscuro = useColorScheme() === 'dark';
+  // LGBT+ tiene 5 colores: se usan el primero y el último.
+  const colores = generos?.length ? coloresGenero(generos[0]) : ['#64209A', '#1A1023'];
+  const c1 = colores[0];
+  const c2 = colores[colores.length - 1];
+  return (
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: t.chatWallpaper }]} pointerEvents="none">
+      <LinearGradient
+        colors={[conAlfa(c1, oscuro ? 0.34 : 0.26), conAlfa(c2, oscuro ? 0.2 : 0.12), conAlfa(t.chatWallpaper, 0)]}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.6, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <Calcadao color={oscuro ? 'rgba(255,255,255,0.045)' : conAlfa(c2, 0.07)} escala={0.9} />
+    </View>
+  );
 }
 
 // ---------- Chat vacío ----------

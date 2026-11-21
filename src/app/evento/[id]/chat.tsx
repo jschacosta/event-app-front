@@ -1394,19 +1394,17 @@ export default function ChatScreen() {
                     </Text>
                   </View>
                 ) : null}
-                {/* Como Telegram: 📎 a la izquierda, el campo con el botón de emojis/stickers adentro y enviar al aparecer texto. */}
+                {/* Como Telegram: dentro del campo, emojis a la izquierda y 📎 a la derecha; enviar aparece afuera al escribir. */}
                 <View style={styles.filaCampo}>
-                  {!editando ? (
+                  <View style={styles.campo}>
                     <Pressable
-                      onPress={menuAdjuntar}
+                      onPress={alternarPanel}
                       disabled={!puedeEscribir}
                       hitSlop={6}
-                      accessibilityLabel={tr('expresion.adjuntar')}
-                      style={({ pressed }) => [styles.botonLado, pressed && { opacity: 0.5 }]}>
-                      <Icono nombre="paperclip" tamano={23} color={t.textSecondary} />
+                      accessibilityLabel={panel ? tr('expresion.teclado') : tr('chat.emojis')}
+                      style={({ pressed }) => [styles.botonPanel, pressed && { opacity: 0.5 }]}>
+                      <Icono nombre={panel ? 'keyboard' : 'face.smiling'} tamano={23} color={t.textSecondary} />
                     </Pressable>
-                  ) : null}
-                  <View style={styles.campo}>
                     <TextInput
                       ref={campo}
                       value={texto}
@@ -1439,14 +1437,16 @@ export default function ChatScreen() {
                       multiline
                       textAlignVertical="center"
                     />
-                    <Pressable
-                      onPress={alternarPanel}
-                      disabled={!puedeEscribir}
-                      hitSlop={6}
-                      accessibilityLabel={panel ? tr('expresion.teclado') : tr('chat.emojis')}
-                      style={({ pressed }) => [styles.botonPanel, pressed && { opacity: 0.5 }]}>
-                      <Icono nombre={panel ? 'keyboard' : 'face.smiling'} tamano={23} color={t.textSecondary} />
-                    </Pressable>
+                    {!editando ? (
+                      <Pressable
+                        onPress={menuAdjuntar}
+                        disabled={!puedeEscribir}
+                        hitSlop={6}
+                        accessibilityLabel={tr('expresion.adjuntar')}
+                        style={({ pressed }) => [styles.botonPanel, pressed && { opacity: 0.5 }]}>
+                        <Icono nombre="paperclip" tamano={23} color={t.textSecondary} />
+                      </Pressable>
+                    ) : null}
                   </View>
                   {hayTexto || editando ? (
                     <Animated.View entering={ZoomIn.duration(140)} exiting={ZoomOut.duration(120)}>
@@ -1725,10 +1725,9 @@ function crearEstilos(C: ReturnType<typeof colores>) {
   botonFormato: { width: 40, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   letraFormato: { fontSize: 16, color: C.texto, fontFamily: fuente },
   filaCampo: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  botonLado: { width: 36, height: 38, alignItems: 'center', justifyContent: 'center' },
   campo: {
     flex: 1, flexDirection: 'row', alignItems: 'flex-end', minHeight: 38, borderRadius: 19,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: C.separador, backgroundColor: C.campo, paddingLeft: 14, paddingRight: 2,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: C.separador, backgroundColor: C.campo, paddingLeft: 2, paddingRight: 2,
   },
   input: {
     flex: 1, fontSize: 17, lineHeight: 22, maxHeight: 22 * 6 + 16, paddingTop: Platform.OS === 'ios' ? 8 : 6, paddingBottom: Platform.OS === 'ios' ? 8 : 6,

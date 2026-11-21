@@ -134,7 +134,7 @@ export const GrillaGifs = memo(function GrillaGifs({ gifs, ancho, onElegir, onFi
 });
 
 // Pestaña de GIFs dentro del panel: botón de buscar, categorías rápidas y el muro.
-export function PestanaGifs({ ancho, onElegir }: { ancho: number; onElegir: (g: Gif) => void }) {
+export function PestanaGifs({ ancho, onElegir, abajo = 0 }: { ancho: number; onElegir: (g: Gif) => void; abajo?: number }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   const categorias = tr('expresion.categoriasGif', { returnObjects: true }) as string[];
@@ -160,7 +160,7 @@ export function PestanaGifs({ ancho, onElegir }: { ancho: number; onElegir: (g: 
       {error && !gifs.length ? (
         <Text style={[styles.vacio, { color: t.textSecondary }]}>{tr(gifsDisponibles() === false ? 'expresion.gifsNoActivos' : 'expresion.gifsError')}</Text>
       ) : (
-        <GrillaGifs gifs={gifs} ancho={ancho} onElegir={onElegir} onFinal={mas} cargando={cargando} />
+        <GrillaGifs gifs={gifs} ancho={ancho} onElegir={onElegir} onFinal={mas} cargando={cargando} abajo={abajo} />
       )}
       <BuscadorGifs visible={buscando} onCerrar={() => setBuscando(false)} onElegir={(g) => { setBuscando(false); onElegir(g); }} />
     </View>

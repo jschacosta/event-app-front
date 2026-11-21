@@ -18,6 +18,9 @@ import { PAQUETES, codigoAnimado, leerRecientes, sumarReciente } from '@/lib/sti
 
 export type ModoPanel = 'emojis' | 'stickers' | 'gifs';
 
+// Espacio libre al final de cada lista para que la pastilla flotante no tape la última fila.
+const ESPACIO_PIE = 58;
+
 const vibrar = () => {
   if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 };
@@ -148,7 +151,7 @@ export const PanelExpresion = memo(function PanelExpresion({ alto, modo, onModo,
               </Pressable>
             ))}
           </ScrollView>
-          <ScrollView key={`e-${String(grupo)}`} style={styles.contenido} contentContainerStyle={styles.grilla} keyboardShouldPersistTaps="always">
+          <ScrollView key={`e-${String(grupo)}`} style={styles.contenido} contentContainerStyle={[styles.grilla, { paddingBottom: ESPACIO_PIE }]} keyboardShouldPersistTaps="always">
             {listaEmojis.map((e) => (
               <Pressable
                 key={e}
@@ -195,7 +198,7 @@ export const PanelExpresion = memo(function PanelExpresion({ alto, modo, onModo,
               for (let i = 0; i < index; i++) offset += filas[i].tipo === 'titulo' ? ALTO_TITULO : ALTO_FILA;
               return { length: filas[index].tipo === 'titulo' ? ALTO_TITULO : ALTO_FILA, offset, index };
             }}
-            contentContainerStyle={{ paddingHorizontal: 6, paddingBottom: 8 }}
+            contentContainerStyle={{ paddingHorizontal: 6, paddingBottom: ESPACIO_PIE }}
             renderItem={({ item }) => item.tipo === 'titulo' ? (
               <Text style={[styles.tituloPaquete, { color: t.textSecondary, height: ALTO_TITULO }]}>{item.texto}</Text>
             ) : (
@@ -208,24 +211,25 @@ export const PanelExpresion = memo(function PanelExpresion({ alto, modo, onModo,
           />
         </>
       ) : (
-        <PestanaGifs ancho={ancho} onElegir={(g) => { if (puedeSticker) onGif(g); }} />
+        <PestanaGifs ancho={ancho} abajo={ESPACIO_PIE} onElegir={(g) => { if (puedeSticker) onGif(g); }} />
       )}
 
-      <View style={[styles.pie, { borderTopColor: t.separator }]}>
-        <View style={[styles.segmento, { backgroundColor: t.segmentTrack }]}>
-          {(['emojis', 'stickers', ...(hayGifs ? ['gifs' as const] : [])] as ModoPanel[]).map((m) => (
+      {/* Como Telegram: las pestañas flotan sobre el contenido, abajo al centro. */}
+      <View style={styles.pie} pointerEvents="box-none">
+        <View style={[styles.segmento, { backgroundColor: t.card, borderColor: t.separator }]}>
+          {(['emojis', ...(hayGifs ? ['gifs' as const] : []), 'stickers'] as ModoPanel[]).map((m) => (
             <Pressable
               key={m}
               onPress={() => onModo(m)}
               accessibilityRole="tab"
               accessibilityState={{ selected: modo === m }}
-              style={[styles.opcionSegmento, modo === m && [styles.opcionElegida, { backgroundColor: t.segmentThumb }]]}>
+              style={[styles.opcionSegmento, modo === m && { backgroundColor: t.backgroundSelected }]}>
               <Text style={[styles.textoSegmento, { color: modo === m ? t.text : t.textSecondary }]}>{tr(`expresion.${m}`)}</Text>
             </Pressable>
           ))}
         </View>
         {modo === 'emojis' ? (
-          <Pressable onPress={onBorrar} onLongPress={onBorrar} hitSlop={8} accessibilityLabel={tr('expresion.borrar')} style={({ pressed }) => [styles.borrar, pressed && { opacity: 0.5 }]}>
+          <Pressable onPress={onBorrar} onLongPress={onBorrar} hitSlop={8} accessibilityLabel={tr('expresion.borrar')} style={({ pressed }) => [styles.borrar, { backgroundColor: t.card, borderColor: t.separator }, pressed && { opacity: 0.5 }]}>
             <Icono nombre="delete.left" tamano={22} color={t.textSecondary} />
           </Pressable>
         ) : null}
@@ -255,11 +259,16 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 30 },
   tituloPaquete: { fontSize: 13, fontWeight: '700', paddingHorizontal: 6, paddingTop: 8, textTransform: 'uppercase', letterSpacing: 0.3 },
   filaStickers: { flexDirection: 'row' },
-  pie: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 6, paddingHorizontal: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  segmento: { flexDirection: 'row', borderRadius: 9, padding: 2 },
-  opcionSegmento: { paddingHorizontal: 16, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  opcionElegida: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-  textoSegmento: { fontSize: 13, fontWeight: '600' },
-  borrar: { position: 'absolute', right: 14, width: 36, height: 32, alignItems: 'center', justifyContent: 'center' },
+  pie: { position: 'absolute', left: 0, right: 0, bottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  segmento: {
+    flexDirection: 'row', borderRadius: 20, padding: 3, borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 6,
+  },
+  opcionSegmento: { paddingHorizontal: 18, height: 32, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  textoSegmento: { fontSize: 14, fontWeight: '600' },
+  borrar: {
+    position: 'absolute', right: 12, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 6,
+  },
   velo: { alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.25)' },
 });
