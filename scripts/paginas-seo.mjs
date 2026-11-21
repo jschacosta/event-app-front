@@ -13,7 +13,16 @@ const API = (process.env.EXPO_PUBLIC_API_URL ?? 'https://bora-app.up.railway.app
 const IDIOMAS = ['es', 'en', 'pt', 'fr', 'de'];
 const NOMBRE_CIUDAD = { rio: 'Rio de Janeiro', santiago: 'Santiago', bogota: 'Bogotá', saopaulo: 'São Paulo' };
 
-const plantilla = readFileSync(join(DIST, 'index.html'), 'utf8');
+// Ícono de Bora en la pestaña (SVG nítido, con el .ico de respaldo) y al guardar la web en el iPhone.
+// Los archivos vienen de public/marca/ (los mismos de bora-web).
+const ICONOS = [
+  '<link rel="icon" href="/marca/icono.svg" type="image/svg+xml" />',
+  '<link rel="apple-touch-icon" href="/marca/icono-180.png" />',
+  '<meta name="theme-color" content="#64209A" />',
+].join('');
+const original = readFileSync(join(DIST, 'index.html'), 'utf8');
+const plantilla = original.includes('/marca/icono.svg') ? original : original.replace('<link rel="icon" href="/favicon.ico"/>', `<link rel="icon" href="/favicon.ico" sizes="48x48"/>${ICONOS}`);
+writeFileSync(join(DIST, 'index.html'), plantilla);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const urlGuia = (ciudad, slug) => `${SITIO}/${ciudad}/hilos/${slug}`;
 
@@ -49,6 +58,7 @@ function pagina({ idioma, titulo, descripcion, canonica, alternos = [], jsonLd, 
     `<meta property="og:title" content="${esc(titulo)}" />`,
     `<meta property="og:description" content="${esc(descripcion)}" />`,
     `<meta property="og:url" content="${canonica}" />`,
+    `<meta property="og:image" content="${SITIO}/marca/icono-512.png" />`,
     `<meta name="twitter:card" content="summary" />`,
     jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : '',
   ].join('\n    ');
