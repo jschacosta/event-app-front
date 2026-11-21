@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bandera } from '@/components/bandera';
@@ -57,7 +57,7 @@ export default function SelectorCiudad() {
               const elegida = c.id === actual.id;
               const n = conteos[c.id];
               return (
-                <Animated.View key={c.id} entering={FadeInDown.delay(40 * (ip * 3 + i)).duration(380).springify().damping(20)}>
+                <Animated.View key={c.id} entering={FadeInDown.delay(40 * (ip * 3 + i)).duration(380).easing(Easing.out(Easing.cubic))}>
                   <Pressable
                     onPress={() => elegir(c.id)}
                     accessibilityRole="radio"
@@ -71,7 +71,7 @@ export default function SelectorCiudad() {
                       </Texto>
                     </View>
                     {elegida ? (
-                      <Animated.View entering={ZoomIn.springify().damping(14)} style={styles.check}>
+                      <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={styles.check}>
                         <Icono nombre="checkmark" tamano={13} color="#000000" peso="bold" />
                       </Animated.View>
                     ) : null}

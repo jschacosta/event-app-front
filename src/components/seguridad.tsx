@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
 import { Icono, Texto } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
@@ -60,7 +60,7 @@ export function ModalExplicacion({ visible, icono, titulo, intro, puntos, childr
             <Pressable style={[StyleSheet.absoluteFill, styles.velo]} onPress={onCerrar} accessibilityLabel={tr('comun.cancelar')} />
           </Animated.View>
           <Animated.View
-            entering={ZoomIn.springify().damping(18).stiffness(260)}
+            entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}
             exiting={FadeOut.duration(120)}
             accessibilityViewIsModal
             style={[styles.tarjeta, { backgroundColor: t.card }]}>

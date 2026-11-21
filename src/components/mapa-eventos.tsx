@@ -20,31 +20,32 @@ const ESTILOS = {
 // Colores del mapa base por capa. En oscuro, morados con contraste suficiente para leer calles y barrios
 // (la base "dark" de OpenFreeMap es casi negra); los pines açaí siguen siendo lo más brillante.
 const TINTES: Record<'claro' | 'oscuro', Record<string, Record<string, string>>> = {
+  // "Lavanda": morado grisáceo claro para un mapa oscuro (se leen calles, agua y barrios sin encandilar).
   oscuro: {
-    background: { 'background-color': '#1A1121' },
-    water: { 'fill-color': '#2B1F48' },
-    waterway: { 'line-color': '#2B1F48' },
-    landuse_residential: { 'fill-color': '#1F1527' },
-    landcover_wood: { 'fill-color': '#1C2520' },
-    landuse_park: { 'fill-color': '#1C2520' },
-    building: { 'fill-color': '#251A31', 'fill-outline-color': '#30243F' },
-    highway_path: { 'line-color': '#2F2541' },
-    highway_minor: { 'line-color': '#31263F' },
-    highway_major_casing: { 'line-color': 'rgba(150,125,185,0.22)' },
-    highway_major_inner: { 'line-color': '#3E3051' },
-    highway_major_subtle: { 'line-color': '#3E3051' },
-    highway_motorway_casing: { 'line-color': 'rgba(170,140,210,0.28)' },
-    highway_motorway_inner: { 'line-color': '#4A3A60' },
-    highway_motorway_subtle: { 'line-color': '#4A3A60' },
-    railway: { 'line-color': '#3A2F48' },
-    railway_minor: { 'line-color': '#3A2F48' },
-    railway_transit: { 'line-color': '#3A2F48' },
-    boundary_state: { 'line-color': '#4A3D5A' },
-    water_name: { 'text-color': '#9D8FC4', 'text-halo-color': 'rgba(26,17,33,0.9)' },
-    highway_name_other: { 'text-color': '#B5A9C6', 'text-halo-color': 'rgba(26,17,33,0.95)' },
-    highway_name_motorway: { 'text-color': '#C7BBD8' },
+    background: { 'background-color': '#3A3046' },
+    water: { 'fill-color': '#4E4180' },
+    waterway: { 'line-color': '#4E4180' },
+    landuse_residential: { 'fill-color': '#40354D' },
+    landcover_wood: { 'fill-color': '#36483D' },
+    landuse_park: { 'fill-color': '#36483D' },
+    building: { 'fill-color': '#4A3E5A', 'fill-outline-color': '#4A3E5A' },
+    highway_path: { 'line-color': '#5A4C6E' },
+    highway_minor: { 'line-color': '#5A4C6E' },
+    highway_major_casing: { 'line-color': 'rgba(210,190,240,0.3)' },
+    highway_major_inner: { 'line-color': '#6C5C84' },
+    highway_major_subtle: { 'line-color': '#6C5C84' },
+    highway_motorway_casing: { 'line-color': 'rgba(210,190,240,0.3)' },
+    highway_motorway_inner: { 'line-color': '#7D6A98' },
+    highway_motorway_subtle: { 'line-color': '#7D6A98' },
+    railway: { 'line-color': '#5A4C6E' },
+    railway_minor: { 'line-color': '#5A4C6E' },
+    railway_transit: { 'line-color': '#5A4C6E' },
+    boundary_state: { 'line-color': '#5A4C6E' },
+    water_name: { 'text-color': '#C6B9EA', 'text-halo-color': 'rgba(58,48,70,0.9)' },
+    highway_name_other: { 'text-color': '#DCD2EA', 'text-halo-color': 'rgba(58,48,70,0.9)' },
+    highway_name_motorway: { 'text-color': '#DCD2EA' },
     ...Object.fromEntries(['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state']
-      .map((id) => [id, { 'text-color': '#D9CCE9', 'text-halo-color': 'rgba(26,17,33,0.9)' }])),
+      .map((id) => [id, { 'text-color': '#F6F0FC', 'text-halo-color': 'rgba(58,48,70,0.9)' }])),
   },
   claro: {
     background: { 'background-color': '#F6F4F8' },
@@ -163,10 +164,10 @@ export const MapaEventos = forwardRef<MapaEventosRef, Props>(function MapaEvento
     if (ids.length) onElegir(ids);
   };
 
-  if (!estilo || !caja) return <View style={[StyleSheet.absoluteFill, { backgroundColor: modo === 'oscuro' ? '#1A1121' : '#F6F4F8' }]} />;
+  if (!estilo || !caja) return <View style={[StyleSheet.absoluteFill, { backgroundColor: modo === 'oscuro' ? '#3A3046' : '#F6F4F8' }]} />;
 
   const pin = t.accent;
-  const borde = modo === 'oscuro' ? '#1A1121' : '#FFFFFF';
+  const borde = modo === 'oscuro' ? '#3A3046' : '#FFFFFF';
   const textoGrupo = t.onAccent;
   const filtroElegidos: ['in', ['get', 'id'], ['literal', string[]]] = ['in', ['get', 'id'], ['literal', elegidos]];
 

@@ -5,9 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
-import Animated, {
-  FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, ZoomIn,
-} from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, ZoomIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Banderas } from '@/components/bandera';
@@ -95,7 +93,7 @@ const TarjetaCanal = memo(function TarjetaCanal({ evento: e, indice, ultima }: {
                 : tr('canales.abre', { dia: diaCorto(e.chatAbreEn), hora: hora(e.chatAbreEn) })}
             </Texto>
             {abierto && nuevos > 0 ? (
-              <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.nuevos, { backgroundColor: t.accent }]} accessibilityLabel={tr('chat.nuevos', { count: nuevos })}>
+              <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={[styles.nuevos, { backgroundColor: t.accent }]} accessibilityLabel={tr('chat.nuevos', { count: nuevos })}>
                 <Texto v="mini" style={{ color: t.onAccent, fontWeight: '700' }}>{textoCuenta(nuevos)}</Texto>
               </Animated.View>
             ) : null}

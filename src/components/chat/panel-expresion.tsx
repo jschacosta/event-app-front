@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
 import { PestanaGifs, useGifsDisponibles } from '@/components/chat/gifs';
 import { StickerAnimado, cargarAnimacion } from '@/components/chat/sticker-animado';
@@ -237,7 +237,7 @@ export const PanelExpresion = memo(function PanelExpresion({ alto, modo, onModo,
 
       {vista ? (
         <Animated.View entering={FadeIn.duration(120)} exiting={FadeOut.duration(120)} pointerEvents="none" style={[StyleSheet.absoluteFill, styles.velo]}>
-          <Animated.View entering={ZoomIn.springify().damping(16)}>
+          <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}>
             <StickerAnimado emoji={vista} tamano={Math.min(220, alto - 40)} repetir />
           </Animated.View>
         </Animated.View>

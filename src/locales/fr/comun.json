@@ -935,5 +935,12 @@
     "abrirAjustes": "Ouvrir les réglages",
     "sinGpsTitulo": "Impossible de trouver votre position",
     "sinGpsTexto": "Vérifiez que la localisation est activée, puis réessayez."
+  },
+  "persona": {
+    "desde": "Sur Bora depuis {{fecha}}",
+    "enComun": "Vous y allez tous les deux",
+    "bloqueada": "Vous avez bloqué cette personne : vous ne voyez plus vos messages respectifs.",
+    "error": "Impossible de charger ce profil. Vérifiez votre connexion.",
+    "sinInfo": "{{nombre}} n’a pas encore ajouté de centres d’intérêt ni de voyages."
   }
 }

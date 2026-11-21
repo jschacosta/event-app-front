@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -42,7 +42,7 @@ export function MenuMensaje({ ancla, mia, vista, reacciones, panel, opciones, on
   }
 
   useEffect(() => {
-    if (ancla) p.set(withSpring(1, { damping: 18, stiffness: 260, mass: 0.8 }));
+    if (ancla) p.set(withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }));
   }, [ancla, p]);
 
   const cerrar = (despues?: () => void) => {

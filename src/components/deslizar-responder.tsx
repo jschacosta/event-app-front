@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Icono } from '@/components/ui';
@@ -44,7 +44,7 @@ export function DeslizarParaResponder({ children, onResponder }: { children: Rea
     onFinalize: () => {
       'worklet';
       pasoUmbral.value = false;
-      x.value = withSpring(0, { damping: 18, stiffness: 220 });
+      x.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
     },
   });
 

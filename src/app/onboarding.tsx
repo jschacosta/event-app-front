@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeInRight, ZoomIn, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInRight, ZoomIn, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AjustarFoto, type ImagenElegida } from '@/components/ajustar-foto';
@@ -208,7 +208,7 @@ function Asistente() {
         <View style={{ alignItems: 'center', gap: 16 }}>
           <Pressable onPress={elegirFotoPerfil} style={[s.fotoPerfil, { backgroundColor: t.card }]}>
             {subiendo ? <ActivityIndicator /> : fotos[0] ? (
-              <Animated.View entering={ZoomIn.springify()} style={StyleSheet.absoluteFill}>
+              <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={StyleSheet.absoluteFill}>
                 <Image source={{ uri: fotos[0] }} style={StyleSheet.absoluteFill} contentFit="cover" />
               </Animated.View>
             ) : <Icono nombre="camera" tamano={40} color={t.textSecondary} />}
@@ -224,7 +224,7 @@ function Asistente() {
         <View style={{ alignItems: 'center', gap: 16 }}>
           <View style={{ height: 44, justifyContent: 'center' }}>
             {ruedaTocada && edad !== null ? (
-              <Animated.View key={edad} entering={ZoomIn.springify().damping(14)}>
+              <Animated.View key={edad} entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}>
                 <Texto v="titulo">{tr('onboarding.edad.edad', { count: edad })}</Texto>
               </Animated.View>
             ) : (
@@ -248,7 +248,7 @@ function Asistente() {
         <Encabezado titulo={tr('onboarding.pais.titulo')} texto={tr('onboarding.pais.texto')} />
         <Pressable onPress={() => setSelector('pais')} style={[s.tarjetaPais, { backgroundColor: t.card }]}>
           {pais ? (
-            <Animated.View key={pais} entering={ZoomIn.springify()} style={{ alignItems: 'center', gap: 6 }}>
+            <Animated.View key={pais} entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={{ alignItems: 'center', gap: 6 }}>
               <Bandera codigo={pais} alto={64} style={s.banderaGrande} />
               <Texto v="seccion">{nombrePais(pais)}</Texto>
             </Animated.View>
@@ -270,7 +270,7 @@ function Asistente() {
                 disabled={subiendo}
                 style={[s.fotoViaje, { backgroundColor: t.card, borderColor: url ? 'transparent' : t.chevron }]}>
                 {url ? (
-                  <Animated.View entering={ZoomIn.springify()} style={StyleSheet.absoluteFill}>
+                  <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={StyleSheet.absoluteFill}>
                     <Image source={{ uri: url }} style={StyleSheet.absoluteFill} contentFit="cover" />
                   </Animated.View>
                 ) : subiendo && n === fotos.length - 1 ? <ActivityIndicator /> : <Icono nombre="plus" tamano={26} color={t.accentText} />}
@@ -311,7 +311,7 @@ function Asistente() {
     ),
     fin: (
       <View style={s.fin}>
-        <Animated.View entering={ZoomIn.springify().damping(10)} style={[s.check, { backgroundColor: t.accent }]}>
+        <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={[s.check, { backgroundColor: t.accent }]}>
           <Icono nombre="checkmark" tamano={44} color={t.onAccent} peso="bold" />
         </Animated.View>
         <Animated.View entering={FadeIn.delay(300)} style={{ gap: 8, alignItems: 'center' }}>

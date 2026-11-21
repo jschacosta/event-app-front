@@ -4,9 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, {
-  FadeInDown, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withSpring, withTiming, ZoomIn,
-} from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, ZoomIn, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bandera, Banderas } from '@/components/bandera';
@@ -26,7 +24,7 @@ import { nombreInteres } from '@/lib/intereses';
 import { nombrePais } from '@/lib/paises';
 import { useCiudad } from '@/lib/ciudades';
 
-const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).springify().damping(20);
+const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).easing(Easing.out(Easing.cubic));
 
 // Botón que se hunde un poco al tocarlo, como en iOS.
 function Tocable({ onPress, children, style, etiqueta }: { onPress: () => void; children: ReactNode; style?: object; etiqueta?: string }) {
@@ -37,8 +35,8 @@ function Tocable({ onPress, children, style, etiqueta }: { onPress: () => void; 
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
-      onPressIn={() => { escala.set(withSpring(0.96, { damping: 20, stiffness: 400 })); }}
-      onPressOut={() => { escala.set(withSpring(1, { damping: 14, stiffness: 300 })); }}>
+      onPressIn={() => { escala.set(withTiming(0.96, { duration: 220, easing: Easing.out(Easing.cubic) })); }}
+      onPressOut={() => { escala.set(withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) })); }}>
       <Animated.View style={[style, animado]}>{children}</Animated.View>
     </Pressable>
   );
@@ -64,7 +62,7 @@ function OpcionApariencia({ id, texto, activa }: { id: Apariencia; texto: string
   const t = useTheme();
   const progreso = useSharedValue(activa ? 1 : 0);
   useEffect(() => {
-    progreso.set(withSpring(activa ? 1 : 0, { damping: 15, stiffness: 220 }));
+    progreso.set(withTiming(activa ? 1 : 0, { duration: 220, easing: Easing.out(Easing.cubic) }));
   }, [activa, progreso]);
   const telefono = useAnimatedStyle(() => ({
     transform: [{ scale: interpolate(progreso.value, [0, 1], [0.94, 1]) }],
@@ -134,7 +132,7 @@ function SelectorIdioma() {
               {t(`idiomas.${l.codigo}`) !== l.nombre && <Texto v="pie" secundario>{t(`idiomas.${l.codigo}`)}</Texto>}
             </View>
             {activo && (
-              <Animated.View key={i18n.language} entering={ZoomIn.springify().damping(14)}>
+              <Animated.View key={i18n.language} entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}>
                 <Icono nombre="checkmark" tamano={17} color={tema.text} peso="semibold" />
               </Animated.View>
             )}

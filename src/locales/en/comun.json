@@ -935,5 +935,12 @@
     "abrirAjustes": "Open settings",
     "sinGpsTitulo": "We couldn't find where you are",
     "sinGpsTexto": "Check that location is turned on and try again."
+  },
+  "persona": {
+    "desde": "On Bora since {{fecha}}",
+    "enComun": "You're both going to",
+    "bloqueada": "You blocked this person: you don't see each other's messages.",
+    "error": "We couldn't load this profile. Check your connection.",
+    "sinInfo": "{{nombre}} hasn't added interests or trips yet."
   }
 }

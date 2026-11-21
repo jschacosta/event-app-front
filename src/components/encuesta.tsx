@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonPrincipal, BotonTexto, fuenteWeb, Icono, Texto } from '@/components/ui';
@@ -109,7 +109,7 @@ export function HojaNuevaEncuesta({ visible, onCrear, onCerrar }: {
             <Pressable style={[StyleSheet.absoluteFill, styles.velo]} onPress={cerrar} accessibilityLabel={tr('comun.cancelar')} />
           </Animated.View>
           <Animated.View
-            entering={SlideInDown.springify().damping(22).stiffness(240)}
+            entering={SlideInDown.duration(260).easing(Easing.out(Easing.cubic))}
             exiting={SlideOutDown.duration(180)}
             style={[styles.hoja, { backgroundColor: t.card, paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
             <View style={[styles.asa, { backgroundColor: t.separator }]} />

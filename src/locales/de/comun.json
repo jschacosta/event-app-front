@@ -935,5 +935,12 @@
     "abrirAjustes": "Einstellungen öffnen",
     "sinGpsTitulo": "Wir konnten deinen Standort nicht finden",
     "sinGpsTexto": "Prüfe, ob der Standort eingeschaltet ist, und versuch es noch mal."
+  },
+  "persona": {
+    "desde": "Bei Bora seit {{fecha}}",
+    "enComun": "Ihr geht beide zu",
+    "bloqueada": "Du hast diese Person blockiert: Ihr seht eure Nachrichten nicht mehr.",
+    "error": "Das Profil konnte nicht geladen werden. Prüf deine Verbindung.",
+    "sinInfo": "{{nombre}} hat noch keine Interessen oder Reisen hinzugefügt."
   }
 }

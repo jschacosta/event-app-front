@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonPrincipal, BotonTexto, FilaInterruptor, Grupo, Icono, Texto, fuenteWeb } from '@/components/ui';
@@ -97,7 +97,7 @@ export default function NuevoCanalScreen() {
         <AvisoVerificarEdad titulo={tr('verificacion.titulo')} texto={tr('verificacion.paraCrear')} />
       ) : creado ? (
         <Animated.View entering={FadeIn.duration(300)} style={styles.listo}>
-          <Animated.View entering={FadeInDown.springify().damping(14)} style={[styles.iconoListo, { backgroundColor: t.accent }]}>
+          <Animated.View entering={FadeInDown.duration(320).easing(Easing.out(Easing.cubic))} style={[styles.iconoListo, { backgroundColor: t.accent }]}>
             <Icono nombre="checkmark" tamano={34} color={t.onAccent} peso="bold" />
           </Animated.View>
           <Texto v="titulo" style={{ textAlign: 'center' }}>{creado.nombre}</Texto>

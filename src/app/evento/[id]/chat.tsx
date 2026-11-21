@@ -27,6 +27,7 @@ import { FilaReacciones, PanelEmojis, Pop, useSalto } from '@/components/emojis'
 import { HojaNuevaEncuesta, TarjetaEncuesta } from '@/components/encuesta';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { MenuMensaje, type Ancla } from '@/components/chat/menu-mensaje';
+import { PerfilPersona } from '@/components/perfil-persona';
 import { CapaVuelos, type Punto, type Vuelo } from '@/components/chat/vuelo-reaccion';
 import { IconoBora } from '@/components/iconos-bora';
 import { Icono } from '@/components/ui';
@@ -918,18 +919,13 @@ export default function ChatScreen() {
     if (menu) reaccionarA(menu.m, e, { ancla: menu.ancla, mia: menu.vista.mia, desde });
   };
 
-  // Tocar la foto de alguien (o a alguien en la lista de personas): su edad, verificación, Instagram y reportar.
+  // Tocar la foto de alguien (o a alguien en la lista de personas): su perfil (fotos, intereses, eventos en
+  // común…) con bloquear y reportar al final.
+  const [persona, setPersona] = useState<{ autor: Autor; mensajeId?: string } | null>(null);
   const perfilPersona = (autor: Autor, mensajeId?: string) => {
-    if (autor.id === usuario?.id) return;
-    setHoja({
-      titulo: [autor.nombreVisible, (autor.edad ?? edadDe(autor.id)) ? String(autor.edad ?? edadDe(autor.id)) : null].filter(Boolean).join(' · '),
-      mensaje: autor.edadVerificada ? tr('verificacion.sello') : undefined,
-      opciones: [
-        ...opcionInstagram(autor),
-        { texto: tr('bloqueos.bloquearA', { nombre: autor.nombreVisible }), icono: 'hand.raised', onPress: () => setTimeout(() => setBloquear(autor), 250) },
-        { texto: tr('reportes.reportarA', { nombre: autor.nombreVisible }), icono: 'flag', destructiva: true, onPress: () => setTimeout(() => reportar(autor, mensajeId), 250) },
-      ],
-    });
+    if (autor.id === usuario?.id || autor.eliminada) return;
+    Keyboard.dismiss();
+    setPersona({ autor, mensajeId });
   };
   const perfilAutor = (m: MensajeChat) => perfilPersona(m.autor, m.id);
 
@@ -1539,6 +1535,14 @@ export default function ChatScreen() {
           if (respondiendo?.autor.id === p.id) setRespondiendo(null);
           setAviso(tr('bloqueos.bloqueaste', { nombre: p.nombreVisible }));
         }}
+      />
+      <PerfilPersona
+        autor={persona?.autor ?? null}
+        edad={persona ? persona.autor.edad ?? edadDe(persona.autor.id) : undefined}
+        token={token ?? null}
+        onCerrar={() => setPersona(null)}
+        onBloquear={(a) => { setPersona(null); setTimeout(() => setBloquear(a), 250); }}
+        onReportar={(a) => { const m = persona?.mensajeId; setPersona(null); setTimeout(() => reportar(a, m), 250); }}
       />
       <ModalModoLento
         visible={ajusteLento}

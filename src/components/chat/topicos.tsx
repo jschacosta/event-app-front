@@ -3,7 +3,7 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown, FadeOut, LinearTransition, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonPrincipal, BotonTexto, Icono, Texto, fuenteWeb } from '@/components/ui';
@@ -111,7 +111,7 @@ export function ListaTopicos({ topicos, puedeCrear, onAbrir, onOpciones, onNuevo
         initialNumToRender={14}
       />
       {puedeCrear ? (
-        <Animated.View entering={FadeInDown.springify().damping(18)} style={[styles.flotante, { bottom: insets.bottom + 18 }]}>
+        <Animated.View entering={FadeInDown.duration(320).easing(Easing.out(Easing.cubic))} style={[styles.flotante, { bottom: insets.bottom + 18 }]}>
           <Pressable
             onPress={onNuevo}
             accessibilityRole="button"
@@ -183,7 +183,7 @@ export function HojaTopico({ visible, eventoId, sala, editar, onListo, onCerrar 
             <Pressable style={[StyleSheet.absoluteFill, styles.velo]} onPress={onCerrar} accessibilityLabel={tr('comun.cancelar')} />
           </Animated.View>
           <Animated.View
-            entering={SlideInDown.springify().damping(22).stiffness(240)}
+            entering={SlideInDown.duration(260).easing(Easing.out(Easing.cubic))}
             exiting={SlideOutDown.duration(180)}
             style={[styles.hoja, { backgroundColor: t.card, paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
             <View style={[styles.asa, { backgroundColor: t.separator }]} />

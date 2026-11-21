@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonPrincipal, BotonTexto, Icono, Texto } from '@/components/ui';
@@ -109,7 +109,7 @@ export default function VerificacionScreen() {
       <ScrollView contentContainerStyle={[styles.contenido, { paddingBottom: insets.bottom + 32 }]}>
         {resultado ? (
           <Animated.View entering={FadeIn.duration(250)} style={styles.centro}>
-            <Animated.View entering={ZoomIn.springify().damping(14)} style={[styles.icono, { backgroundColor: estado === 'rechazada' ? t.backgroundElement : t.accent }]}>
+            <Animated.View entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))} style={[styles.icono, { backgroundColor: estado === 'rechazada' ? t.backgroundElement : t.accent }]}>
               <Icono
                 nombre={estado === 'aprobada' ? 'checkmark.seal.fill' : estado === 'rechazada' ? 'exclamationmark.triangle' : 'hourglass'}
                 tamano={34}

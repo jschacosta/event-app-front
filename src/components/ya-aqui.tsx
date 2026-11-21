@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
 
 import { Icono, Texto } from '@/components/ui';
 import { useSesion } from '@/context/sesion';
@@ -87,7 +87,7 @@ export function Caras({ personas, tam = 28, max = 5, borde }: { personas: Autor[
       {personas.slice(0, max).map((p, i) => (
         <Animated.View
           key={p.id}
-          entering={ZoomIn.springify().damping(15)}
+          entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}
           layout={LinearTransition.duration(200)}
           style={[
             styles.cara,
@@ -168,7 +168,7 @@ export function BotonAqui({ aqui, onPress }: { aqui: ReturnType<typeof useYaAqui
       style={({ pressed }) => [styles.botonAqui, pressed && { opacity: 0.6 }]}>
       <Animated.View
         key={aqui.mio ? 'mio' : 'no'}
-        entering={ZoomIn.springify().damping(14)}
+        entering={ZoomIn.duration(200).easing(Easing.out(Easing.cubic))}
         style={[styles.circuloAqui, aqui.mio ? { backgroundColor: t.accent } : { backgroundColor: t.backgroundElement }]}>
         <Icono nombre="location.fill" tamano={15} color={aqui.mio ? t.onAccent : t.text} />
       </Animated.View>

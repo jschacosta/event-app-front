@@ -935,5 +935,12 @@
     "abrirAjustes": "Abrir ajustes",
     "sinGpsTitulo": "No pudimos ver dónde estás",
     "sinGpsTexto": "Revisa que la ubicación del teléfono esté encendida y vuelve a intentarlo."
+  },
+  "persona": {
+    "desde": "En Bora desde {{fecha}}",
+    "enComun": "Van a lo mismo",
+    "bloqueada": "Bloqueaste a esta persona: no ves sus mensajes ni ella los tuyos.",
+    "error": "No pudimos cargar el perfil. Revisa tu conexión.",
+    "sinInfo": "{{nombre}} todavía no agregó intereses ni viajes a su perfil."
   }
 }

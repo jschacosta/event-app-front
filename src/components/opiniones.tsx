@@ -5,7 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withDelay, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -297,7 +297,7 @@ export function HojaResponder({ visible, datos, eventoId, token, fechaInicial, o
             <Pressable style={[StyleSheet.absoluteFill, styles.velo]} onPress={onCerrar} accessibilityLabel={tr('comun.cancelar')} />
           </Animated.View>
           <Animated.View
-            entering={SlideInDown.springify().damping(22).stiffness(240)}
+            entering={SlideInDown.duration(260).easing(Easing.out(Easing.cubic))}
             exiting={SlideOutDown.duration(180)}
             style={[styles.hoja, { backgroundColor: t.card, paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
             <View style={styles.cabezaHoja}>

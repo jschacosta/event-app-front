@@ -7,7 +7,7 @@ import {
   ActivityIndicator, Platform, Pressable, StyleSheet, Switch, Text, View, type StyleProp, type TextStyle, type ViewStyle,
 } from 'react-native';
 
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { FuenteTitulo } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -226,7 +226,7 @@ export function Segmentado<T extends string>({ opciones, valor, onCambio, marcas
   const anchoSegmento = ancho > 0 ? (ancho - 4) / opciones.length : 0;
   const x = useSharedValue(indice);
   useEffect(() => {
-    x.set(withSpring(indice, { damping: 22, stiffness: 260, mass: 0.7 }));
+    x.set(withTiming(indice, { duration: 220, easing: Easing.out(Easing.cubic) }));
   }, [indice, x]);
   const estiloPastilla = useAnimatedStyle(() => ({
     width: anchoSegmento,
