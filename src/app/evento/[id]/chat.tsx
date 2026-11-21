@@ -249,8 +249,8 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
         : emojis!.length === 1
           ? <StickerAnimado emoji={emojis![0]} tamano={TAMANO_EMOJI_SOLO} />
           : <Text style={styles.emojisGrandes} allowFontScaling={false}>{emojis!.join('')}</Text>}
-      {/* Sobre un emoji chico la hora lo taparía: va debajo. */}
-      {emojis ? <Text style={styles.horaSuelta}>{horaTexto}</Text> : <HoraFlotante texto={horaTexto} pendiente={m.pendiente} />}
+      {/* Sobre un emoji o un sticker la hora lo taparía: va debajo (solo el GIF la lleva encima). */}
+      {m.gif ? <HoraFlotante texto={horaTexto} pendiente={m.pendiente} /> : <Text style={styles.horaSuelta}>{horaTexto}</Text>}
     </Pressable>
   ) : (
     <Pressable

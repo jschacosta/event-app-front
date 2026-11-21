@@ -2,9 +2,11 @@
 // crece mientras sube en un arco, baja achicándose hasta la pastilla de reacciones del mensaje y,
 // al aterrizar, suelta un destello de puntos. La reacción se aplica justo en el aterrizaje, así la
 // pastilla aparece en el mismo instante. Sin rebotes: todo con desaceleración.
+// Se ve aunque el teléfono tenga las animaciones apagadas (como en Telegram): dura medio segundo y es
+// la confirmación de que la reacción se puso.
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion, interpolate, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -42,12 +44,12 @@ function UnVuelo({ vuelo, origen, onFin }: { vuelo: Vuelo; origen: Punto; onFin:
   useEffect(() => {
     const aterrizar = () => vuelo.alAterrizar();
     const terminar = () => onFin(vuelo.n);
-    p.set(withTiming(1, { duration: DURACION, easing: Easing.bezier(0.3, 0.6, 0.25, 1) }, (listo) => {
+    p.set(withTiming(1, { duration: DURACION, easing: Easing.bezier(0.3, 0.6, 0.25, 1), reduceMotion: ReduceMotion.Never }, (listo) => {
       if (listo) scheduleOnRN(aterrizar);
     }));
-    q.set(withDelay(DURACION - 40, withTiming(1, { duration: DESTELLO, easing: Easing.out(Easing.quad) }, (listo) => {
+    q.set(withDelay(DURACION - 40, withTiming(1, { duration: DESTELLO, easing: Easing.out(Easing.quad), reduceMotion: ReduceMotion.Never }, (listo) => {
       if (listo) scheduleOnRN(terminar);
-    })));
+    }), ReduceMotion.Never));
   }, [p, q, vuelo, onFin]);
 
   const estiloEmoji = useAnimatedStyle(() => {
