@@ -2,7 +2,7 @@
 import type { HiloResumen } from '@/components/opiniones';
 import { api } from '@/lib/api';
 
-export type TemaGuia = 'seguridad' | 'transporte' | 'entradas' | 'ropa' | 'plata' | 'samba' | 'funk' | 'barrios' | 'fiestas';
+export type TemaGuia = 'seguridad' | 'transporte' | 'entradas' | 'ropa' | 'plata' | 'samba' | 'funk' | 'barrios' | 'fiestas' | 'bebida' | 'cultura' | 'carnaval';
 export const IDIOMAS_GUIA = ['es', 'en', 'pt', 'fr', 'de'] as const;
 export type IdiomaGuia = (typeof IDIOMAS_GUIA)[number];
 

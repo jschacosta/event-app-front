@@ -968,7 +968,10 @@
       "samba": "Samba",
       "funk": "Funk",
       "barrios": "Quartiers",
-      "fiestas": "Soirées"
+      "fiestas": "Soirées",
+      "bebida": "Boissons",
+      "cultura": "Culture carioca",
+      "carnaval": "Carnaval"
     }
   }
 }
