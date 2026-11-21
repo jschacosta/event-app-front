@@ -8,7 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const DIST = process.argv[2] ?? 'dist';
-const SITIO = (process.env.SITIO_URL ?? 'https://boraspot.vercel.app').replace(/\/$/, '');
+const SITIO = (process.env.SITIO_URL ?? 'https://borapp.vercel.app').replace(/\/$/, '');
 const API = (process.env.EXPO_PUBLIC_API_URL ?? 'https://bora-app.up.railway.app').replace(/\/$/, '');
 const IDIOMAS = ['es', 'en', 'pt', 'fr', 'de'];
 const NOMBRE_CIUDAD = { rio: 'Rio de Janeiro', santiago: 'Santiago', bogota: 'Bogotá', saopaulo: 'São Paulo' };
