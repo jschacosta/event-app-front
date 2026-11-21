@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ComentariosHilo, RedactarHilo, useConversacion } from '@/components/conversacion-hilo';
@@ -40,6 +41,16 @@ export default function HiloScreen() {
         <Autoria autor={hilo.autor} fue={hilo.fue} creado={hilo.creado} />
         <Texto style={[styles.titulo, { color: t.text }]}>{hilo.titulo}</Texto>
         {hilo.texto ? <Texto style={{ fontSize: 16, lineHeight: 23 }}>{hilo.texto}</Texto> : null}
+        {hilo.fuentes?.length ? (
+          <View style={{ gap: 4, marginTop: 6 }}>
+            <Texto v="pie" secundario style={{ fontWeight: '700' }}>{tr('hilos.fuentes')}</Texto>
+            {hilo.fuentes.map((f) => (
+              <Pressable key={f.url} onPress={() => WebBrowser.openBrowserAsync(f.url)} accessibilityRole="link" hitSlop={4}>
+                {({ pressed }) => <Texto v="pie" style={{ color: t.accentText, opacity: pressed ? 0.6 : 1 }} numberOfLines={1}>{f.titulo}</Texto>}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <View style={[styles.accionesHilo, { borderBottomColor: t.separator }]}>
           <Votos horizontal puntaje={hilo.puntaje} miVoto={hilo.miVoto} onVotar={c.votarHilo} />
           <Texto v="pie" secundario style={{ fontWeight: '600' }}>{tr('opiniones.respuestas', { count: hilo.respuestas })}</Texto>

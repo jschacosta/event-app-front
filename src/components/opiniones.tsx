@@ -40,6 +40,7 @@ export type DatosOpiniones = {
 };
 export type HiloResumen = {
   id: string; titulo: string; texto: string; autor: Autor | null; fue: boolean; puntaje: number; respuestas: number; miVoto: number; creado: string;
+  fuentes?: { titulo: string; url: string }[]; // solo en los hilos que abre Bora
 };
 
 const VISIBLES = 4;

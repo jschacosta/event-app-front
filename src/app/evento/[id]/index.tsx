@@ -35,7 +35,8 @@ import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fech
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
 import { FotoEvento } from '@/components/foto-evento';
 import { avisar } from '@/lib/avisos';
-import { CHAT_ACTIVO } from '@/lib/funciones';
+import { CHAT_ACTIVO, GUIAS_ACTIVAS } from '@/lib/funciones';
+import { GuiasDeEvento } from '@/components/guias-evento';
 
 // Ficha de un evento, como un afiche: el título va sobre la foto. Debajo, los datos en dos columnas
 // (cuándo / dónde), "¿Vas?" compacto y quién va. En fiestas que se repiten, además: "Lo que dicen"
@@ -330,6 +331,7 @@ export default function EventoScreen() {
             <>
               <LoQueDicen datos={opiniones.datos} onResponder={() => (token ? setRespondiendo(true) : pedirSesion(tr, 'opinar', `/evento/${id}`))} />
               {evento.notaBora ? <View style={{ paddingTop: 22 }}><LoQueHayQueSaber nota={evento.notaBora} /></View> : null}
+              {GUIAS_ACTIVAS && evento.guias?.length ? <View style={{ paddingTop: 22 }}><GuiasDeEvento guias={evento.guias} ciudad={evento.ciudad} /></View> : null}
               {/* Lo de Google va aparte y debajo de lo de Bora (en eventos de una fecha, en la info). */}
               {evento.lugarGoogle ? <View style={{ paddingTop: 22, paddingBottom: 10 }}><EnInternet lugar={evento.lugarGoogle} /></View> : null}
               <View style={[styles.pestanas, { borderBottomColor: t.separator }]}>
@@ -376,6 +378,7 @@ export default function EventoScreen() {
                 </View>
               ) : null}
               {!repite && evento.notaBora ? <LoQueHayQueSaber nota={evento.notaBora} /> : null}
+              {!repite && GUIAS_ACTIVAS && evento.guias?.length ? <GuiasDeEvento guias={evento.guias} ciudad={evento.ciudad} /> : null}
               {!repite && evento.lugarGoogle ? <EnInternet lugar={evento.lugarGoogle} /> : null}
             </Animated.View>
           )}

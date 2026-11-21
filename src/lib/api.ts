@@ -144,6 +144,7 @@ export type ResumenAsistencia = { van: number; talvez: number; previa: number; s
 // "En internet": nota y resumen de Google Maps del lugar (no de la fiesta). Nunca se mezcla con Bora.
 // "Lo que hay que saber": datos prácticos del lugar escritos por Bora (en el idioma de la persona).
 export type NotaBora = { puntos: string[]; revisadaEn: string };
+export type GuiaDeEvento = { id: string; tema: string; titulo: string; slug: string; resumen: string };
 
 export type LugarGoogle = {
   fuente: 'google';
@@ -178,6 +179,7 @@ export type Evento = {
   fechasSerie?: number;
   lugarGoogle?: LugarGoogle | null; // solo en el detalle: lo que dice Google Maps del lugar
   notaBora?: NotaBora | null; // solo en el detalle: "Lo que hay que saber", escrito por Bora
+  guias?: GuiaDeEvento[]; // solo en el detalle: guías de Bora que tienen que ver con la fiesta
   chatAbreEn: string;
   chatAbierto: boolean;
   aquiAbreEn?: string; // desde cuándo se puede marcar "Ya estoy aquí" (1 hora antes del inicio)
