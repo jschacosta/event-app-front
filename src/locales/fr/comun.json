@@ -157,7 +157,8 @@
     "seRepite_one": "Récurrent",
     "seRepite_other": "Récurrent : {{count}} dates",
     "iniciaSesionOpinar": "Pour raconter comment c’était, voter ou commenter, connectez-vous ou créez un compte. C’est gratuit.",
-    "botonEntrar": "Se connecter"
+    "botonEntrar": "Se connecter",
+    "agregarCalendario": "Au calendrier"
   },
   "chat": {
     "titulo": "Canal",
@@ -910,5 +911,29 @@
     "todos": "Tous les quartiers",
     "sinResultados": "Aucun quartier de ce nom",
     "sinEventos": "Aucun événement à {{barrio}} avec ces filtres."
+  },
+  "mapa": {
+    "ver": "Voir sur la carte",
+    "eventos_one": "{{count}} événement sur la carte",
+    "eventos_other": "{{count}} événements sur la carte",
+    "semana": "7 prochains jours",
+    "enEsteLugar": "{{n}} sur {{total}} ici",
+    "quitarCategoria": "Retirer {{genero}}",
+    "sinUbicacion_one": "L’événement de ces dates n’a pas d’adresse exacte.",
+    "sinUbicacion_other": "Les {{count}} événements de ces dates n’ont pas d’adresse exacte.",
+    "vacio": "Aucun événement à ces dates.",
+    "verSemana": "Voir les 7 prochains jours",
+    "dondeEstoy": "Afficher ma position"
+  },
+  "cerca": {
+    "boton": "Près de moi",
+    "detalle": "Chaque jour, du plus proche au plus loin",
+    "quitar": "Retirer Près de moi",
+    "distancia": "à {{d}}",
+    "sinPermisoTitulo": "Bora n’a pas accès à votre position",
+    "sinPermisoTexto": "Pour voir ce qui se passe près de vous, autorisez la localisation dans les réglages du téléphone. Elle n’est utilisée que lorsque Bora est ouvert.",
+    "abrirAjustes": "Ouvrir les réglages",
+    "sinGpsTitulo": "Impossible de trouver votre position",
+    "sinGpsTexto": "Vérifiez que la localisation est activée, puis réessayez."
   }
 }

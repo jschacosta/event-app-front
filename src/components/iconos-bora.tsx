@@ -3,7 +3,7 @@
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 export type NombreIconoBora =
-  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica' | 'sinSenal' | 'descargar' | 'campana' | 'ruta';
+  | 'entrada' | 'canal' | 'grupo' | 'buscar' | 'ajustes' | 'flecha' | 'encuesta' | 'chispa' | 'pin' | 'globo' | 'cerrar' | 'copa' | 'musica' | 'sinSenal' | 'descargar' | 'campana' | 'ruta' | 'mapa' | 'cerca' | 'calendario' | 'lista';
 
 // Cada ícono: trazos dentro de un cuadro de 24×24.
 const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
@@ -124,6 +124,39 @@ const TRAZOS: Record<NombreIconoBora, (c: string) => React.ReactNode> = {
       <Path d="M7.6 18.5h5.2a2.8 2.8 0 0 0 0-5.6h-2.6a2.8 2.8 0 0 1 0-5.6h1.3" stroke={c} strokeDasharray="0.1 3" />
       <Path d="M17.5 12.5s-3.5-3-3.5-5.9a3.5 3.5 0 0 1 7 0c0 2.9-3.5 5.9-3.5 5.9z" stroke={c} />
       <Circle cx="17.5" cy="6.6" r="1" fill={c} />
+    </>
+  ),
+  // Plano doblado en tres paños con un punto marcado: ver en el mapa
+  mapa: (c) => (
+    <>
+      <Path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z" stroke={c} />
+      <Path d="M9 4.5v13M15 6.5v6" stroke={c} />
+      <Path d="M18 21s-2.6-2.2-2.6-4.3a2.6 2.6 0 0 1 5.2 0c0 2.1-2.6 4.3-2.6 4.3z" stroke={c} fill={c} />
+    </>
+  ),
+  // Mira con el punto al centro: dónde estoy
+  cerca: (c) => (
+    <>
+      <Circle cx="12" cy="12" r="6.5" stroke={c} />
+      <Circle cx="12" cy="12" r="2" fill={c} stroke={c} />
+      <Path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" stroke={c} />
+    </>
+  ),
+  // Hoja de calendario con sus anillos y un "+": agregar al calendario
+  calendario: (c) => (
+    <>
+      <Path d="M5.5 5.5h13a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5V7a1.5 1.5 0 0 1 1.5-1.5z" stroke={c} />
+      <Path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5" stroke={c} />
+      <Path d="M12 12.8v4.4M9.8 15h4.4" stroke={c} />
+    </>
+  ),
+  // Renglones con su viñeta: volver a la lista
+  lista: (c) => (
+    <>
+      <Path d="M9.5 7h10M9.5 12h10M9.5 17h10" stroke={c} />
+      <Circle cx="5" cy="7" r="0.9" fill={c} stroke={c} />
+      <Circle cx="5" cy="12" r="0.9" fill={c} stroke={c} />
+      <Circle cx="5" cy="17" r="0.9" fill={c} stroke={c} />
     </>
   ),
 };

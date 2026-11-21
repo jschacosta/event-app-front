@@ -157,7 +157,8 @@
     "seRepite_one": "Recurring",
     "seRepite_other": "Recurring: {{count}} dates",
     "iniciaSesionOpinar": "To share how it was, vote or comment, sign in or create an account. It's free.",
-    "botonEntrar": "Sign in"
+    "botonEntrar": "Sign in",
+    "agregarCalendario": "Add to calendar"
   },
   "chat": {
     "titulo": "Channel",
@@ -910,5 +911,29 @@
     "todos": "All areas",
     "sinResultados": "No areas with that name",
     "sinEventos": "No events in {{barrio}} with these filters."
+  },
+  "mapa": {
+    "ver": "See on the map",
+    "eventos_one": "{{count}} event on the map",
+    "eventos_other": "{{count}} events on the map",
+    "semana": "Next 7 days",
+    "enEsteLugar": "{{n}} of {{total}} here",
+    "quitarCategoria": "Remove {{genero}}",
+    "sinUbicacion_one": "The event on these dates doesn't have an exact address.",
+    "sinUbicacion_other": "The {{count}} events on these dates don't have an exact address.",
+    "vacio": "No events on these dates.",
+    "verSemana": "See the next 7 days",
+    "dondeEstoy": "Show where I am"
+  },
+  "cerca": {
+    "boton": "Near me",
+    "detalle": "Each day, from closest to farthest",
+    "quitar": "Remove Near me",
+    "distancia": "{{d}} away",
+    "sinPermisoTitulo": "Bora can't access your location",
+    "sinPermisoTexto": "To see what's near you, allow location in your phone settings. It's only used while Bora is open.",
+    "abrirAjustes": "Open settings",
+    "sinGpsTitulo": "We couldn't find where you are",
+    "sinGpsTexto": "Check that location is turned on and try again."
   }
 }

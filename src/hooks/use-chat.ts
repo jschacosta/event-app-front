@@ -224,7 +224,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
     );
     // Con modo lento el servidor dice cuándo se puede volver a escribir (al enviar o al rechazar).
     if (r.esperaHasta !== undefined) setEsperaHasta(r.esperaHasta ? new Date(r.esperaHasta).getTime() : null);
-    if (r.miembro !== undefined) setMiembro(Boolean(r.miembro)); // escribir no une: solo "Unirme"
+    if (r.miembro !== undefined) setMiembro(Boolean(r.miembro)); // escribir también une (queda en Mis canales)
     setMensajes((prev) => {
       const sinTemporal = prev.filter((x) => x.id !== idTemporal);
       const m = r.mensaje;

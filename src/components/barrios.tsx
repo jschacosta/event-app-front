@@ -14,9 +14,35 @@ import type { Barrio } from '@/lib/agenda';
 const sinAcentos = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const CON_BUSCADOR = 10;
 
-export function BotonBarrio({ elegido, onAbrir, onQuitar }: { elegido: string | null; onAbrir: () => void; onQuitar: () => void }) {
+// Abre el mapa con los mismos filtros de la Agenda (solo en el teléfono: la web no tiene mapa nativo).
+export function BotonMapa({ onPress }: { onPress: () => void }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={tr('mapa.ver')} hitSlop={6}
+      style={({ pressed }) => [styles.boton, styles.cuadrado, { backgroundColor: t.backgroundElement }, pressed && { opacity: 0.6 }]}>
+      <IconoBora nombre="mapa" tamano={18} color={t.text} />
+    </Pressable>
+  );
+}
+
+// "Dónde": un barrio o "Cerca de mí" (ordena cada día por distancia). Elegido, el botón se pinta açaí y lleva su ✕.
+export function BotonBarrio({ elegido, cerca, onAbrir, onQuitar }: { elegido: string | null; cerca?: boolean; onAbrir: () => void; onQuitar: () => void }) {
+  const t = useTheme();
+  const { t: tr } = useTranslation();
+  if (cerca) {
+    return (
+      <View style={[styles.boton, styles.elegido, { backgroundColor: t.accent }]}>
+        <Pressable onPress={onAbrir} accessibilityRole="button" accessibilityLabel={tr('barrio.elegir')} hitSlop={6} style={styles.nombre}>
+          <IconoBora nombre="cerca" tamano={16} color={t.onAccent} />
+          <Texto v="detalle" numberOfLines={1} style={{ fontWeight: '700', color: t.onAccent, maxWidth: 130 }}>{tr('cerca.boton')}</Texto>
+        </Pressable>
+        <Pressable onPress={onQuitar} accessibilityRole="button" accessibilityLabel={tr('cerca.quitar')} hitSlop={8} style={styles.quitar}>
+          <IconoBora nombre="cerrar" tamano={14} color={t.onAccent} grosor={2.4} />
+        </Pressable>
+      </View>
+    );
+  }
   if (!elegido) {
     return (
       <Pressable onPress={onAbrir} accessibilityRole="button" accessibilityLabel={tr('barrio.elegir')} hitSlop={6}
@@ -51,8 +77,9 @@ function Barra({ cuenta, max }: { cuenta: number; max: number }) {
   );
 }
 
-export function HojaBarrios({ visible, barrios, elegido, onElegir, onCerrar }: {
-  visible: boolean; barrios: Barrio[]; elegido: string | null; onElegir: (b: string | null) => void; onCerrar: () => void;
+export function HojaBarrios({ visible, barrios, elegido, cerca, onElegir, onCerca, onCerrar }: {
+  visible: boolean; barrios: Barrio[]; elegido: string | null; cerca?: boolean; onElegir: (b: string | null) => void;
+  onCerca?: () => void; onCerrar: () => void;
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
@@ -83,7 +110,16 @@ export function HojaBarrios({ visible, barrios, elegido, onElegir, onCerrar }: {
         </View>
       ) : null}
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {busqueda ? null : <FilaOpcion texto={tr('barrio.todos')} elegida={elegido === null ? true : undefined} onPress={() => elegir(null)} />}
+        {busqueda || !onCerca ? null : (
+          <FilaOpcion
+            texto={tr('cerca.boton')}
+            detalle={tr('cerca.detalle')}
+            elegida={cerca ? true : undefined}
+            izquierda={<IconoBora nombre="cerca" tamano={18} color={t.accentText} />}
+            onPress={() => { setBusqueda(''); onCerrar(); onCerca(); }}
+          />
+        )}
+        {busqueda ? null : <FilaOpcion texto={tr('barrio.todos')} elegida={elegido === null && !cerca ? true : undefined} onPress={() => elegir(null)} />}
         {lista.map((b, i) => (
           <FilaOpcion
             key={b.nombre}
@@ -103,6 +139,7 @@ export function HojaBarrios({ visible, barrios, elegido, onElegir, onCerrar }: {
 const styles = StyleSheet.create({
   boton: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 11, borderRadius: 6 },
   elegido: { paddingRight: 4 },
+  cuadrado: { width: 34, paddingHorizontal: 0, justifyContent: 'center' },
   nombre: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   quitar: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   barraFila: { flexDirection: 'row', alignItems: 'center', gap: 8, width: 104 },

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bora",
     "slug": "rio-eventos-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bora",
@@ -21,8 +21,12 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.boraapp.app",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "web": {
@@ -59,7 +63,25 @@
         }
       ],
       "expo-background-task",
-      "expo-build-properties"
+      "expo-build-properties",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Bora usa tu ubicación para mostrarte los eventos que tienes cerca.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "writeOnlyAccess": true,
+          "writeOnlyCalendarPermission": "Bora agrega a tu calendario los eventos que eliges.",
+          "calendarPermission": "Bora agrega a tu calendario los eventos que eliges.",
+          "remindersPermission": false
+        }
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -10,7 +10,8 @@ import { HojaCalendario } from '@/components/calendario';
 import { BotonArriba, EncabezadoCompacto, useDesplazamiento } from '@/components/desplazamiento';
 import { EsqueletoAgenda } from '@/components/esqueleto';
 import { BarraBusqueda, BotonCiudad, FilaGeneros, IconoVacio, TiraFechas } from '@/components/filtros';
-import { BotonBarrio, HojaBarrios } from '@/components/barrios';
+import { BotonBarrio, BotonMapa, HojaBarrios } from '@/components/barrios';
+import { IconoBora } from '@/components/iconos-bora';
 import { AvisoSinConexion, VacioSinConexion } from '@/components/aviso-sin-conexion';
 import { AvisoComoEstuvo } from '@/components/opiniones';
 import { BotonTexto, Icono, Texto } from '@/components/ui';
@@ -29,11 +30,14 @@ import { claveDia, claveHoy, diaCorto, diasDesdeHoy, diasHastaClave, encabezadoD
 import { colorEtiquetaGenero, GENEROS, nombreGenero } from '@/lib/generos';
 import { precargarEvento } from '@/lib/precarga';
 import { FotoEvento } from '@/components/foto-evento';
+import { distancia, pedirPosicion, textoDistancia, usePosicion, type Posicion } from '@/lib/ubicacion';
 
 // Agenda de Bora, armada como un line-up: el número del día va grande en su propia columna,
 // con una línea que une los eventos de ese día, y cada fila dice qué, a qué hora, dónde, cuánto y quién va.
 // Arriba: ciudad, tus tarjetas de géneros, las fechas y una tira con TODO lo que está en vivo ahora.
 const POR_DIA = 6;
+// Mapa y "Cerca de mí": solo en el teléfono (la web no tiene mapa nativo ni GPS confiable).
+const CON_MAPA = Platform.OS !== 'web';
 
 function abrir(e: Evento) {
   router.push({ pathname: '/evento/[id]', params: { id: e.id } });
@@ -65,7 +69,7 @@ const TarjetaAhora = memo(function TarjetaAhora({ evento }: { evento: Evento }) 
 
 // Fila del line-up: foto | nombre; hora y lugar; precio; género y quién va. Sin rayas entre filas:
 // las separa el aire. En el buscador (conDia) la fecha va delante de la hora.
-const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { evento: Evento; repeticiones: number; conDia?: boolean }) {
+const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia, metros }: { evento: Evento; repeticiones: number; conDia?: boolean; metros?: number | null }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   const a = evento.asistencia;
@@ -89,6 +93,12 @@ const FilaLineup = memo(function FilaLineup({ evento, repeticiones, conDia }: { 
           {precio ? <Texto v="pie" style={{ fontWeight: '600', marginLeft: 'auto' }}>{precio}</Texto> : null}
         </View>
         <View style={[styles.linea, { marginTop: 3 }]}>
+          {metros != null ? (
+            <View style={styles.distancia}>
+              <IconoBora nombre="cerca" tamano={11} color={t.accentText} grosor={2.4} />
+              <Texto v="mini" style={{ fontWeight: '800', color: t.accentText }}>{tr('cerca.distancia', { d: textoDistancia(metros) })}</Texto>
+            </View>
+          ) : null}
           {genero ? (
             <View style={[styles.genero, { backgroundColor: colorEtiquetaGenero(genero) }]}>
               <Texto v="mini" style={{ color: '#FFFFFF', fontWeight: '700' }}>{nombreGenero(genero)}</Texto>
@@ -134,10 +144,11 @@ type Seccion = { clave: string; titulo: string; total: number; grupos: { evento:
 
 // Un día del line-up: el número del día grande en la columna izquierda y una línea fina que baja
 // junto a sus eventos (como el recorrido de una noche). Los días se separan con espacio, no con rayas.
-const Dia = memo(function Dia({ seccion, onVerTodos }: { seccion: Seccion; onVerTodos: (clave: string) => void }) {
+const Dia = memo(function Dia({ seccion, onVerTodos, posicion }: { seccion: Seccion; onVerTodos: (clave: string) => void; posicion: Posicion | null }) {
   const t = useTheme();
   const { t: tr } = useTranslation();
-  const visibles = useMemo(() => elegirVisibles(seccion.grupos), [seccion.grupos]);
+  // Cerca de mí: los más cercanos (los grupos ya vienen ordenados por distancia).
+  const visibles = useMemo(() => (posicion ? seccion.grupos.slice(0, POR_DIA) : elegirVisibles(seccion.grupos)), [seccion.grupos, posicion]);
   const { numero, semana } = fechaDeClave(seccion.clave);
   const relativo = diasHastaClave(seccion.clave);
   return (
@@ -151,7 +162,7 @@ const Dia = memo(function Dia({ seccion, onVerTodos }: { seccion: Seccion; onVer
         {seccion.grupos.length > 1 ? <View style={[styles.riel, { backgroundColor: t.outline }]} /> : null}
       </View>
       <View style={{ flex: 1 }}>
-        {visibles.map((g) => <FilaLineup key={g.evento.id} evento={g.evento} repeticiones={g.repeticiones} />)}
+        {visibles.map((g) => <FilaLineup key={g.evento.id} evento={g.evento} repeticiones={g.repeticiones} metros={posicion ? distancia(posicion, g.evento) : undefined} />)}
         {seccion.total > visibles.length ? (
           <Pressable onPress={() => onVerTodos(seccion.clave)} accessibilityRole="button" style={({ pressed }) => [styles.verMas, pressed && { opacity: 0.6 }]}>
             <Texto v="detalle" style={{ fontWeight: '700', color: t.accentText }}>{tr('agenda.verTodosCuenta', { count: seccion.total })}</Texto>
@@ -186,6 +197,15 @@ export default function AgendaScreen() {
   const [barrioElegido, setBarrio] = useState<string | null>(null);
   const barrio = useDeferredValue(barrioElegido);
   const [hojaBarrios, setHojaBarrios] = useState(false);
+  // Cerca de mí: cada día ordenado por distancia. Solo vale con la posición en la mano.
+  const [cerca, setCerca] = useState(false);
+  const posicionActual = usePosicion();
+  const posicion = cerca ? posicionActual : null;
+  const activarCerca = useCallback(() => {
+    setBarrio(null);
+    setCerca(true);
+    pedirPosicion().then((p) => { if (!p) setCerca(false); });
+  }, []);
   const [calendario, setCalendario] = useState(false);
   const { onScroll, medirBuscador, compacto, arriba } = useDesplazamiento();
   const lista = useRef<FlatList<Seccion>>(null);
@@ -209,6 +229,7 @@ export default function AgendaScreen() {
     setCiudadVista(ciudad.id);
     setGenero(null);
     setBarrio(null);
+    setCerca(false);
     setConsulta('');
     setDia(null);
   }
@@ -281,9 +302,11 @@ export default function AgendaScreen() {
       && cubierto(agenda, e, genero, barrio));
     const vivo = (e: Evento) => new Date(e.inicio).getTime() <= ahora && ahora < new Date(e.fin).getTime();
     // En vivo también va primero lo que vale la pena (si no, gana el almuerzo que empezó a mediodía).
+    // Con "Cerca de mí", lo que no tiene ubicación va al final.
+    const lejania = (e: Evento) => (posicion ? distancia(posicion, e) ?? Infinity : 0);
     const enVivo = dia && dia !== hoy ? [] : deGenero.filter(vivo)
-      .map((evento, i) => ({ evento, i, p: puntaje({ evento, repeticiones: 1 }) }))
-      .sort((a, b) => b.p - a.p || a.i - b.i)
+      .map((evento, i) => ({ evento, i, p: puntaje({ evento, repeticiones: 1 }), d: lejania(evento) }))
+      .sort((a, b) => a.d - b.d || b.p - a.p || a.i - b.i)
       .map((x) => x.evento);
     // El line-up muestra lo que todavía no empezó (lo que está en vivo ya se ve arriba).
     const proximos = deGenero.filter((e) => !vivo(e) && (!dia || claveDia(e.inicio) === dia));
@@ -296,12 +319,15 @@ export default function AgendaScreen() {
       porDia.set(clave, [...(porDia.get(clave) ?? []), g]);
     }
     const secciones: Seccion[] = [...porDia.entries()].map(([clave, gs]) => ({
-      clave, titulo: encabezadoDia(clave), grupos: gs, total: Math.max(gs.length, totalDia.get(clave) ?? 0),
+      clave,
+      titulo: encabezadoDia(clave),
+      grupos: posicion ? [...gs].sort((a, b) => lejania(a.evento) - lejania(b.evento)) : gs,
+      total: Math.max(gs.length, totalDia.get(clave) ?? 0),
     }));
     return { enVivo, secciones };
     // i18n.language y ciudad.zona: los títulos de los días cambian con el idioma y la zona horaria
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventos, agenda, dia, genero, barrio, ahora, i18n.language, ciudad.zona]);
+  }, [eventos, agenda, dia, genero, barrio, ahora, posicion, i18n.language, ciudad.zona]);
 
   // Días con eventos: los manda el servidor (de toda la agenda), así la tira y el calendario no necesitan bajar todo.
   const diasConEventos = useMemo(() => {
@@ -320,6 +346,10 @@ export default function AgendaScreen() {
     pathname: '/dia/[clave]',
     params: { clave, ...(genero ? { genero } : {}), ...(barrio ? { barrio } : {}) },
   }), [genero, barrio]);
+  const verMapa = useCallback(() => router.push({
+    pathname: '/mapa',
+    params: { ...(dia ? { dia } : {}), ...(genero ? { genero } : {}), ...(barrio ? { barrio } : {}) },
+  }), [dia, genero, barrio]);
   const nada = mostrarSecciones && enVivo.length === 0 && secciones.length === 0 && !generoPendiente;
 
   const refrescar = async () => {
@@ -341,7 +371,7 @@ export default function AgendaScreen() {
         ref={lista}
         data={mostrarSecciones ? secciones : []}
         keyExtractor={(sec) => sec.clave}
-        renderItem={({ item: sec }) => <Dia seccion={sec} onVerTodos={verDia} />}
+        renderItem={({ item: sec }) => <Dia seccion={sec} onVerTodos={verDia} posicion={posicion} />}
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
@@ -363,9 +393,17 @@ export default function AgendaScreen() {
         ListHeaderComponent={<View style={{ paddingTop: insets.top + 10 }}>
           <View style={styles.encabezado}>
             <BotonCiudad grande />
-            {(agenda.barrios?.length ?? 0) >= 3 || barrioElegido ? (
-              <BotonBarrio elegido={barrioElegido} onAbrir={() => setHojaBarrios(true)} onQuitar={() => setBarrio(null)} />
-            ) : null}
+            <View style={styles.acciones}>
+              {(agenda.barrios?.length ?? 0) >= 3 || barrioElegido || CON_MAPA ? (
+                <BotonBarrio
+                  elegido={barrioElegido}
+                  cerca={cerca}
+                  onAbrir={() => setHojaBarrios(true)}
+                  onQuitar={() => { setBarrio(null); setCerca(false); }}
+                />
+              ) : null}
+              {CON_MAPA ? <BotonMapa onPress={verMapa} /> : null}
+            </View>
           </View>
           <View style={styles.margen}><AvisoSinConexion desde={horaDeLista(ciudad.id)} style={{ marginBottom: 10 }} /></View>
 
@@ -447,7 +485,9 @@ export default function AgendaScreen() {
         visible={hojaBarrios}
         barrios={agenda.barrios ?? []}
         elegido={barrioElegido}
-        onElegir={(b) => { setBarrio(b); subir(); }}
+        cerca={cerca}
+        onCerca={CON_MAPA ? () => { activarCerca(); subir(); } : undefined}
+        onElegir={(b) => { setBarrio(b); setCerca(false); subir(); }}
         onCerrar={() => setHojaBarrios(false)}
       />
       <HojaCalendario
@@ -465,6 +505,8 @@ const styles = StyleSheet.create({
   pantalla: { flex: 1, alignItems: 'center' },
   scroll: { width: '100%' },
   encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16 },
+  acciones: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  distancia: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   margen: { paddingHorizontal: 16, marginTop: 10 },
   cabezaAhora: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, marginBottom: 8 },
   puntoVivo: { width: 7, height: 7, borderRadius: 4, marginLeft: 4 },

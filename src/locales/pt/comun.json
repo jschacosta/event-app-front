@@ -157,7 +157,8 @@
     "seRepite_one": "Se repete",
     "seRepite_other": "Se repete: {{count}} datas",
     "iniciaSesionOpinar": "Para contar como foi, votar ou comentar, entre ou crie sua conta. É grátis.",
-    "botonEntrar": "Entrar"
+    "botonEntrar": "Entrar",
+    "agregarCalendario": "Na agenda"
   },
   "chat": {
     "titulo": "Canal",
@@ -910,5 +911,29 @@
     "todos": "Todos os bairros",
     "sinResultados": "Nenhum bairro com esse nome",
     "sinEventos": "Não há eventos em {{barrio}} com esses filtros."
+  },
+  "mapa": {
+    "ver": "Ver no mapa",
+    "eventos_one": "{{count}} evento no mapa",
+    "eventos_other": "{{count}} eventos no mapa",
+    "semana": "Próximos 7 dias",
+    "enEsteLugar": "{{n}} de {{total}} aqui",
+    "quitarCategoria": "Tirar {{genero}}",
+    "sinUbicacion_one": "O evento dessas datas não tem o endereço exato.",
+    "sinUbicacion_other": "Os {{count}} eventos dessas datas não têm o endereço exato.",
+    "vacio": "Não há eventos nessas datas.",
+    "verSemana": "Ver os próximos 7 dias",
+    "dondeEstoy": "Mostrar onde estou"
+  },
+  "cerca": {
+    "boton": "Perto de mim",
+    "detalle": "Cada dia, do mais perto ao mais longe",
+    "quitar": "Tirar Perto de mim",
+    "distancia": "a {{d}}",
+    "sinPermisoTitulo": "O Bora não tem acesso à sua localização",
+    "sinPermisoTexto": "Para ver o que está perto, permita a localização nos ajustes do celular. Ela só é usada enquanto o Bora está aberto.",
+    "abrirAjustes": "Abrir ajustes",
+    "sinGpsTitulo": "Não conseguimos ver onde você está",
+    "sinGpsTexto": "Confira se a localização do celular está ligada e tente de novo."
   }
 }

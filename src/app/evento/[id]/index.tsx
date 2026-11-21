@@ -29,6 +29,7 @@ import { compartirEvento } from '@/lib/compartir-evento';
 import { activarNotificaciones, programarAvisoLocal } from '@/lib/notificaciones';
 import { recordatorioAlMarcar } from '@/lib/recordatorios';
 import { HojaComoLlegar } from '@/components/como-llegar';
+import { agregarAlCalendario } from '@/lib/agregar-calendario';
 import { FilaRecordatorio } from '@/components/recordatorio';
 import { diaCorto, diasDesdeHoy, hora, precioTexto, tituloDia } from '@/lib/fechas';
 import { colorEtiquetaGenero, nombreGenero } from '@/lib/generos';
@@ -222,7 +223,21 @@ export default function EventoScreen() {
             <Columna
               rotulo={cuando}
               valor={`${hora(evento.inicio)} – ${hora(evento.fin)}`}
-              extra={<Texto v="pie" style={{ color: enCurso ? t.live : t.textSecondary, fontWeight: enCurso ? '700' : '400' }}>{cuantoFalta(evento.inicio, evento.fin, ahora, tr)}</Texto>}
+              extra={(
+                <>
+                  <Texto v="pie" style={{ color: enCurso ? t.live : t.textSecondary, fontWeight: enCurso ? '700' : '400' }}>{cuantoFalta(evento.inicio, evento.fin, ahora, tr)}</Texto>
+                  {enCurso ? null : (
+                    <Pressable onPress={() => agregarAlCalendario(evento)} hitSlop={8} accessibilityRole="button" style={styles.llegar}>
+                      {({ pressed }) => (
+                        <>
+                          <IconoBora nombre="calendario" tamano={14} color={t.accentText} />
+                          <Texto v="pie" style={{ color: t.accentText, fontWeight: '700', opacity: pressed ? 0.5 : 1 }}>{tr('evento.agregarCalendario')}</Texto>
+                        </>
+                      )}
+                    </Pressable>
+                  )}
+                </>
+              )}
             />
             <View style={[styles.divisor, { backgroundColor: t.separator }]} />
             <Columna

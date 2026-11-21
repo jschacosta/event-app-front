@@ -81,6 +81,7 @@ export default function RootLayout() {
             <Stack.Screen name="evento/[id]/nuevo-canal" options={{ presentation: 'modal' }} />
             <Stack.Screen name="canal/[codigo]" options={{ animation: 'fade' }} />
             <Stack.Screen name="dia/[clave]" />
+            <Stack.Screen name="mapa" />
             <Stack.Screen name="verificacion" options={{ presentation: 'modal' }} />
             <Stack.Screen name="perfil/editar" options={{ presentation: 'modal' }} />
             <Stack.Screen name="perfil/bloqueados" options={{ presentation: 'modal' }} />

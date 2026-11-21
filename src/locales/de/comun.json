@@ -157,7 +157,8 @@
     "seRepite_one": "Regelmäßig",
     "seRepite_other": "Regelmäßig: {{count}} Termine",
     "iniciaSesionOpinar": "Um zu erzählen, wie es war, abzustimmen oder zu kommentieren, melde dich an oder erstelle ein Konto. Es ist kostenlos.",
-    "botonEntrar": "Anmelden"
+    "botonEntrar": "Anmelden",
+    "agregarCalendario": "In den Kalender"
   },
   "chat": {
     "titulo": "Kanal",
@@ -910,5 +911,29 @@
     "todos": "Alle Viertel",
     "sinResultados": "Kein Viertel mit diesem Namen",
     "sinEventos": "Keine Events in {{barrio}} mit diesen Filtern."
+  },
+  "mapa": {
+    "ver": "Auf der Karte ansehen",
+    "eventos_one": "{{count}} Event auf der Karte",
+    "eventos_other": "{{count}} Events auf der Karte",
+    "semana": "Nächste 7 Tage",
+    "enEsteLugar": "{{n}} von {{total}} hier",
+    "quitarCategoria": "{{genero}} entfernen",
+    "sinUbicacion_one": "Für das Event an diesen Tagen fehlt die genaue Adresse.",
+    "sinUbicacion_other": "Für die {{count}} Events an diesen Tagen fehlt die genaue Adresse.",
+    "vacio": "Keine Events an diesen Tagen.",
+    "verSemana": "Nächste 7 Tage ansehen",
+    "dondeEstoy": "Meinen Standort zeigen"
+  },
+  "cerca": {
+    "boton": "In meiner Nähe",
+    "detalle": "Jeder Tag, vom nächsten zum entferntesten",
+    "quitar": "In meiner Nähe entfernen",
+    "distancia": "{{d}} entfernt",
+    "sinPermisoTitulo": "Bora hat keinen Zugriff auf deinen Standort",
+    "sinPermisoTexto": "Um zu sehen, was in deiner Nähe ist, erlaube den Standort in den Einstellungen deines Handys. Er wird nur genutzt, während Bora offen ist.",
+    "abrirAjustes": "Einstellungen öffnen",
+    "sinGpsTitulo": "Wir konnten deinen Standort nicht finden",
+    "sinGpsTexto": "Prüfe, ob der Standort eingeschaltet ist, und versuch es noch mal."
   }
 }
