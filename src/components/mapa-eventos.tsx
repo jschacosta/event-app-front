@@ -19,15 +19,17 @@ const ESTILOS = {
 
 // Colores del mapa base por capa. En oscuro, morados con contraste suficiente para leer calles y barrios
 // (la base "dark" de OpenFreeMap es casi negra); los pines açaí siguen siendo lo más brillante.
-const TINTES: Record<'claro' | 'oscuro', Record<string, Record<string, string>>> = {
+// null quita la propiedad del estilo base (p. ej. la trama gris de los bosques del estilo oscuro).
+const TINTES: Record<'claro' | 'oscuro', Record<string, Record<string, unknown>>> = {
   // "Lavanda": morado grisáceo claro para un mapa oscuro (se leen calles, agua y barrios sin encandilar).
   oscuro: {
     background: { 'background-color': '#3A3046' },
     water: { 'fill-color': '#4E4180' },
     waterway: { 'line-color': '#4E4180' },
     landuse_residential: { 'fill-color': '#40354D' },
-    landcover_wood: { 'fill-color': '#36483D' },
-    landuse_park: { 'fill-color': '#36483D' },
+    // Cerros y bosques en verde: en Río son la referencia para ubicarse.
+    landcover_wood: { 'fill-color': '#3C5646', 'fill-pattern': null, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0, 11, 0.9] },
+    landuse_park: { 'fill-color': '#41604B' },
     building: { 'fill-color': '#4A3E5A', 'fill-outline-color': '#4A3E5A' },
     highway_path: { 'line-color': '#5A4C6E' },
     highway_minor: { 'line-color': '#5A4C6E' },
@@ -51,7 +53,8 @@ const TINTES: Record<'claro' | 'oscuro', Record<string, Record<string, string>>>
     background: { 'background-color': '#F6F4F8' },
     water: { 'fill-color': '#DCD4EA' },
     waterway: { 'line-color': '#DCD4EA' },
-    park: { 'fill-color': '#E7ECDF' },
+    park: { 'fill-color': '#D3E4C8' },
+    landcover_wood: { 'fill-color': '#C4DAB6' },
   },
 };
 
@@ -69,7 +72,11 @@ function useEstilo(modo: 'claro' | 'oscuro') {
       .then((r) => r.json() as Promise<StyleSpecification>)
       .then((s) => {
         const tinte = TINTES[modo];
-        s.layers = s.layers.map((l) => (tinte[l.id] ? { ...l, paint: { ...(('paint' in l && l.paint) || {}), ...tinte[l.id] } } as typeof l : l));
+        s.layers = s.layers.map((l) => {
+          if (!tinte[l.id]) return l;
+          const paint = Object.fromEntries(Object.entries({ ...(('paint' in l && l.paint) || {}), ...tinte[l.id] }).filter(([, v]) => v !== null));
+          return { ...l, paint } as typeof l;
+        });
         cacheEstilos[modo] = s;
         clearTimeout(plan);
         poner(s);
