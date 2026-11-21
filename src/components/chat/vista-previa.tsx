@@ -5,11 +5,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image as ImagenRN, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { Bandera } from '@/components/bandera';
-import { FondoDibujos } from '@/components/chat/fondo-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconoBora } from '@/components/iconos-bora';
@@ -52,26 +52,36 @@ export function useVistaCanal(eventoId: string | undefined, activo = true, sala 
 // ---------- Fondo del chat ----------
 // Liso, del color del tema: el afiche difuminado de antes ensuciaba la pantalla, sobre todo sin mensajes.
 // Se conservan los parámetros para no tocar a quien lo usa.
-// Fondo del chat según la categoría del evento (como los fondos con dibujo de Telegram): un degradado
-// con los colores del género, fuerte arriba y que se apaga hacia abajo para que las burbujas se lean,
-// y encima los dibujitos del género (pandeiros en Samba, parlantes en Funk…).
+// Fondo del chat según la categoría del evento: manchas de luz con los colores del género (como una
+// pista con focos) y grano de película encima. La categoría se siente por el color, sin dibujos.
+const GRANO = require('@/assets/images/grano.png');
+const MANCHAS = [
+  { cx: 15, cy: 12, rx: 80, ry: 32, color: 0, oscuro: 0.55, claro: 0.38 },
+  { cx: 108, cy: 56, rx: 62, ry: 28, color: 1, oscuro: 0.5, claro: 0.3 },
+  { cx: -5, cy: 98, rx: 48, ry: 20, color: 0, oscuro: 0.28, claro: 0.2 },
+] as const;
+
 export function FondoEvento({ generos }: { imagen?: string | null; generos?: string[] }) {
   const t = useTheme();
   const oscuro = useColorScheme() === 'dark';
   // LGBT+ tiene 5 colores: se usan el primero y el último.
   const colores = generos?.length ? coloresGenero(generos[0]) : ['#64209A', '#1A1023'];
-  const c1 = colores[0];
-  const c2 = colores[colores.length - 1];
+  const tonos = [colores[0], colores[colores.length - 1]];
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: t.chatWallpaper }]} pointerEvents="none">
-      <LinearGradient
-        colors={[conAlfa(c1, oscuro ? 0.34 : 0.26), conAlfa(c2, oscuro ? 0.2 : 0.12), conAlfa(t.chatWallpaper, 0)]}
-        locations={[0, 0.45, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.6, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <FondoDibujos genero={generos?.[0]} color={oscuro ? conAlfa(c1, 0.2) : conAlfa(c2, 0.18)} />
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+        <Defs>
+          {MANCHAS.map((m, i) => (
+            <RadialGradient key={i} id={`mancha${i}`} cx="50%" cy="50%" r="50%">
+              <Stop offset="0" stopColor={tonos[m.color]} stopOpacity={oscuro ? m.oscuro : m.claro} />
+              <Stop offset="0.55" stopColor={tonos[m.color]} stopOpacity={(oscuro ? m.oscuro : m.claro) * 0.35} />
+              <Stop offset="1" stopColor={tonos[m.color]} stopOpacity={0} />
+            </RadialGradient>
+          ))}
+        </Defs>
+        {MANCHAS.map((m, i) => <Ellipse key={i} cx={m.cx} cy={m.cy} rx={m.rx} ry={m.ry} fill={`url(#mancha${i})`} />)}
+      </Svg>
+      <ImagenRN source={GRANO} resizeMode="repeat" style={[StyleSheet.absoluteFill, { width: undefined, height: undefined, opacity: oscuro ? 0.07 : 0.09 }]} />
     </View>
   );
 }
