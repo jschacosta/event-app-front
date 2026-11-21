@@ -67,8 +67,8 @@ export const Colors = {
     sun: '#FFC83D',
     onSun: '#2E1F00',
     outline: '#33263E',
-    bubbleIn: '#241830',
-    bubbleOut: '#7B3FD0',
+    bubbleIn: 'rgba(36,22,48,0.62)', // semitransparente: deja pasar la luz del fondo del chat
+    bubbleOut: 'rgba(123,63,208,0.88)',
     onBubbleOut: '#FFFFFF',
     bubbleOutMeta: 'rgba(255,255,255,0.7)',
     chatWallpaper: '#120A17',
