@@ -17,19 +17,34 @@ const ESTILOS = {
   oscuro: 'https://tiles.openfreemap.org/styles/dark',
 };
 
-// Colores del mapa base por capa: lo justo para que se sienta Bora sin perder lectura de calles.
+// Colores del mapa base por capa. En oscuro, morados con contraste suficiente para leer calles y barrios
+// (la base "dark" de OpenFreeMap es casi negra); los pines açaí siguen siendo lo más brillante.
 const TINTES: Record<'claro' | 'oscuro', Record<string, Record<string, string>>> = {
   oscuro: {
-    background: { 'background-color': '#120A17' },
-    water: { 'fill-color': '#1E1433' },
-    waterway: { 'line-color': '#1E1433' },
-    landuse_residential: { 'fill-color': '#160D1C' },
-    landcover_wood: { 'fill-color': '#1A1222' },
-    landuse_park: { 'fill-color': '#1A1222' },
-    building: { 'fill-color': '#170E1E', 'fill-outline-color': '#22172C' },
-    highway_minor: { 'line-color': '#21162B' },
-    highway_major_subtle: { 'line-color': '#2C1F38' },
-    highway_motorway_subtle: { 'line-color': '#2C1F38' },
+    background: { 'background-color': '#1A1121' },
+    water: { 'fill-color': '#2B1F48' },
+    waterway: { 'line-color': '#2B1F48' },
+    landuse_residential: { 'fill-color': '#1F1527' },
+    landcover_wood: { 'fill-color': '#1C2520' },
+    landuse_park: { 'fill-color': '#1C2520' },
+    building: { 'fill-color': '#251A31', 'fill-outline-color': '#30243F' },
+    highway_path: { 'line-color': '#2F2541' },
+    highway_minor: { 'line-color': '#31263F' },
+    highway_major_casing: { 'line-color': 'rgba(150,125,185,0.22)' },
+    highway_major_inner: { 'line-color': '#3E3051' },
+    highway_major_subtle: { 'line-color': '#3E3051' },
+    highway_motorway_casing: { 'line-color': 'rgba(170,140,210,0.28)' },
+    highway_motorway_inner: { 'line-color': '#4A3A60' },
+    highway_motorway_subtle: { 'line-color': '#4A3A60' },
+    railway: { 'line-color': '#3A2F48' },
+    railway_minor: { 'line-color': '#3A2F48' },
+    railway_transit: { 'line-color': '#3A2F48' },
+    boundary_state: { 'line-color': '#4A3D5A' },
+    water_name: { 'text-color': '#9D8FC4', 'text-halo-color': 'rgba(26,17,33,0.9)' },
+    highway_name_other: { 'text-color': '#B5A9C6', 'text-halo-color': 'rgba(26,17,33,0.95)' },
+    highway_name_motorway: { 'text-color': '#C7BBD8' },
+    ...Object.fromEntries(['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state']
+      .map((id) => [id, { 'text-color': '#D9CCE9', 'text-halo-color': 'rgba(26,17,33,0.9)' }])),
   },
   claro: {
     background: { 'background-color': '#F6F4F8' },
@@ -148,10 +163,10 @@ export const MapaEventos = forwardRef<MapaEventosRef, Props>(function MapaEvento
     if (ids.length) onElegir(ids);
   };
 
-  if (!estilo || !caja) return <View style={[StyleSheet.absoluteFill, { backgroundColor: modo === 'oscuro' ? '#120A17' : '#F6F4F8' }]} />;
+  if (!estilo || !caja) return <View style={[StyleSheet.absoluteFill, { backgroundColor: modo === 'oscuro' ? '#1A1121' : '#F6F4F8' }]} />;
 
   const pin = t.accent;
-  const borde = modo === 'oscuro' ? '#120A17' : '#FFFFFF';
+  const borde = modo === 'oscuro' ? '#1A1121' : '#FFFFFF';
   const textoGrupo = t.onAccent;
   const filtroElegidos: ['in', ['get', 'id'], ['literal', string[]]] = ['in', ['get', 'id'], ['literal', elegidos]];
 
