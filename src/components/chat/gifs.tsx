@@ -22,6 +22,28 @@ type Pagina = { gifs: (Gif & { id: string })[]; siguiente: number | null };
 let disponibles: boolean | null = null;
 export const gifsDisponibles = () => disponibles;
 
+// Al abrir el panel se pregunta una vez si hay GIFs (de paso quedan las tendencias en la caché del
+// servidor). Mientras no se sabe, la pestaña no aparece: así nunca se ve un "no disponible".
+let revision: Promise<boolean> | null = null;
+export function useGifsDisponibles() {
+  const { token } = useSesion();
+  const [hay, setHay] = useState(disponibles === true);
+  useEffect(() => {
+    if (!token || disponibles !== null) return;
+    revision ??= api('/gifs?pagina=1', { token })
+      .then(() => (disponibles = true))
+      .catch((e: { codigo?: string; status?: number }) => {
+        if (e.codigo === 'GIFS_NO_DISPONIBLES' && e.status === 503) disponibles = false;
+        revision = null; // si fue un corte de señal, se vuelve a preguntar la próxima vez
+        return false;
+      });
+    let vivo = true;
+    revision.then((r) => { if (vivo) setHay(r); });
+    return () => { vivo = false; };
+  }, [token]);
+  return hay;
+}
+
 export function useGifs(consulta: string) {
   const { token } = useSesion();
   const [gifs, setGifs] = useState<(Gif & { id: string })[]>([]);

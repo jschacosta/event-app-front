@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useKeyboardHandler, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import Animated, {
-  Easing, FadeIn, FadeInDown, FadeOut, Keyframe, LinearTransition, SlideInLeft, SlideInRight, useAnimatedStyle, useSharedValue, withTiming, ZoomIn, ZoomOut,
+  Easing, FadeIn, FadeInDown, FadeOut, LinearTransition, SlideInLeft, SlideInRight, useAnimatedStyle, useSharedValue, withTiming, ZoomIn, ZoomOut,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +27,7 @@ import { FilaReacciones, PanelEmojis, Pop, useSalto } from '@/components/emojis'
 import { HojaNuevaEncuesta, TarjetaEncuesta } from '@/components/encuesta';
 import { HojaAcciones, type OpcionHoja } from '@/components/hoja-acciones';
 import { MenuMensaje, type Ancla } from '@/components/chat/menu-mensaje';
+import { CapaVuelos, type Punto, type Vuelo } from '@/components/chat/vuelo-reaccion';
 import { IconoBora } from '@/components/iconos-bora';
 import { Icono } from '@/components/ui';
 import { BotonAqui, CabezaAqui, useYaAqui } from '@/components/ya-aqui';
@@ -59,7 +60,9 @@ const sePuedeEditar = (m: MensajeChat) => Date.now() - new Date(m.fecha).getTime
 const MAX_TEXTO = 500;
 // Alto del panel de emojis y stickers antes de conocer el del teclado (después se usa el del teclado).
 const ALTO_PANEL_INICIAL = Platform.OS === 'ios' ? 336 : 300;
-const TAMANO_STICKER = 150;
+// Sticker sobre una "calcomanía" blanca; un emoji solo va más chico y sin fondo, para que no se confundan.
+const TAMANO_STICKER = 96;
+const TAMANO_EMOJI_SOLO = 56;
 
 // Botones de formato que aparecen al seleccionar texto en el campo (como en Telegram).
 const BOTONES_FORMATO: { formato: Formato; letra: string; estilo: object }[] = [
@@ -75,13 +78,6 @@ type Item =
   | { tipo: 'aviso'; m: MensajeChat }
   | { tipo: 'msg'; m: MensajeChat; agrupado: boolean; continua: boolean };
 
-// Al reaccionar, el emoji salta grande sobre el mensaje y se va hacia arriba (como en Telegram).
-const ESTALLIDO = new Keyframe({
-  0: { opacity: 0, transform: [{ translateY: 0 }, { scale: 0.3 }] },
-  25: { opacity: 1, transform: [{ translateY: -14 }, { scale: 1.7 }] },
-  60: { opacity: 1, transform: [{ translateY: -30 }, { scale: 1.25 }] },
-  100: { opacity: 0, transform: [{ translateY: -56 }, { scale: 1 }] },
-}).duration(850);
 const DOBLE_TOQUE_MS = 280;
 const REACCION_DOBLE_TOQUE = '❤️';
 
@@ -169,6 +165,8 @@ function ChipReaccion({ emoji, cuenta, mio, onPress }: { emoji: string; cuenta: 
 const nada = () => {};
 
 type DatosVista = { mia: boolean; agrupado: boolean; continua: boolean; aqui: boolean; edad?: number };
+// Dónde está el mensaje y desde dónde sale el emoji al reaccionar (para la animación del vuelo).
+type DatosVuelo = { ancla: Ancla; mia: boolean; desde?: Punto };
 
 const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltado, aqui, edad, clon, oculto, onMenu, onPerfil, onReaccion, onIrACita, onResponder, onVotar }: {
   m: MensajeChat; mia: boolean; yo?: string; resaltado: boolean;
@@ -179,7 +177,7 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
 
   oculto?: boolean; // mientras su copia está en el menú
   clon?: boolean; // copia que se muestra encima en el menú del mensaje (sin gestos ni márgenes)
-  onMenu: (m: MensajeChat, ancla: Ancla, vista: DatosVista) => void; onPerfil: (m: MensajeChat) => void; onReaccion: (m: MensajeChat, emoji: string) => void; onIrACita: (id: string) => void;
+  onMenu: (m: MensajeChat, ancla: Ancla, vista: DatosVista) => void; onPerfil: (m: MensajeChat) => void; onReaccion: (m: MensajeChat, emoji: string, vuelo?: DatosVuelo) => void; onIrACita: (id: string) => void;
   onResponder: (m: MensajeChat) => void;
   onVotar: (m: MensajeChat, opcion: number) => void;
 }) {
@@ -192,20 +190,6 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
   // Stickers, GIFs y mensajes de solo emojis (hasta 3) van grandes y sin burbuja.
   const emojis = !m.sticker && !m.gif && !m.encuesta && !m.respuestaA ? emojisSolos(m.texto) : null;
   const sinBurbuja = Boolean(m.sticker || m.gif || emojis);
-
-  // Cuando mi reacción cambia a un emoji nuevo, ese emoji "salta" sobre el mensaje.
-  const miReaccion = (yo && reacciones.find((r) => r.usuarios.includes(yo))?.emoji) || null;
-  const [reaccionVista, setReaccionVista] = useState(miReaccion);
-  const [estallido, setEstallido] = useState<{ emoji: string; n: number } | null>(null);
-  if (miReaccion !== reaccionVista) {
-    setReaccionVista(miReaccion);
-    if (miReaccion) setEstallido((e) => ({ emoji: miReaccion, n: (e?.n ?? 0) + 1 }));
-  }
-  useEffect(() => {
-    if (!estallido) return;
-    const id = setTimeout(() => setEstallido(null), 900);
-    return () => clearTimeout(id);
-  }, [estallido]);
 
   // La fila se mide en la pantalla para que el menú ponga la copia del mensaje justo encima.
   const filaRef = useRef<ComponentRef<typeof View>>(null);
@@ -227,7 +211,10 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
     if (ahora - ultimoToque.current < DOBLE_TOQUE_MS) {
       ultimoToque.current = 0;
       vibrar();
-      onReaccion(m, REACCION_DOBLE_TOQUE);
+      // El corazón sale del centro del mensaje y aterriza en sus reacciones.
+      filaRef.current?.measureInWindow((x, y, ancho, alto) => {
+        onReaccion(m, REACCION_DOBLE_TOQUE, { ancla: { x, y, ancho, alto }, mia, desde: { x: x + ancho / 2, y: y + alto / 2 } });
+      });
     } else {
       ultimoToque.current = ahora;
     }
@@ -258,9 +245,9 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
       {m.gif
         ? <Image source={{ uri: m.gif.url }} placeholder={{ uri: m.gif.preview }} style={[styles.gif, { aspectRatio: Math.max(0.5, Math.min(2, m.gif.ancho / m.gif.alto)) }]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         : m.sticker
-        ? <StickerAnimado emoji={m.texto} codigo={m.sticker} tamano={TAMANO_STICKER} />
+        ? <View style={styles.calcomania}><StickerAnimado emoji={m.texto} codigo={m.sticker} tamano={TAMANO_STICKER} /></View>
         : emojis!.length === 1
-          ? <StickerAnimado emoji={emojis![0]} tamano={96} />
+          ? <StickerAnimado emoji={emojis![0]} tamano={TAMANO_EMOJI_SOLO} />
           : <Text style={styles.emojisGrandes} allowFontScaling={false}>{emojis!.join('')}</Text>}
       <HoraFlotante texto={horaTexto} pendiente={m.pendiente} />
     </Pressable>
@@ -308,11 +295,6 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
 
   // Los mensajes propios entran desde abajo (como en Telegram); el resto solo aparece.
   const entrada = m.pendiente ? FadeInDown.duration(160) : undefined;
-  const salto = estallido ? (
-    <Animated.Text key={estallido.n} entering={ESTALLIDO} pointerEvents="none" style={[styles.estallido, mia ? { right: 8 } : { left: 44 }]}>
-      {estallido.emoji}
-    </Animated.Text>
-  ) : null;
 
   const contenidoVivo = clon ? contenido : <Animated.View style={estiloApriete}>{contenido}</Animated.View>;
 
@@ -321,7 +303,6 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
       <Animated.View ref={filaRef} entering={clon ? undefined : entrada} style={[styles.filaMia, clon ? { maxWidth: '100%' } : !agrupado && styles.separacion, oculto && { opacity: 0 }]}>
         {contenidoVivo}
         {chips}
-        {clon ? null : salto}
       </Animated.View>
     );
     return clon ? fila : <DeslizarParaResponder onResponder={() => onResponder(m)}>{fila}</DeslizarParaResponder>;
@@ -362,7 +343,6 @@ const Burbuja = memo(function Burbuja({ m, mia, agrupado, continua, yo, resaltad
           </View>
         </View>
         {chips}
-        {clon ? null : salto}
       </View>
   );
   return clon ? fila : <DeslizarParaResponder onResponder={() => onResponder(m)}>{fila}</DeslizarParaResponder>;
@@ -818,9 +798,27 @@ export default function ChatScreen() {
     setAviso(tr('chat.copiado'));
   };
 
-  const reaccionarA = useCallback((m: MensajeChat, emoji: string) => {
-    if (usuario && !m.pendiente) reaccionar(m.id, emoji, usuario.id);
+  // Al poner una reacción, el emoji vuela hasta el mensaje y la reacción se aplica al aterrizar.
+  // Quitarla (o tocar una pastilla que ya existe) es inmediato.
+  const [vuelos, setVuelos] = useState<Vuelo[]>([]);
+  const nVuelo = useRef(0);
+  const reaccionarA = useCallback((m: MensajeChat, emoji: string, vuelo?: DatosVuelo) => {
+    if (!usuario || m.pendiente) return;
+    const aplicar = () => reaccionar(m.id, emoji, usuario.id);
+    const mia = m.reacciones?.find((r) => r.usuarios.includes(usuario.id))?.emoji;
+    if (!vuelo || mia === emoji || Platform.OS === 'web') return aplicar();
+    const { ancla } = vuelo;
+    const conReacciones = Boolean(m.reacciones?.length);
+    // La pastilla va bajo el mensaje: a la derecha en los propios, tras la foto en los demás.
+    const hasta = {
+      x: vuelo.mia ? ancla.x + ancla.ancho - 22 : ancla.x + 52,
+      y: conReacciones ? ancla.y + ancla.alto - 12 : ancla.y + ancla.alto + 8,
+    };
+    const desde = vuelo.desde ?? { x: ancla.x + ancla.ancho / 2, y: ancla.y };
+    nVuelo.current += 1;
+    setVuelos((v) => [...v, { n: nVuelo.current, emoji, desde, hasta, alAterrizar: () => { vibrar(); aplicar(); } }]);
   }, [reaccionar, usuario]);
+  const finVuelo = useCallback((n: number) => setVuelos((v) => v.filter((x) => x.n !== n)), []);
 
   // Reportar: primero se elige el motivo; se reporta a la persona y, si viene de un mensaje, también el mensaje.
   const reportar = (autor: Autor, mensajeId?: string) => {
@@ -905,8 +903,8 @@ export default function ChatScreen() {
       ],
     });
   };
-  const elegirReaccion = (e: string) => {
-    if (menu) reaccionarA(menu.m, e);
+  const elegirReaccion = (e: string, desde?: Punto) => {
+    if (menu) reaccionarA(menu.m, e, { ancla: menu.ancla, mia: menu.vista.mia, desde });
   };
 
   // Tocar la foto de alguien (o a alguien en la lista de personas): su edad, verificación, Instagram y reportar.
@@ -1566,11 +1564,11 @@ export default function ChatScreen() {
         reacciones={menu && estado === 'listo' ? (
           <FilaReacciones
             elegida={menu.reaccion}
-            onElegir={(e) => { setMenu(null); elegirReaccion(e); }}
+            onElegir={(e, desde) => { setMenu(null); elegirReaccion(e, desde); }}
             onMas={() => setMenu((x) => x && { ...x, todos: true })}
           />
         ) : undefined}
-        panel={menu?.todos ? <PanelEmojis onElegir={(e) => { setMenu(null); elegirReaccion(e); }} alto={260} /> : undefined}
+        panel={menu?.todos ? <PanelEmojis onElegir={(e, desde) => { setMenu(null); elegirReaccion(e, desde); }} alto={260} /> : undefined}
         opciones={menu?.opciones ?? []}
         onCerrar={() => setMenu(null)}
       />
@@ -1582,6 +1580,7 @@ export default function ChatScreen() {
         encabezado={hoja?.encabezado}
         onCerrar={() => setHoja(null)}
       />
+      <CapaVuelos vuelos={vuelos} onFin={finVuelo} />
     </View>
   );
 }
@@ -1630,9 +1629,12 @@ function crearEstilos(C: ReturnType<typeof colores>) {
   burbujaOtro: { backgroundColor: C.burbujaOtro, borderRadius: 18, paddingHorizontal: 12, paddingTop: 7, paddingBottom: 7, alignSelf: 'flex-start' },
   grandeMio: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   grandeOtro: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  emojisGrandes: { fontSize: 46, lineHeight: 56 },
+  emojisGrandes: { fontSize: 38, lineHeight: 46 },
+  calcomania: {
+    padding: 8, borderRadius: 26, backgroundColor: '#FFFFFF',
+    shadowColor: '#1B0A2B', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3,
+  },
   gif: { width: 230, maxHeight: 300, borderRadius: 16, backgroundColor: C.avatarVacio },
-  estallido: { position: 'absolute', top: -6, fontSize: 34, zIndex: 3 },
   avisoFila: { alignItems: 'center', marginVertical: 6 },
   aviso2: {
     flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '86%',

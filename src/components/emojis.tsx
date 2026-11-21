@@ -2,8 +2,8 @@
 // El panel sirve sobre todo en la web y para reaccionar con cualquier emoji; en el celular
 // el teclado también trae los suyos.
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { Pressable, ScrollView, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
+import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated';
 
 import { Icono } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,9 +23,9 @@ export const GRUPOS: { icono: string; emojis: string[] }[] = [
 export function Pop({ retraso = 0, children }: { retraso?: number; children: ReactNode }) {
   const p = useSharedValue(0);
   useEffect(() => {
-    p.set(withDelay(retraso, withSpring(1, { damping: 9, stiffness: 320, mass: 0.6 })));
+    p.set(withDelay(retraso, withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) })));
   }, [p, retraso]);
-  const estilo = useAnimatedStyle(() => ({ opacity: Math.min(1, p.value * 2), transform: [{ scale: p.value }] }));
+  const estilo = useAnimatedStyle(() => ({ opacity: Math.min(1, p.value * 2), transform: [{ scale: 0.5 + p.value * 0.5 }] }));
   return <Animated.View style={estilo}>{children}</Animated.View>;
 }
 
@@ -33,20 +33,24 @@ export function Pop({ retraso = 0, children }: { retraso?: number; children: Rea
 export function useSalto(clave: unknown) {
   const s = useSharedValue(1);
   useEffect(() => {
-    s.set(withSequence(withTiming(1.3, { duration: 110 }), withSpring(1, { damping: 8, stiffness: 300 })));
+    s.set(withSequence(withTiming(1.22, { duration: 110, easing: Easing.out(Easing.quad) }), withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })));
   }, [clave, s]);
   return useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
 }
 
 // Fila de reacciones rápidas + "+" para abrir el panel completo.
-export function FilaReacciones({ elegida, onElegir, onMas }: { elegida?: string; onElegir: (e: string) => void; onMas: () => void }) {
+type Desde = { x: number; y: number };
+// La posición del toque (en la ventana) es desde donde sale el vuelo de la reacción.
+const desdeToque = (ev: GestureResponderEvent): Desde => ({ x: ev.nativeEvent.pageX, y: ev.nativeEvent.pageY });
+
+export function FilaReacciones({ elegida, onElegir, onMas }: { elegida?: string; onElegir: (e: string, desde?: Desde) => void; onMas: () => void }) {
   const t = useTheme();
   return (
     <View style={[styles.fila, { backgroundColor: t.card }]}>
       {REACCIONES_RAPIDAS.map((e, i) => (
         <Pop key={e} retraso={60 + 35 * i}>
           <Pressable
-            onPress={() => onElegir(e)}
+            onPress={(ev) => onElegir(e, desdeToque(ev))}
             accessibilityRole="button"
             accessibilityLabel={e}
             style={({ pressed }) => [styles.rapida, elegida === e && { backgroundColor: t.backgroundSelected }, pressed && { transform: [{ scale: 1.25 }] }]}>
@@ -64,7 +68,7 @@ export function FilaReacciones({ elegida, onElegir, onMas }: { elegida?: string;
 }
 
 // Panel de emojis por grupos.
-export function PanelEmojis({ onElegir, alto = 260 }: { onElegir: (e: string) => void; alto?: number }) {
+export function PanelEmojis({ onElegir, alto = 260 }: { onElegir: (e: string, desde?: Desde) => void; alto?: number }) {
   const t = useTheme();
   const [grupo, setGrupo] = useState(0);
   return (
@@ -83,7 +87,7 @@ export function PanelEmojis({ onElegir, alto = 260 }: { onElegir: (e: string) =>
       </View>
       <ScrollView contentContainerStyle={styles.grilla} keyboardShouldPersistTaps="always">
         {GRUPOS[grupo].emojis.map((e) => (
-          <Pressable key={e} onPress={() => onElegir(e)} style={({ pressed }) => [styles.celda, pressed && { backgroundColor: t.backgroundSelected }]}>
+          <Pressable key={e} onPress={(ev) => onElegir(e, desdeToque(ev))} style={({ pressed }) => [styles.celda, pressed && { backgroundColor: t.backgroundSelected }]}>
             <Text style={styles.emoji}>{e}</Text>
           </Pressable>
         ))}

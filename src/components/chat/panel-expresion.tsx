@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
-import { PestanaGifs, gifsDisponibles } from '@/components/chat/gifs';
+import { PestanaGifs, useGifsDisponibles } from '@/components/chat/gifs';
 import { StickerAnimado, cargarAnimacion } from '@/components/chat/sticker-animado';
 import { GRUPOS } from '@/components/emojis';
 import { Icono } from '@/components/ui';
@@ -65,7 +65,9 @@ export const PanelExpresion = memo(function PanelExpresion({ alto, modo, onModo,
   const [seccion, setSeccion] = useState<string>('');
   const [vista, setVista] = useState<string | null>(null); // sticker mostrado en grande
   const listaStickers = useRef<FlatList<FilaStickers>>(null);
-  const hayGifs = gifsDisponibles() !== false;
+  const hayGifs = useGifsDisponibles();
+  // Si se pidió la pestaña de GIFs y no hay, se muestran los stickers.
+  useEffect(() => { if (modo === 'gifs' && !hayGifs) onModo('stickers'); }, [modo, hayGifs, onModo]);
 
   useEffect(() => {
     leerRecientes('emojis').then((r) => { setRecientesEmojis(r); if (r.length) setGrupo('recientes'); });
