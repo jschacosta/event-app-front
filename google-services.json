@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "44036479336",
+    "project_id": "bora-app-fd2b3",
+    "storage_bucket": "bora-app-fd2b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44036479336:android:467fe9d91fc02cf7dc9edd",
+        "android_client_info": {
+          "package_name": "com.boraapp.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUNm0QXN2sMfnBLJQqRwiFpKKTRpUyPHs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

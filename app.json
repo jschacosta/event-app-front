@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bora",
     "slug": "rio-eventos-app",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bora",
@@ -21,6 +21,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.boraapp.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
