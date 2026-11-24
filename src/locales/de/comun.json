@@ -208,7 +208,14 @@
     "cancelarEdicion": "Bearbeiten abbrechen",
     "soloAvisos": "Ankündigungskanal: Nur wer ihn erstellt hat, kann hier schreiben.",
     "vacioAvisos": "Noch keine Ankündigungen.",
-    "irAlFinal": "Zur neuesten Nachricht"
+    "irAlFinal": "Zur neuesten Nachricht",
+    "notificaciones": {
+      "titulo": "Benachrichtigungen aktivieren",
+      "texto": "So erfährst du, wenn jemand in dieser Gruppe schreibt, auch wenn Bora geschlossen ist.",
+      "activar": "Aktivieren",
+      "abrirAjustes": "Einstellungen öffnen",
+      "ahoraNo": "Jetzt nicht"
+    }
   },
   "editarPerfil": {
     "errorNombre": "Gib deinen Vor- und Nachnamen ein.",

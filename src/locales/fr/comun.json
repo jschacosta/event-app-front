@@ -208,7 +208,14 @@
     "cancelarEdicion": "Annuler la modification",
     "soloAvisos": "Canal d’annonces : seul son créateur peut y écrire.",
     "vacioAvisos": "Pas encore d’annonces.",
-    "irAlFinal": "Aller au dernier message"
+    "irAlFinal": "Aller au dernier message",
+    "notificaciones": {
+      "titulo": "Activez les notifications",
+      "texto": "Pour savoir quand quelqu'un écrit dans ce groupe, même quand Bora est fermé.",
+      "activar": "Activer",
+      "abrirAjustes": "Ouvrir les réglages",
+      "ahoraNo": "Plus tard"
+    }
   },
   "editarPerfil": {
     "errorNombre": "Saisissez votre prénom et votre nom.",

@@ -51,6 +51,7 @@ import { textoAviso } from '@/lib/sistema';
 import { emojisSolos } from '@/lib/stickers';
 import { FotoEvento } from '@/components/foto-evento';
 import { avisar as avisarConHoja } from '@/lib/avisos';
+import { AvisoNotificaciones } from '@/components/aviso-notificaciones';
 
 // Mensajes seguidos de la misma persona (con menos de 5 minutos entre sí) se agrupan:
 // sin repetir nombre ni foto, y con las esquinas de las burbujas unidas, como en Telegram.
@@ -1203,6 +1204,7 @@ export default function ChatScreen() {
             ) : null}
           </Animated.View>
         ) : null}
+        {modo === 'chat' && estado === 'listo' ? <AvisoNotificaciones token={token} /> : null}
       </View>
 
       {/* Cada vista (lista de tópicos, un tópico, otra sala) entra deslizándose, como al navegar en Telegram. */}

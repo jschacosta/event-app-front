@@ -208,7 +208,14 @@
     "cancelarEdicion": "Cancel editing",
     "soloAvisos": "Announcements channel: only its creator can post here.",
     "vacioAvisos": "No announcements yet.",
-    "irAlFinal": "Go to latest message"
+    "irAlFinal": "Go to latest message",
+    "notificaciones": {
+      "titulo": "Turn on notifications",
+      "texto": "So you know when someone writes in this group, even with Bora closed.",
+      "activar": "Turn on",
+      "abrirAjustes": "Open settings",
+      "ahoraNo": "Not now"
+    }
   },
   "editarPerfil": {
     "errorNombre": "Enter your first and last name.",

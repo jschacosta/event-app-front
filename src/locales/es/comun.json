@@ -208,7 +208,14 @@
     "cancelarEdicion": "Cancelar edición",
     "soloAvisos": "Canal de avisos: solo quien lo creó puede escribir aquí.",
     "vacioAvisos": "Aún no hay avisos.",
-    "irAlFinal": "Ir al último mensaje"
+    "irAlFinal": "Ir al último mensaje",
+    "notificaciones": {
+      "titulo": "Activa las notificaciones",
+      "texto": "Así te enteras cuando te escriban en este grupo, aunque Bora esté cerrada.",
+      "activar": "Activar",
+      "abrirAjustes": "Abrir ajustes",
+      "ahoraNo": "Ahora no"
+    }
   },
   "editarPerfil": {
     "errorNombre": "Escribe tu nombre y tu apellido.",
