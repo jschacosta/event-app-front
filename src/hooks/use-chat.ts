@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { useSesion } from '@/context/sesion';
 import i18n from '@/lib/i18n';
@@ -166,6 +167,20 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
       setEstado('error');
     };
 
+    // Con la app en segundo plano la conexión sigue viva un rato y el servidor creería que estoy mirando
+    // la sala (y no mandaría la notificación): se sale de la sala y se vuelve a entrar al abrir la app.
+    let enFondo = false;
+    const alCambiarApp = (st: string) => {
+      if (st === 'background' && !enFondo) {
+        enFondo = true;
+        s.emit('chat:salir', { eventoId, sala });
+      } else if (st === 'active' && enFondo) {
+        enFondo = false;
+        if (s.connected) unirse();
+      }
+    };
+    const subApp = AppState.addEventListener('change', alCambiarApp);
+
     s.on('connect', unirse); // también al reconectar
     s.on('chat:mensaje', alMensaje);
     s.on('chat:oculto', alOculto);
@@ -183,6 +198,7 @@ export function useChat(eventoId: string | undefined, sala: Sala = 'general', to
 
     return () => {
       clearTimeout(timerEscribiendo);
+      subApp.remove();
       s.emit('chat:salir', { eventoId, sala });
       // El servidor la marca leída al salir; después se actualizan los contadores.
       setTimeout(refrescarNoLeidos, 400);
