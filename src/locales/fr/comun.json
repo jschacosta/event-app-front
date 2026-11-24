@@ -858,7 +858,10 @@
     "nuevaTexto": "Mettez-la à jour depuis {{tienda}} pour profiter des nouveautés.",
     "actualizar": "Mettre à jour",
     "obligatoria": "Mettez Bora à jour",
-    "obligatoriaTexto": "Cette version de Bora n’est plus prise en charge. Téléchargez la dernière depuis {{tienda}} pour continuer. Votre compte et vos sorties sont conservés."
+    "obligatoriaTexto": "Cette version de Bora n’est plus prise en charge. Téléchargez la dernière depuis {{tienda}} pour continuer. Votre compte et vos sorties sont conservés.",
+    "instalada": "Version {{v}}",
+    "instaladaOta": "Version {{v}} · mise à jour le {{dia}}, {{hora}}",
+    "codigo": "Code de la mise à jour : {{id}}"
   },
   "llegar": {
     "titulo": "Y aller",

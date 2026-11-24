@@ -19,6 +19,12 @@ const conTiempo = <T,>(p: Promise<T>, ms: number) =>
 // Versión instalada desde la tienda (la de la compilación, no la de la OTA).
 export const versionApp = () => Updates.runtimeVersion || Constants.expoConfig?.version || '0.0.0';
 
+/** La OTA con que corre la app: fecha de publicación (ISO) y código corto. null si corre la versión de la tienda. */
+export function otaActual(): { fecha: string; id: string } | null {
+  if (Platform.OS === 'web' || !Updates.isEnabled || Updates.isEmbeddedLaunch || !Updates.createdAt) return null;
+  return { fecha: new Date(Updates.createdAt).toISOString(), id: String(Updates.updateId ?? '').slice(0, 8) };
+}
+
 // true si la versión a es anterior a b ("1.1.0" < "1.2.0"). Una versión vacía no cuenta.
 export function anterior(a?: string, b?: string) {
   if (!a || !b) return false;

@@ -858,7 +858,10 @@
     "nuevaTexto": "Update it from {{tienda}} to get the latest.",
     "actualizar": "Update",
     "obligatoria": "Update Bora",
-    "obligatoriaTexto": "This version of Bora is no longer supported. Get the latest one from {{tienda}} to keep using it. Your account and plans stay as they are."
+    "obligatoriaTexto": "This version of Bora is no longer supported. Get the latest one from {{tienda}} to keep using it. Your account and plans stay as they are.",
+    "instalada": "Version {{v}}",
+    "instaladaOta": "Version {{v}} · updated {{dia}}, {{hora}}",
+    "codigo": "Update code: {{id}}"
   },
   "llegar": {
     "titulo": "Get there",

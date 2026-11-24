@@ -858,7 +858,10 @@
     "nuevaTexto": "Aktualisiere sie über {{tienda}}, um das Neueste zu bekommen.",
     "actualizar": "Aktualisieren",
     "obligatoria": "Aktualisiere Bora",
-    "obligatoriaTexto": "Diese Version von Bora wird nicht mehr unterstützt. Lade die neueste über {{tienda}} herunter, um sie weiter zu nutzen. Dein Konto und deine Pläne bleiben erhalten."
+    "obligatoriaTexto": "Diese Version von Bora wird nicht mehr unterstützt. Lade die neueste über {{tienda}} herunter, um sie weiter zu nutzen. Dein Konto und deine Pläne bleiben erhalten.",
+    "instalada": "Version {{v}}",
+    "instaladaOta": "Version {{v}} · aktualisiert am {{dia}}, {{hora}}",
+    "codigo": "Update-Code: {{id}}"
   },
   "llegar": {
     "titulo": "Anfahrt",

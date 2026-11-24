@@ -24,6 +24,8 @@ import { nombreInteres } from '@/lib/intereses';
 import { nombrePais } from '@/lib/paises';
 import { useCiudad } from '@/lib/ciudades';
 import { CHAT_ACTIVO } from '@/lib/funciones';
+import { diaCorto, hora } from '@/lib/fechas';
+import { otaActual, versionApp } from '@/lib/version';
 
 const entrada = (i: number) => FadeInDown.duration(420).delay(60 * i).easing(Easing.out(Easing.cubic));
 
@@ -146,7 +148,30 @@ function SelectorIdioma() {
 
 function PieApp() {
   const { t } = useTranslation('auth');
-  return <Texto v="pie" secundario style={{ textAlign: 'center' }}>{t('perfil.pieApp')}</Texto>;
+  return (
+    <View style={{ gap: 6 }}>
+      <Texto v="pie" secundario style={{ textAlign: 'center' }}>{t('perfil.pieApp')}</Texto>
+      <VersionInstalada />
+    </View>
+  );
+}
+
+// Versión instalada y fecha de la última OTA que llegó a este teléfono; al mantener apretado se ve su código.
+function VersionInstalada() {
+  const { t } = useTranslation();
+  const [verCodigo, setVerCodigo] = useState(false);
+  if (Platform.OS === 'web') return null;
+  const ota = otaActual();
+  const linea = ota
+    ? t('version.instaladaOta', { v: versionApp(), dia: diaCorto(ota.fecha), hora: hora(ota.fecha) })
+    : t('version.instalada', { v: versionApp() });
+  return (
+    <Pressable onLongPress={() => ota && setVerCodigo((x) => !x)} hitSlop={8} accessibilityRole="text">
+      <Texto v="pie" secundario style={{ textAlign: 'center', fontSize: 11, opacity: 0.7 }}>
+        {verCodigo && ota ? t('version.codigo', { id: ota.id }) : linea}
+      </Texto>
+    </Pressable>
+  );
 }
 
 // ---------- Sin cuenta ----------

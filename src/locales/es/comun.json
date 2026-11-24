@@ -858,7 +858,10 @@
     "nuevaTexto": "Actualízala desde {{tienda}} para tener lo último.",
     "actualizar": "Actualizar",
     "obligatoria": "Actualiza Bora",
-    "obligatoriaTexto": "Esta versión de Bora ya no es compatible. Descarga la última desde {{tienda}} para seguir usándola. Tu cuenta y tus planes se mantienen."
+    "obligatoriaTexto": "Esta versión de Bora ya no es compatible. Descarga la última desde {{tienda}} para seguir usándola. Tu cuenta y tus planes se mantienen.",
+    "instalada": "Versión {{v}}",
+    "instaladaOta": "Versión {{v}} · actualizada el {{dia}}, {{hora}}",
+    "codigo": "Código de la actualización: {{id}}"
   },
   "llegar": {
     "titulo": "Cómo llegar",
