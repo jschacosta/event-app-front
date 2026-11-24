@@ -32,8 +32,8 @@ function Guardia() {
 
 // Registra el teléfono para las notificaciones y abre lo que corresponde al tocar una.
 function Notificaciones() {
-  const { token } = useSesion();
-  useNotificaciones(token);
+  const { token, cargando } = useSesion();
+  useNotificaciones(token, cargando);
   return null;
 }
 

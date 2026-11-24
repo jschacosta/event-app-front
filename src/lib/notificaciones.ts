@@ -11,7 +11,7 @@ import * as BackgroundTask from 'expo-background-task';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { router, type Href } from 'expo-router';
+import { router, useRootNavigationState, type Href } from 'expo-router';
 import * as TaskManager from 'expo-task-manager';
 import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -20,6 +20,7 @@ import { almacen } from '@/lib/almacen';
 import { api } from '@/lib/api';
 import { hora as horaEvento } from '@/lib/fechas';
 import i18n from '@/lib/i18n';
+import { noReiniciarPorOta } from '@/lib/version';
 
 const CANAL = 'avisos';
 const disponible = Platform.OS !== 'web';
@@ -252,9 +253,12 @@ export function cancelarAvisoLocal(eventoId: string) {
 
 // En la raíz de la app: registra el teléfono si ya dio permiso y abre la pantalla del aviso al tocarlo
 // (también si la app estaba cerrada).
-function useNotificacionesNativo(sesion: string | null) {
+function useNotificacionesNativo(sesion: string | null, cargando: boolean) {
   const respuesta = Notifications.useLastNotificationResponse();
   const abierta = useRef<string | null>(null);
+  // Con la app cerrada, el aviso llega antes de que la navegación esté montada: hay que esperarla
+  // (si no, el push se pierde y queda el inicio).
+  const navegacionLista = !!useRootNavigationState()?.key;
 
   useEffect(() => {
     activarNotificaciones(sesion);
@@ -282,10 +286,13 @@ function useNotificacionesNativo(sesion: string | null) {
     const id = respuesta.notification.request.identifier;
     const url = respuesta.notification.request.content.data?.url;
     if (abierta.current === id || typeof url !== 'string') return;
+    noReiniciarPorOta();
+    // También se espera la sesión: el chat la necesita para cargar.
+    if (!navegacionLista || cargando) return;
     abierta.current = id;
     router.push(url as Href);
-  }, [respuesta]);
+  }, [respuesta, navegacionLista, cargando]);
 }
 
 // En la web no hay notificaciones: el hook no hace nada (se elige una vez, al cargar el módulo).
-export const useNotificaciones: (sesion: string | null) => void = disponible ? useNotificacionesNativo : () => {};
+export const useNotificaciones: (sesion: string | null, cargando: boolean) => void = disponible ? useNotificacionesNativo : () => {};

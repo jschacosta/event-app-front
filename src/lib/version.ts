@@ -36,15 +36,25 @@ export function anterior(a?: string, b?: string) {
 
 // ---------- OTA ----------
 
+// Si la app se abrió tocando una notificación, no se reinicia por una OTA: se perdería la pantalla
+// que abrió el aviso (por ejemplo el chat). La OTA se baja igual y queda para la próxima vez.
+let sinReiniciar = false;
+export const noReiniciarPorOta = () => { sinReiniciar = true; };
+
 // Si hay una OTA nueva, avisa con onBajando(true), la baja y reinicia la app con ella.
 export async function aplicarUltimaOta(onBajando: (b: boolean) => void) {
   if (!activo() || !Updates.isEnabled) return false;
   let r: Updates.UpdateCheckResult;
   try { r = await conTiempo(Updates.checkForUpdateAsync(), 8000); } catch { return false; }
   if (!r.isAvailable) return false;
+  if (sinReiniciar) {
+    Updates.fetchUpdateAsync().catch(() => {});
+    return false;
+  }
   onBajando(true);
   try {
     await conTiempo(Updates.fetchUpdateAsync(), 45_000);
+    if (sinReiniciar) { onBajando(false); return false; }
     await Updates.reloadAsync();
     return true;
   } catch {
