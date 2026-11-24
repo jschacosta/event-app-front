@@ -24,6 +24,8 @@ import i18n from '@/lib/i18n';
 const CANAL = 'avisos';
 const disponible = Platform.OS !== 'web';
 let tokenPush: string | null = null; // el de este teléfono, si se pudo registrar
+let errorPush: string | null = null; // por qué no se pudo registrar (para la prueba en Ajustes)
+export const estadoPush = () => ({ token: tokenPush, error: errorPush });
 
 if (disponible) {
   // Con la app abierta también se muestra el aviso arriba.
@@ -55,14 +57,16 @@ export async function activarNotificaciones(sesion: string | null, { preguntar =
   if (!disponible || !sesion) return false;
   try {
     await prepararCanal();
-    if (!(await permiso(preguntar))) return false;
+    if (!(await permiso(preguntar))) { errorPush = 'sin permiso'; return false; }
     const id = projectId();
-    if (!Device.isDevice || !id) return false; // simulador o app sin proyecto de EAS: solo avisos locales
+    if (!Device.isDevice || !id) { errorPush = 'sin proyecto o simulador'; return false; } // solo avisos locales
     const { data } = await Notifications.getExpoPushTokenAsync({ projectId: id });
     await api('/me/push', { metodo: 'POST', token: sesion, body: { token: data } });
     tokenPush = data;
+    errorPush = null;
     return true;
-  } catch {
+  } catch (e) {
+    errorPush = e instanceof Error ? e.message : String(e);
     return false; // Expo Go en Android no tiene push; quedan los avisos locales
   }
 }

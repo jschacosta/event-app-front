@@ -772,6 +772,16 @@
           "titulo": "Le meilleur du week-end",
           "detalle": "Le jeudi, les temps forts du week-end dans votre ville."
         }
+      },
+      "prueba": {
+        "titulo": "Tester les notifications",
+        "detalle": "Nous envoyons une notification à ce téléphone. Quittez Bora après avoir touché le bouton pour la voir arriver.",
+        "boton": "M'envoyer un test",
+        "enviando": "Envoi…",
+        "enviada": "Envoyée : elle devrait arriver dans quelques secondes.",
+        "sinToken": "Ce téléphone n'est pas enregistré pour recevoir des notifications.",
+        "registro": "Impossible d'enregistrer ce téléphone : {{detalle}}",
+        "error": "Envoi impossible : {{detalle}}"
       }
     },
     "privacidad": {

@@ -12,10 +12,11 @@ import { BotonPrincipal, BotonTexto, FilaInterruptor, Grupo, Icono, Texto } from
 import { MaxContentWidth } from '@/constants/theme';
 import { useSesion } from '@/context/sesion';
 import { useTheme } from '@/hooks/use-theme';
-import { quiereAviso, type Avisos } from '@/lib/api';
-import { activarNotificaciones, cancelarRecordatorios } from '@/lib/notificaciones';
+import { api, quiereAviso, type Avisos } from '@/lib/api';
+import { activarNotificaciones, cancelarRecordatorios, estadoPush } from '@/lib/notificaciones';
 
 type Permiso = 'si' | 'no' | 'preguntar' | null;
+type ResultadoPrueba = { tokens: number; errores?: string[]; resultados: { estado: string; error: string | null; mensaje: string | null }[] };
 
 const GRUPOS: { titulo: string; pie?: string; claves: (keyof Avisos)[] }[] = [
   { titulo: 'eventos', claves: ['recordatorio', 'canalAbierto', 'llenandose', 'opinion'] },
@@ -59,6 +60,29 @@ export default function NotificacionesScreen() {
   const activar = async () => {
     await activarNotificaciones(token, { preguntar: true });
     leerPermiso();
+  };
+
+  // Prueba: registra de nuevo este teléfono y se manda una notificación; se muestra qué pasó.
+  const [prueba, setPrueba] = useState<{ cargando: boolean; lineas: string[] }>({ cargando: false, lineas: [] });
+  const probar = async () => {
+    setPrueba({ cargando: true, lineas: [] });
+    const lineas: string[] = [];
+    const conPush = await activarNotificaciones(token, { preguntar: true });
+    leerPermiso();
+    if (!conPush) lineas.push(tr('ajustes.notificaciones.prueba.registro', { detalle: estadoPush().error ?? '?' }));
+    try {
+      const r = await api<ResultadoPrueba>('/me/push/prueba', { metodo: 'POST', token });
+      if (!r.tokens) lineas.push(tr('ajustes.notificaciones.prueba.sinToken'));
+      for (const e of r.errores ?? []) lineas.push(tr('ajustes.notificaciones.prueba.error', { detalle: e }));
+      for (const x of r.resultados) {
+        lineas.push(x.estado === 'ok'
+          ? tr('ajustes.notificaciones.prueba.enviada')
+          : tr('ajustes.notificaciones.prueba.error', { detalle: [x.error, x.mensaje].filter(Boolean).join(' · ') || x.estado }));
+      }
+    } catch (e) {
+      lineas.push(tr('ajustes.notificaciones.prueba.error', { detalle: e instanceof Error ? e.message : String(e) }));
+    }
+    setPrueba({ cargando: false, lineas });
   };
 
   if (!usuario) return null;
@@ -107,6 +131,15 @@ export default function NotificacionesScreen() {
           </Grupo>
         ))}
 
+        <View style={[styles.prueba, { backgroundColor: t.card }]}>
+          <Texto v="cuerpoFuerte">{tr('ajustes.notificaciones.prueba.titulo')}</Texto>
+          <Texto v="detalle" secundario style={{ lineHeight: 19 }}>{tr('ajustes.notificaciones.prueba.detalle')}</Texto>
+          <View style={{ marginTop: 4 }}>
+            <BotonPrincipal texto={prueba.cargando ? tr('ajustes.notificaciones.prueba.enviando') : tr('ajustes.notificaciones.prueba.boton')} onPress={prueba.cargando ? () => {} : probar} />
+          </View>
+          {prueba.lineas.map((l, i) => <Texto key={i} v="detalle" selectable style={{ lineHeight: 19 }}>{l}</Texto>)}
+        </View>
+
         {error ? <Texto v="detalle" style={{ color: t.danger, paddingHorizontal: 16 }}>{error}</Texto> : null}
         <Texto v="detalle" secundario style={{ paddingHorizontal: 16, lineHeight: 19 }}>{tr('ajustes.notificaciones.horario')}</Texto>
       </ScrollView>
@@ -122,5 +155,6 @@ const styles = StyleSheet.create({
   scroll: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   contenido: { padding: 16, gap: 24 },
   permiso: { flexDirection: 'row', gap: 12, padding: 14, borderRadius: 10 },
+  prueba: { gap: 6, padding: 14, borderRadius: 10 },
   icono: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });

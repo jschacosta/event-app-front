@@ -772,6 +772,16 @@
           "titulo": "O melhor do fim de semana",
           "detalle": "Às quintas, os destaques da sua cidade para o fim de semana."
         }
+      },
+      "prueba": {
+        "titulo": "Testar notificações",
+        "detalle": "Vamos mandar uma notificação para este celular. Saia do Bora depois de tocar no botão para ver ela chegar.",
+        "boton": "Me mandar um teste",
+        "enviando": "Enviando…",
+        "enviada": "Enviada: deve chegar em alguns segundos.",
+        "sinToken": "Este celular não ficou registrado para receber notificações.",
+        "registro": "Não foi possível registrar este celular: {{detalle}}",
+        "error": "Não foi possível enviar: {{detalle}}"
       }
     },
     "privacidad": {

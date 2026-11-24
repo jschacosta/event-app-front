@@ -772,6 +772,16 @@
           "titulo": "Best of the weekend",
           "detalle": "On Thursdays, the highlights in your city for the weekend."
         }
+      },
+      "prueba": {
+        "titulo": "Test notifications",
+        "detalle": "We'll send a notification to this phone. Leave Bora after tapping the button to see it arrive.",
+        "boton": "Send me a test",
+        "enviando": "Sending…",
+        "enviada": "Sent: it should arrive in a few seconds.",
+        "sinToken": "This phone isn't registered to receive notifications.",
+        "registro": "This phone couldn't be registered: {{detalle}}",
+        "error": "Couldn't send it: {{detalle}}"
       }
     },
     "privacidad": {

@@ -772,6 +772,16 @@
           "titulo": "Das Beste am Wochenende",
           "detalle": "Donnerstags die Highlights in deiner Stadt fürs Wochenende."
         }
+      },
+      "prueba": {
+        "titulo": "Benachrichtigungen testen",
+        "detalle": "Wir schicken eine Benachrichtigung an dieses Handy. Verlasse Bora, nachdem du auf den Button getippt hast, um sie ankommen zu sehen.",
+        "boton": "Test an mich senden",
+        "enviando": "Wird gesendet…",
+        "enviada": "Gesendet: Sie sollte in ein paar Sekunden ankommen.",
+        "sinToken": "Dieses Handy ist nicht für Benachrichtigungen registriert.",
+        "registro": "Dieses Handy konnte nicht registriert werden: {{detalle}}",
+        "error": "Senden nicht möglich: {{detalle}}"
       }
     },
     "privacidad": {

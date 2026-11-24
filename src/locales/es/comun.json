@@ -772,6 +772,16 @@
           "titulo": "Lo mejor del fin de semana",
           "detalle": "Los jueves, lo más destacado de tu ciudad para el finde."
         }
+      },
+      "prueba": {
+        "titulo": "Probar notificaciones",
+        "detalle": "Te mandamos una notificación a este teléfono. Sal de Bora después de tocar el botón para verla llegar.",
+        "boton": "Enviarme una prueba",
+        "enviando": "Enviando…",
+        "enviada": "Enviada: debería llegar en unos segundos.",
+        "sinToken": "Este teléfono no quedó registrado para recibir notificaciones.",
+        "registro": "No se pudo registrar este teléfono: {{detalle}}",
+        "error": "No se pudo enviar: {{detalle}}"
       }
     },
     "privacidad": {
